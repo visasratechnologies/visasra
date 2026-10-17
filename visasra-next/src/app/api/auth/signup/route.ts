@@ -46,9 +46,8 @@ export async function POST(req: Request) {
         success: true,
         isExistingUser: Boolean(existing),
         message: existing
-          ? `Welcome back! Verification code sent to email.`
-          : otpResult.message,
-        otp: otpResult.otp,
+          ? `Welcome back! Verification code sent to your email.`
+          : otpResult.message || `Verification code sent to ${cleanEmail}. Please check your email.`,
       });
     }
 

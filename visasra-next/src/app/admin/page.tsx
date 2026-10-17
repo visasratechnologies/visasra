@@ -196,8 +196,7 @@ export default function AdminPortal() {
       const data = await res.json();
       if (res.ok) {
         setAdminOtpSent(true);
-        if (data.otp) setAdminOtp(data.otp);
-        showToast(data.message || 'Authorization code sent to your email');
+        showToast(data.message || 'Authorization code sent to your email. Please check your inbox.');
       } else {
         showToast(data.error || 'Failed to dispatch authorization code');
       }

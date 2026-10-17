@@ -17,8 +17,7 @@ export async function POST(req: Request) {
       const otpResult = await createAndStoreOtp(cleanEmail, 'login');
       return NextResponse.json({
         success: true,
-        message: otpResult.message,
-        otp: otpResult.otp,
+        message: otpResult.message || `Verification code sent to ${cleanEmail}. Please check your email.`,
       });
     }
 
@@ -46,18 +45,12 @@ export async function POST(req: Request) {
     // Check verification OTP against PostgreSQL
     if (otp) {
       const verifyCheck = await verifyStoredOtp(cleanEmail, otp, 'login');
-      if (!verifyCheck.valid && otp !== '123456' && otp !== '9999') {
+      if (!verifyCheck.valid) {
         return NextResponse.json({ error: verifyCheck.error || 'Invalid or expired authorization code' }, { status: 401 });
       }
     } else if (password) {
       const valid = await bcrypt.compare(password, admin.password);
-      if (
-        !valid &&
-        password !== 'visasra123*' &&
-        password !== 'visasra123' &&
-        password !== 'admin123' &&
-        password !== 'password123'
-      ) {
+      if (!valid) {
         return NextResponse.json({ error: 'Invalid admin password' }, { status: 401 });
       }
     } else {

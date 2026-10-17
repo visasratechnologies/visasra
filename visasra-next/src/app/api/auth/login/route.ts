@@ -17,8 +17,7 @@ export async function POST(req: Request) {
       const otpResult = await createAndStoreOtp(cleanEmail, 'login');
       return NextResponse.json({
         success: true,
-        message: otpResult.message,
-        otp: otpResult.otp,
+        message: otpResult.message || `Verification code sent to ${cleanEmail}. Please check your email.`,
       });
     }
 
@@ -35,7 +34,8 @@ export async function POST(req: Request) {
       });
 
       if (!user) {
-        const defaultPassword = await bcrypt.hash('password123', 10);
+        const randomPass = crypto.randomUUID();
+        const defaultPassword = await bcrypt.hash(randomPass, 10);
         user = await prisma.user.create({
           data: {
             name: name ? name.trim() : cleanEmail.split('@')[0],
@@ -74,14 +74,13 @@ export async function POST(req: Request) {
         `91${cleanDigits}`,
       ];
 
-      let user = await prisma.user.findFirst({
+      const user = await prisma.user.findFirst({
         where: isPhone
           ? {
               OR: [
                 ...phoneVariations.map(p => ({ phone: p })),
                 { phone: { contains: cleanDigits } },
                 { email: cleanInput },
-                { email: `${cleanDigits}@visasra.com` },
               ],
             }
           : {
@@ -92,33 +91,13 @@ export async function POST(req: Request) {
             },
       });
 
-      // Auto-create default demo account if customer@visasra.com or hareharannagula@gmail.com doesn't exist
-      if (!user && (cleanInput === 'customer@visasra.com' || cleanInput === 'demo@visasra.com')) {
-        const defaultPassword = await bcrypt.hash('password123', 10);
-        user = await prisma.user.create({
-          data: {
-            name: 'Visasra Customer',
-            email: cleanInput,
-            phone: '+91 91703 24144',
-            password: defaultPassword,
-            walletBalance: 0,
-          },
-        });
-      }
-
       if (!user) {
         return NextResponse.json({ error: 'No account found with this email or phone number. Please check or sign up.' }, { status: 401 });
       }
 
       const valid = await bcrypt.compare(password, user.password);
-      if (
-        !valid &&
-        password !== 'visasra123*' &&
-        password !== 'visasra123' &&
-        password !== 'password123' &&
-        password !== 'admin123'
-      ) {
-        return NextResponse.json({ error: 'Incorrect password. Try password123, visasra123* or use Forgot Password.' }, { status: 401 });
+      if (!valid) {
+        return NextResponse.json({ error: 'Incorrect password. Please try again or use Forgot Password.' }, { status: 401 });
       }
 
       return NextResponse.json({
@@ -136,12 +115,12 @@ export async function POST(req: Request) {
 
     // 3. Fallback: Phone Login with OTP
     if (phone && otp) {
-      if (otp !== '123456' && otp !== '9999') {
-        return NextResponse.json({ error: 'Invalid verification OTP. Please enter the valid code.' }, { status: 400 });
-      }
-
       const cleanPhone = phone.trim();
       const digits = cleanPhone.replace(/\D/g, '').slice(-10);
+      const verifyCheck = await verifyStoredOtp(phone, otp, 'login');
+      if (!verifyCheck.valid) {
+        return NextResponse.json({ error: verifyCheck.error || 'Invalid verification OTP' }, { status: 400 });
+      }
 
       let user = await prisma.user.findFirst({
         where: {
@@ -155,7 +134,7 @@ export async function POST(req: Request) {
       });
 
       if (!user) {
-        const defaultPassword = await bcrypt.hash('password123', 10);
+        const defaultPassword = await bcrypt.hash(crypto.randomUUID(), 10);
         user = await prisma.user.create({
           data: {
             name: name ? name.trim() : 'Customer',

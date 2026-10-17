@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { verifyStoredOtp } from '@/lib/otp';
 
 export async function POST(req: Request) {
   try {
@@ -44,13 +45,9 @@ export async function POST(req: Request) {
       if (worker.password) {
         isValid = await bcrypt.compare(password, worker.password);
       }
-      // Allow default fallback password
-      if (!isValid && (password === 'password123' || password === 'visasra123' || password === 'visasra123*' || password === 'admin123')) {
-        isValid = true;
-      }
 
       if (!isValid) {
-        return NextResponse.json({ error: 'Incorrect password. Try password123 or use Forgot Password.' }, { status: 401 });
+        return NextResponse.json({ error: 'Incorrect password. Please try again or use Forgot Password.' }, { status: 401 });
       }
 
       return NextResponse.json({
@@ -60,10 +57,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Fallback: Phone and OTP Login (for demo shopper auto-fill)
-    if (phone) {
-      if (otp && otp !== '123456' && otp !== '9999') {
-        return NextResponse.json({ error: 'Invalid verification OTP. Please enter the valid code.' }, { status: 400 });
+    // 2. Fallback: Phone and OTP Login
+    if (phone && otp) {
+      const verifyCheck = await verifyStoredOtp(phone, otp, 'login');
+      if (!verifyCheck.valid) {
+        return NextResponse.json({ error: verifyCheck.error || 'Invalid verification OTP' }, { status: 400 });
       }
 
       const cleanPhone = phone.trim();

@@ -75,9 +75,7 @@ export async function createAndStoreOtp(
       console.warn('Supabase dual email dispatch skipped:', e);
     }
 
-    const returnMessage = isSandboxRestricted
-      ? `Verification code dispatched! (Check your email inbox or spam folder; your code is ${otp})`
-      : `Verification code sent to ${cleanEmail}. Please check your inbox or spam folder.`;
+    const returnMessage = `Verification code sent to ${cleanEmail}. Please check your inbox or spam folder.`;
 
     return {
       success: true,
@@ -91,7 +89,7 @@ export async function createAndStoreOtp(
       success: true,
       otp,
       expiresAt,
-      message: `Verification code: ${otp}`,
+      message: `Verification code sent to ${cleanEmail}. Please check your inbox or spam folder.`,
     };
   }
 }

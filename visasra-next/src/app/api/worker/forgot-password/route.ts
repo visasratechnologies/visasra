@@ -27,8 +27,7 @@ export async function POST(req: Request) {
       const otpResult = await createAndStoreOtp(cleanEmail, 'reset_password');
       return NextResponse.json({
         success: true,
-        message: `Password reset verification code sent to ${cleanEmail}. (Code: ${otpResult.otp})`,
-        otp: otpResult.otp,
+        message: otpResult.message || `Password reset verification code sent to ${cleanEmail}. Please check your email.`,
       });
     }
 

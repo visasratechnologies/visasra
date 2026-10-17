@@ -461,10 +461,7 @@ export default function CustomerApp() {
           const data = await res.json();
           if (res.ok) {
             setOtpSent(true);
-            if (data.otp) {
-              setAuthOtp(data.otp);
-            }
-            showToast(data.message || `Verification code sent to ${authEmail}`);
+            showToast(data.message || `Verification code sent to ${authEmail}. Please check your email.`);
           } else {
             showToast(data.error || 'Failed to send OTP to email');
           }
@@ -568,9 +565,6 @@ export default function CustomerApp() {
       const data = await res.json();
       if (res.ok) {
         setSignupStep('verify_email');
-        if (data.otp) {
-          setSignupOtp(data.otp);
-        }
         showToast(data.message || `Verification code sent to ${signupEmail}. Please check your email.`);
       } else {
         showToast(data.error || 'Failed to send verification code');
@@ -658,7 +652,6 @@ export default function CustomerApp() {
         const data = await res.json();
         if (res.ok) {
           setForgotOtpSent(true);
-          if (data.otp) setForgotOtp(data.otp);
           showToast(data.message || `Reset code sent to ${forgotEmail}. Please check your email.`);
         } else {
           showToast(data.error || 'Failed to send reset code');
@@ -1891,7 +1884,7 @@ export default function CustomerApp() {
                       required
                       value={authEmail}
                       onChange={(e) => setAuthEmail(e.target.value)}
-                      placeholder="e.g. hareharannagula@gmail.com or 9491473081"
+                      placeholder="e.g. priya.sharma@example.com or 9876543210"
                     />
                   </div>
 
@@ -1983,7 +1976,7 @@ export default function CustomerApp() {
                             required
                             value={authOtp}
                             onChange={(e) => setAuthOtp(e.target.value)}
-                            placeholder="123456"
+                            placeholder="••••••"
                             style={{ letterSpacing: 4, fontWeight: 700, fontSize: 15, textAlign: 'center' }}
                           />
                         </div>

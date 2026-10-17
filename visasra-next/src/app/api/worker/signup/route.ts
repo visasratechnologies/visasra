@@ -56,8 +56,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Verification code sent to ${cleanEmail}. (Code: ${otpResult.otp})`,
-        otp: otpResult.otp,
+        message: otpResult.message || `Verification code sent to ${cleanEmail}. Please check your email.`,
       });
     }
 

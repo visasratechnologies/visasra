@@ -3183,7 +3183,7 @@ export default function WorkerApp() {
                     <dt>IFSC Code</dt>
                     <dd style={{ fontFamily: 'monospace', fontWeight: 700 }}>{worker?.bankIfscCode || 'HDFC0000124'}</dd>
                     <dt>Payout UPI</dt>
-                    <dd style={{ fontFamily: 'monospace', color: '#15803d', fontWeight: 600 }}>{worker?.payoutUpi || 'hareharan@okaxis'}</dd>
+                    <dd style={{ fontFamily: 'monospace', color: '#15803d', fontWeight: 600 }}>{worker?.payoutUpi || 'partner@okhdfcbank'}</dd>
                   </dl>
                 </div>
               </div>
