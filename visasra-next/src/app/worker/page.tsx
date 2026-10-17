@@ -200,9 +200,9 @@ export default function WorkerApp() {
 
   // Auth Modes & State: 'signin' | 'signup' | 'forgot'
   const [authTab, setAuthTab] = useState<'signin' | 'signup' | 'forgot'>('signin');
-  // 1. Sign In
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  // 1. Sign In (Mobile Number or Email)
+  const [loginEmail, setLoginEmail] = useState('9170324144');
+  const [loginPassword, setLoginPassword] = useState('password123');
   // 2. Sign Up (NO Aadhaar! Name, mobile number, mail id, password, email OTP)
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -538,11 +538,12 @@ export default function WorkerApp() {
   // ACTIONS: AUTH & GATED APPLICATION WORKFLOW
   // -------------------------------------------------------------------
 
-  // 1. Sign In with Email & Password
+  // 1. Sign In with Mobile Number or Email & Password
   const handleEmailPasswordLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!loginEmail.trim() || !loginEmail.includes('@')) {
-      showToast('Please enter your valid registered email address');
+    const cleanLogin = loginEmail.trim();
+    if (!cleanLogin || cleanLogin.length < 3) {
+      showToast('Please enter your mobile number or email address');
       return;
     }
     if (!loginPassword) {
@@ -551,11 +552,13 @@ export default function WorkerApp() {
     }
     setAuthLoading(true);
     try {
+      const isEmail = cleanLogin.includes('@');
       const res = await fetch('/api/worker/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: loginEmail.trim().toLowerCase(),
+          email: isEmail ? cleanLogin.toLowerCase() : undefined,
+          phone: !isEmail ? cleanLogin : undefined,
           password: loginPassword,
         }),
       });
@@ -1281,15 +1284,15 @@ export default function WorkerApp() {
               </div>
             )}
 
-            {/* TAB 1: SIGN IN WITH EMAIL & PASSWORD */}
+            {/* TAB 1: SIGN IN WITH MOBILE OR EMAIL & PASSWORD */}
             {authTab === 'signin' && (
               <form onSubmit={handleEmailPasswordLogin} style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <input
-                  type="email"
-                  placeholder="Email ID (e.g. name@gmail.com)"
+                  type="text"
+                  placeholder="Mobile Number or Email ID (e.g. 9170324144)"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  autoComplete="email"
+                  autoComplete="username"
                   required
                 />
                 <input
@@ -1312,7 +1315,7 @@ export default function WorkerApp() {
                   </button>
                 </div>
                 <button type="submit" className="btn" disabled={authLoading}>
-                  {authLoading ? 'Signing in...' : 'Sign in with Email'}
+                  {authLoading ? 'Signing in...' : 'Sign in to Partner Portal'}
                 </button>
                 <div style={{ marginTop: 14, textAlign: 'center' }}>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>

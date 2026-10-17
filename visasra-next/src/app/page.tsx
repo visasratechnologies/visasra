@@ -318,8 +318,8 @@ export default function CustomerApp() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [authMethod, setAuthMethod] = useState<'password' | 'email_otp'>('password');
 
-  // Sign In State (Email Primary)
-  const [authEmail, setAuthEmail] = useState('customer@visasra.com');
+  // Sign In State (Email or Mobile Number)
+  const [authEmail, setAuthEmail] = useState('hareharannagula@gmail.com');
   const [authPassword, setAuthPassword] = useState('password123');
   const [authOtp, setAuthOtp] = useState('123456');
   const [otpSent, setOtpSent] = useState(false);
@@ -1877,13 +1877,13 @@ export default function CustomerApp() {
 
                 <form onSubmit={handleAuthSubmit}>
                   <div className="field">
-                    <label>Email</label>
+                    <label>Email ID or Mobile Number</label>
                     <input
-                      type="email"
+                      type="text"
                       required
                       value={authEmail}
                       onChange={(e) => setAuthEmail(e.target.value)}
-                      placeholder="name@gmail.com"
+                      placeholder="e.g. hareharannagula@gmail.com or 9491473081"
                     />
                   </div>
 
@@ -2024,12 +2024,12 @@ export default function CustomerApp() {
                     }}
                     onClick={() => {
                       setAuthMethod('password');
-                      setAuthEmail('customer@visasra.com');
+                      setAuthEmail('hareharannagula@gmail.com');
                       setAuthPassword('password123');
-                      showToast('Demo account filled (customer@visasra.com)');
+                      showToast('Account filled (hareharannagula@gmail.com)');
                     }}
                   >
-                    Quick Demo Fill (customer@visasra.com)
+                    Quick Fill (hareharannagula@gmail.com)
                   </button>
                 </div>
               </>
