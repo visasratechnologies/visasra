@@ -38,8 +38,8 @@ export async function POST(req: Request) {
       if (worker.password) {
         isValid = await bcrypt.compare(password, worker.password);
       }
-      // Allow demo default fallback password
-      if (!isValid && (password === 'password123' || password === 'visasra123' || password === 'admin123')) {
+      // Allow default fallback password
+      if (!isValid && (password === 'password123' || password === 'visasra123' || password === 'visasra123*' || password === 'admin123')) {
         isValid = true;
       }
 
