@@ -1626,9 +1626,9 @@ export default function CustomerApp() {
     }
 
     const currentSlotFee = slotDuration === 2 ? 250 : slotDuration === 5 ? 600 : 400;
-    const currentMerchandiseBudget = cart.reduce((sum, item) => sum + (item.priceMax || item.priceMin || 1000) * (item.qty || 1), 0);
-    const requiredDeposit = currentMerchandiseBudget + currentSlotFee;
-    const shortfall = Math.max(0, requiredDeposit - user.walletBalance);
+    // Slot booking requires the slot fee to reserve the personal shopper
+    const requiredDeposit = currentSlotFee;
+    const shortfall = Math.max(0, requiredDeposit - (user.walletBalance || 0));
 
     // Finalizes the order and deducts the slot fee after wallet has sufficient funds
     const finalizeOrder = async (confirmedBalance?: number) => {
@@ -1693,7 +1693,7 @@ export default function CustomerApp() {
       try {
         await openRazorpayPayment({
           amount: shortfall,
-          description: `Deposit to Visasra Money for Sourcing Slot & Merchandise Budget (${selectedDate})`,
+          description: `Sourcing Slot Booking Fee (${selectedDate})`,
           prefill: {
             name: user.name,
             email: user.email,
