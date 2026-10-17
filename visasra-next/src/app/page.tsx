@@ -842,6 +842,16 @@ export default function CustomerApp() {
     date: string;
   }>>([]);
 
+  // Booking Confirmation, Loading & Celebration States
+  const [isBooking, setIsBooking] = useState(false);
+  const [orderPlacedSuccess, setOrderPlacedSuccess] = useState<Order | null>(null);
+
+  // Button expression & instant feedback states
+  const [addedFeedbackId, setAddedFeedbackId] = useState<string | null>(null);
+  const [isAddingBasket, setIsAddingBasket] = useState(false);
+  const [customAddedFeedback, setCustomAddedFeedback] = useState(false);
+  const [onlineAddedFeedback, setOnlineAddedFeedback] = useState(false);
+
   // Image Upload State & Handlers (Direct Cloudflare Sync / Local Fallback)
   const [uploadingImage, setUploadingImage] = useState(false);
   const handleFileUpload = async (file: File): Promise<string | null> => {
@@ -1462,8 +1472,13 @@ export default function CustomerApp() {
 
 
 
-  // Add Item to Cart (Quick)
+  // Add Item to Cart (Quick) with button expression
   const addToCart = (product: Product) => {
+    setAddedFeedbackId(product.id);
+    setTimeout(() => {
+      setAddedFeedbackId(prev => (prev === product.id ? null : prev));
+    }, 1600);
+
     const existing = cart.find(i => i.id === product.id);
     if (existing) {
       setCart(cart.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
@@ -1482,29 +1497,34 @@ export default function CustomerApp() {
     showToast(`Added ${product.name} to sourcing basket`);
   };
 
-  // Add Customized Catalog Product
+  // Add Customized Catalog Product with button expression
   const handleAddCustomizedCatalogProduct = () => {
     if (!customizingProduct) return;
+    setIsAddingBasket(true);
+    const prod = customizingProduct;
     const newItem: CartItem = {
-      id: `${customizingProduct.id}-${Date.now()}`,
-      name: customizingProduct.name,
+      id: `${prod.id}-${Date.now()}`,
+      name: prod.name,
       qty: customizingQty,
-      priceMin: customizingProduct.estMin,
-      priceMax: customizingProduct.estMax,
-      image: customizingImgs[0] || customizingImg.trim() || customizingProduct.image,
-      images: customizingImgs.length > 0 ? customizingImgs : (customizingProduct.images || [customizingProduct.image]),
+      priceMin: prod.estMin,
+      priceMax: prod.estMax,
+      image: customizingImgs[0] || customizingImg.trim() || prod.image,
+      images: customizingImgs.length > 0 ? customizingImgs : (prod.images || [prod.image]),
       notes: customizingNotes.trim() || undefined,
       sourceType: 'catalog',
-      categoryName: customizingProduct.categoryName,
+      categoryName: prod.categoryName,
     };
     setCart([...cart, newItem]);
-    showToast(`Added ${customizingProduct.name} to basket`);
-    setCustomizingProduct(null);
-    setCustomizingQty(1);
-    setCustomizingNotes('');
-    setCustomizingImg('');
-    setCustomizingImgs([]);
-    setActiveProductPhotoIdx(0);
+    showToast(`Added ${prod.name} to basket`);
+    setTimeout(() => {
+      setIsAddingBasket(false);
+      setCustomizingProduct(null);
+      setCustomizingQty(1);
+      setCustomizingNotes('');
+      setCustomizingImg('');
+      setCustomizingImgs([]);
+      setActiveProductPhotoIdx(0);
+    }, 450);
   };
 
   // Add Custom Item (Source 2: Customize Product / What's On Your Mind)
@@ -1514,6 +1534,9 @@ export default function CustomerApp() {
       showToast('Please enter an item name');
       return;
     }
+    setCustomAddedFeedback(true);
+    setTimeout(() => setCustomAddedFeedback(false), 1600);
+
     const primaryImg = customImgs[0] || customImg.trim() || '/images/categories/pooja-spiritual.jpg';
     const allImgs = customImgs.length > 0 ? customImgs : [primaryImg];
 
@@ -1550,6 +1573,9 @@ export default function CustomerApp() {
       showToast('Please provide an item name or website link');
       return;
     }
+    setOnlineAddedFeedback(true);
+    setTimeout(() => setOnlineAddedFeedback(false), 1600);
+
     const title = onlineTitle.trim() || `${onlinePlatform} Product`;
     const primaryImg = onlineImgs[0] || onlineImg.trim() || '/images/categories/electronics-accessories.jpg';
     const allImgs = onlineImgs.length > 0 ? onlineImgs : [primaryImg];
@@ -1573,6 +1599,8 @@ export default function CustomerApp() {
     setOnlineTitle('');
     setOnlinePrice('2499');
     setOnlineImg('');
+    setOnlineImgs([]);
+    setOnlineNotes('');
     setOnlineImgs([]);
     setOnlineNotes('');
     setOnlineImg('');
@@ -1622,7 +1650,9 @@ export default function CustomerApp() {
       return;
     }
 
+    setIsBooking(true);
     const currentSlotFee = slotDuration === 2 ? 250 : slotDuration === 5 ? 600 : 400;
+    const merchandiseBudget = cart.reduce((sum, item) => sum + (item.priceMax || item.priceMin || 1000) * (item.qty || 1), 0);
     // Slot booking requires the slot fee to reserve the personal shopper
     const requiredDeposit = currentSlotFee;
     const shortfall = Math.max(0, requiredDeposit - (user.walletBalance || 0));
@@ -1669,19 +1699,52 @@ export default function CustomerApp() {
           try {
             localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: finalBal }));
           } catch {}
-          showToast(`Slot Confirmed! ₹${currentSlotFee} slot fee deducted. Sourcing budget held in Visasra Money.`);
+
+          // 1. Instant optimistic reflection: prepend order into orders state (0ms delay)
+          if (data.order) {
+            setOrders(prev => [data.order, ...prev.filter(o => o.id !== data.order.id)]);
+          }
+
+          // 2. Clear booking wizard state
+          const bookedCartItems = [...cart];
           setCart([]);
           setItemRequirement('');
           setDeliveryNotes('');
           setBookingStep(1);
           setShowTripDetailsModal(false);
+
+          // 3. Open celebration modal "Order Placed Successfully! 🎉"
+          setOrderPlacedSuccess(data.order || {
+            id: `ord-${Date.now()}`,
+            orderNumber: `VIS-${Math.floor(10000 + Math.random() * 90000)}`,
+            slotKey,
+            slotDate: selectedDate,
+            slotWindow: selectedSlotWindow,
+            slotLabel: `${selectedDate} · ${selectedSlotWindow}`,
+            status: 'confirmed',
+            trackingStage: 'slot_confirmed',
+            totalAmount: merchandiseBudget,
+            items: bookedCartItems.map((c, i) => ({
+              id: `item-${Date.now()}-${i}`,
+              name: c.name,
+              qty: c.qty,
+              estMin: c.priceMin,
+              estMax: c.priceMax,
+              image: c.image,
+              status: 'waiting',
+              options: [],
+            })),
+          });
+
+          // 4. Background re-sync
           loadData();
-          setActiveTab('orders');
         } else {
           showToast(data.error || 'Booking failed');
         }
       } catch {
         showToast('Booking failed');
+      } finally {
+        setIsBooking(false);
       }
     };
 
@@ -1718,18 +1781,22 @@ export default function CustomerApp() {
               await finalizeOrder(creditedBalance);
             } else {
               showToast(topupData.error || 'Failed to credit deposit to Visasra Money');
+              setIsBooking(false);
             }
           },
           onDismiss: () => {
             showToast('Razorpay payment cancelled. No money was added to your wallet.');
+            setIsBooking(false);
           },
           onError: () => {
             showToast('Razorpay payment failed. Please try again.');
+            setIsBooking(false);
           },
         });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Failed to launch Razorpay payment';
         showToast(msg);
+        setIsBooking(false);
       }
       return;
     }
@@ -2502,10 +2569,11 @@ export default function CustomerApp() {
                             <div className="booking-total">₹{o.totalAmount}</div>
                           </div>
                           <div className="status-pill">{o.trackingStage.replace('_', ' ')}</div>
-                          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                          <div className="booking-actions-row" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                             <button
                               type="button"
                               className="btn btn-sm btn-primary live-track-btn"
+                              style={{ flex: '1 1 120px', minWidth: 110, justifyContent: 'center' }}
                               onClick={() => {
                                 setLiveSessionSlot(o.slotKey);
                                 setActiveTab('live-shopping');
@@ -2516,6 +2584,7 @@ export default function CustomerApp() {
                             <button
                               type="button"
                               className="track-btn"
+                              style={{ flex: '1 1 120px', minWidth: 110, margin: 0, justifyContent: 'center' }}
                               onClick={() => setTrackOrderSlot(o.slotKey)}
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>
@@ -2581,7 +2650,27 @@ export default function CustomerApp() {
                         <div style={{ fontWeight: 700, fontSize: 14, margin: '2px 0 6px', color: 'var(--text)' }}>{p.name}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontWeight: 800, color: '#1261B5' }}>₹{p.estMin} – ₹{p.estMax}</span>
-                          <button className="btn btn-sm btn-primary" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => addToCart(p)}>Add</button>
+                          <button
+                            className="btn btn-sm btn-primary"
+                            style={{
+                              padding: '5px 12px',
+                              fontSize: 12,
+                              fontWeight: 800,
+                              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+                              ...(addedFeedbackId === p.id
+                                ? {
+                                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                                    borderColor: '#059669',
+                                    color: '#fff',
+                                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                                    transform: 'scale(1.06)',
+                                  }
+                                : {})
+                            }}
+                            onClick={() => addToCart(p)}
+                          >
+                            {addedFeedbackId === p.id ? '✓ Added' : '+ Add'}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -3375,8 +3464,17 @@ export default function CustomerApp() {
                             'Add up to 4 photos to help your personal shopper find the exact product'
                           )}
 
-                          <button type="submit" className="btn-concierge-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                            + Add Customized Product to Sourcing Basket
+                          <button
+                            type="submit"
+                            className="btn-concierge-primary"
+                            style={{
+                              width: '100%',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease',
+                              ...(customAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
+                            }}
+                          >
+                            {customAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Customized Product to Sourcing Basket'}
                           </button>
                         </form>
                       )}
@@ -3465,8 +3563,17 @@ export default function CustomerApp() {
                             />
                           </label>
 
-                          <button type="submit" className="btn-concierge-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                            + Add Online Store Item to Basket
+                          <button
+                            type="submit"
+                            className="btn-concierge-primary"
+                            style={{
+                              width: '100%',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease',
+                              ...(onlineAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
+                            }}
+                          >
+                            {onlineAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Online Store Item to Basket'}
                           </button>
                         </form>
                       )}
@@ -4170,6 +4277,7 @@ export default function CustomerApp() {
                             <button
                               type="button"
                               className="btn-concierge-secondary"
+                              disabled={isBooking}
                               onClick={() => setBookingStep(2)}
                             >
                               ← Back
@@ -4177,16 +4285,36 @@ export default function CustomerApp() {
                             <button
                               type="button"
                               className="btn-concierge-primary"
+                              disabled={isBooking}
                               onClick={handleConfirmBooking}
+                              style={isBooking ? { opacity: 0.88, cursor: 'wait' } : {}}
                             >
-                              {walletShortfall > 0 ? (
+                              {isBooking ? (
+                                <>
+                                  <span
+                                    style={{
+                                      width: 15,
+                                      height: 15,
+                                      border: '2.2px solid rgba(255,255,255,0.3)',
+                                      borderTopColor: '#fff',
+                                      borderRadius: '50%',
+                                      display: 'inline-block',
+                                      animation: 'spin 0.75s linear infinite',
+                                      marginRight: 6,
+                                    }}
+                                  />
+                                  <span>Confirming Order &amp; Sourcing Slot...</span>
+                                </>
+                              ) : walletShortfall > 0 ? (
                                 <span>Pay ₹{walletShortfall.toLocaleString('en-IN')} via Razorpay &amp; Book ({slotDuration}h)</span>
                               ) : (
                                 <span>Confirm &amp; Book Slot ({slotDuration}h)</span>
                               )}
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
-                                <polyline points="9 18 15 12 9 6" />
-                              </svg>
+                              {!isBooking && (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
+                                  <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                              )}
                             </button>
                           </div>
                         </>
@@ -4256,16 +4384,21 @@ export default function CustomerApp() {
                           <span>🟢 Personal Shopper Active in Market Right Now</span>
                         </div>
                       )}
-                      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                      <div className="booking-actions-row" style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
                         {o.orderType !== 'online' && (
                           <button
                             type="button"
                             className="btn btn-sm btn-primary live-track-btn"
-                            style={(o.trackingStage === 'shopping' || o.status === 'shopping') ? {
-                              background: 'linear-gradient(135deg, #059669, #047857)',
-                              boxShadow: '0 4px 12px rgba(5, 150, 105, 0.35)',
-                              border: 'none',
-                            } : {}}
+                            style={{
+                              flex: '1 1 130px',
+                              minWidth: 110,
+                              justifyContent: 'center',
+                              ...((o.trackingStage === 'shopping' || o.status === 'shopping') ? {
+                                background: 'linear-gradient(135deg, #059669, #047857)',
+                                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.35)',
+                                border: 'none',
+                              } : {})
+                            }}
                             onClick={() => {
                               setLiveSessionSlot(o.slotKey);
                               setActiveTab('live-shopping');
@@ -4277,7 +4410,13 @@ export default function CustomerApp() {
                         <button
                           type="button"
                           className="track-btn"
-                          style={o.orderType === 'online' ? { background: 'var(--navy)', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8 } : {}}
+                          style={{
+                            flex: '1 1 130px',
+                            minWidth: 110,
+                            margin: 0,
+                            justifyContent: 'center',
+                            ...(o.orderType === 'online' ? { background: 'var(--navy)', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8 } : {})
+                          }}
                           onClick={() => setTrackOrderSlot(o.slotKey)}
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>
@@ -5116,9 +5255,16 @@ export default function CustomerApp() {
                   type="button"
                   className="btn-concierge-primary"
                   onClick={handleAddCustomizedCatalogProduct}
-                  style={{ flex: 2, padding: '12px', justifyContent: 'center' }}
+                  disabled={isAddingBasket}
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    ...(isAddingBasket ? { background: '#10B981', borderColor: '#059669', color: '#fff' } : {})
+                  }}
                 >
-                  + Add to Sourcing Basket
+                  {isAddingBasket ? '✓ Added to Sourcing Basket!' : '+ Add to Sourcing Basket'}
                 </button>
               </div>
             </div>
@@ -5284,6 +5430,204 @@ export default function CustomerApp() {
             {/* Simple Delivery Note */}
             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 12px', fontSize: 11.5, color: '#64748B', textAlign: 'center' }}>
               Shipped via Express International Courier directly to your doorstep.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ORDER PLACED SUCCESSFULLY CELEBRATION MODAL ================= */}
+      {orderPlacedSuccess && (
+        <div
+          className="modal-overlay"
+          style={{
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            background: 'rgba(7, 19, 39, 0.72)',
+            backdropFilter: 'blur(8px)',
+          }}
+          onClick={() => setOrderPlacedSuccess(null)}
+        >
+          <div
+            className="modal-card"
+            style={{
+              maxWidth: 480,
+              width: '100%',
+              padding: '30px 24px 26px',
+              textAlign: 'center',
+              borderRadius: 24,
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.45)',
+              background: '#ffffff',
+              animation: 'fadeIn 0.22s ease-out',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Top decorative gradient bar */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 6,
+                background: 'linear-gradient(90deg, #10B981, #059669, #0284C7)',
+              }}
+            />
+
+            {/* Success Icon */}
+            <div
+              style={{
+                width: 68,
+                height: 68,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                color: '#fff',
+                display: 'grid',
+                placeItems: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 12px 28px -6px rgba(16, 185, 129, 0.45)',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: 34, height: 34 }}>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ECFDF5', color: '#047857', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
+              <span>●</span> Order Confirmed &amp; Verified
+            </div>
+
+            <h2
+              style={{
+                fontSize: 22,
+                fontWeight: 800,
+                color: '#0B192E',
+                margin: '4px 0 6px',
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              Order Placed Successfully! 🎉
+            </h2>
+
+            <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 18px', lineHeight: 1.5 }}>
+              Your shopping slot is confirmed. A verified personal shopper on the ground in India will source your items with authentic GST bills.
+            </p>
+
+            {/* Order snapshot card */}
+            <div
+              style={{
+                background: '#F8FAFC',
+                border: '1.2px solid #E2E8F0',
+                borderRadius: 16,
+                padding: '16px 18px',
+                textAlign: 'left',
+                marginBottom: 20,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #E2E8F0' }}>
+                <div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Order Reference</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0B192E', marginTop: 1 }}>{orderPlacedSuccess.orderNumber}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Held in Escrow</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0284C7', marginTop: 1 }}>₹{orderPlacedSuccess.totalAmount.toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: 6, fontSize: 12.5 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>Slot Timing:</span>
+                  <b style={{ color: '#0F172A' }}>{orderPlacedSuccess.slotLabel || orderPlacedSuccess.slotKey}</b>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>Items Booked:</span>
+                  <b style={{ color: '#0F172A' }}>{orderPlacedSuccess.items?.length || 1} product(s)</b>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748B' }}>Personal Shopper:</span>
+                  <span style={{ color: '#059669', fontWeight: 700 }}>Assigned &amp; Ready</span>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#047857' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 14, height: 14, flexShrink: 0 }}>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>Official GST store bills &amp; live video photo inspection guaranteed</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'grid', gap: 10 }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  fontSize: 14.5,
+                  fontWeight: 800,
+                  borderRadius: 12,
+                  justifyContent: 'center',
+                }}
+                onClick={() => {
+                  setOrderPlacedSuccess(null);
+                  setActiveTab('orders');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                View in Orders List →
+              </button>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                {orderPlacedSuccess.orderType !== 'online' && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{
+                      flex: 1,
+                      padding: '11px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      borderRadius: 12,
+                      justifyContent: 'center',
+                    }}
+                    onClick={() => {
+                      setLiveSessionSlot(orderPlacedSuccess.slotKey);
+                      setOrderPlacedSuccess(null);
+                      setActiveTab('live-shopping');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Join Live Shopping
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{
+                    flex: 1,
+                    padding: '11px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    borderRadius: 12,
+                    justifyContent: 'center',
+                    color: '#64748B',
+                  }}
+                  onClick={() => {
+                    setOrderPlacedSuccess(null);
+                    setActiveTab('home');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  Continue Browsing
+                </button>
+              </div>
             </div>
           </div>
         </div>

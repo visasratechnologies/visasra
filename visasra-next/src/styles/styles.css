@@ -118,6 +118,7 @@ html, body { height: 100%; margin: 0; }
   .screen { display: none; padding: 0 18px 12px; animation: fadeIn .18s ease; box-sizing: border-box; width: 100%; max-width: 100%; overflow-x: hidden; }
   .screen.active { display: block; }
   @media (prefers-reduced-motion: no-preference) { @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .screen { animation: none; } }
 
   /* ================= Buttons ================= */
@@ -407,20 +408,41 @@ html, body { height: 100%; margin: 0; }
     border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
     margin-bottom: 12px; cursor: pointer; box-shadow: var(--shadow-sm); transition: box-shadow .13s ease, transform .13s ease;
     overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
   .booking-card:hover { box-shadow: var(--shadow-md); }
   .booking-strip { display: flex; gap: 3px; height: 5px; }
   .booking-strip span { flex: 1; background: var(--gold); }
-  .booking-main { padding: 15px 16px; }
-  .booking-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .booking-main { padding: 15px 16px; width: 100%; box-sizing: border-box; min-width: 0; }
+  .booking-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; min-width: 0; width: 100%; }
   .booking-id { font-size: 11.5px; color: var(--text-faint); margin-bottom: 3px; font-weight: 600; }
-  .booking-slot { font-size: 14.5px; font-weight: 800; }
+  .booking-slot { font-size: 14.5px; font-weight: 800; white-space: normal; word-break: break-word; }
   .booking-items { font-size: 12.5px; color: var(--text); font-weight: 600; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .booking-meta { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; }
-  .booking-total { font-family: var(--font-ui); font-weight: 800; font-size: 16px; color: var(--gold); white-space: nowrap; }
+  .booking-total { font-family: var(--font-ui); font-weight: 800; font-size: 16px; color: var(--gold); white-space: nowrap; flex-shrink: 0; }
   .status-pill {
     display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 800;
     padding: 4px 11px; border-radius: 999px; background: var(--success-bg); color: var(--success);
+  }
+  .booking-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+  }
+  .booking-actions-row .live-track-btn,
+  .booking-actions-row .track-btn {
+    flex: 1 1 120px;
+    min-width: 110px;
+    margin-top: 0 !important;
+    box-sizing: border-box;
+    justify-content: center;
+    text-align: center;
   }
   .booking-detail { display: none; margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--border-soft); }
   .booking-card.open .booking-detail { display: block; }
@@ -431,8 +453,9 @@ html, body { height: 100%; margin: 0; }
   .detail-row-thumb .drt-body { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .detail-row-thumb .drt-name { font-size: 13px; color: var(--text-dim); }
   .detail-row-thumb b { color: var(--text); font-weight: 600; font-size: 13px; white-space: nowrap; }
-  .booking-top-left { display: flex; align-items: flex-start; gap: 10px; }
-  .booking-top-left .item-thumb { width: 44px; height: 44px; }
+  .booking-top-left { display: flex; align-items: flex-start; gap: 10px; min-width: 0; flex: 1; }
+  .booking-top-left > div { min-width: 0; overflow: hidden; }
+  .booking-top-left .item-thumb { width: 44px; height: 44px; flex-shrink: 0; }
 
   /* Compact row of item thumbnails — slot screen, confirmation, etc. */
   .items-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
@@ -778,9 +801,9 @@ html, body { height: 100%; margin: 0; }
     .product-scroll { margin: 0; padding: 2px 2px 8px; flex-wrap: wrap; overflow: visible; }
     .product-card { width: calc(20% - 11px); }
 
-    #ordersList { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
+    #ordersList { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; width: 100%; box-sizing: border-box; }
     #ordersList .empty-state { grid-column: 1 / -1; }
-    #homeBookings { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; }
+    #homeBookings { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; width: 100%; box-sizing: border-box; }
     #homeBookings .empty-state { grid-column: 1 / -1; }
 
     .cart-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
@@ -797,6 +820,8 @@ html, body { height: 100%; margin: 0; }
     #app { margin-left: 268px; }
     .screen { max-width: 1200px; }
     .product-card { width: calc(16.6% - 11px); }
+    #ordersList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #homeBookings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   /* Mobile cart CTA */
@@ -1790,8 +1815,8 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 
 /* ===== "Track order" button on order cells ===== */
 .track-btn {
-  width: 100%; margin-top: 10px; display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 12px;
-  background: var(--surface); border: 1.5px solid #BFD6F1; color: var(--gold); font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer;
+  box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border-radius: 12px;
+  background: var(--surface); border: 1.5px solid #BFD6F1; color: var(--gold); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
   transition: background .12s ease, border-color .12s ease;
 }
 .track-btn svg { width: 18px; height: 18px; flex: none; }
@@ -4517,10 +4542,17 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     gap: 14px !important;
   }
 
-  /* 2-Column Bookings matching screenshot */
-  #homeBookings, #ordersList, .wish-grid {
+  /* Bookings on tablet with sidebar: 1 clean full-width column to avoid clipping */
+  #homeBookings, #ordersList {
     display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .wish-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 12px !important;
   }
   #homeBookings .empty-state, #ordersList .empty-state {
