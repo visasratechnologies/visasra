@@ -219,6 +219,8 @@ export default function WorkerApp() {
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
 
   const [authLoading, setAuthLoading] = useState(false);
+  const [checkingKyc, setCheckingKyc] = useState(false);
+  const [lastKycCheck, setLastKycCheck] = useState<Date | null>(null);
   const [activeOtpCode, setActiveOtpCode] = useState('');
   const [otpShake, setOtpShake] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -878,10 +880,12 @@ export default function WorkerApp() {
   // Check verification status from Admin
   const checkKycStatus = async () => {
     if (!worker?.id && !worker?.email && !worker?.phone) return;
+    setCheckingKyc(true);
     try {
       const query = worker?.id ? `workerId=${worker.id}` : worker?.email ? `email=${encodeURIComponent(worker.email)}` : `phone=${worker?.phone}`;
       const res = await fetch(`/api/worker/kyc?${query}`);
       const data = await res.json();
+      setLastKycCheck(new Date());
       if (res.ok && data.worker) {
         const w: WorkerProfile = data.worker;
         setWorker(w);
@@ -897,11 +901,25 @@ export default function WorkerApp() {
         } else {
           showToast('Verification in progress. Admin is reviewing your submitted documents.');
         }
+      } else {
+        showToast('Could not fetch updated status. Try again.');
       }
     } catch {
-      showToast('Could not check status');
+      showToast('Network error checking status. Please try again.');
+    } finally {
+      setCheckingKyc(false);
     }
   };
+
+  // Auto-poll KYC verification status while partner is on wait screen
+  useEffect(() => {
+    if (screen === 'kycwait' && (worker?.id || worker?.email || worker?.phone)) {
+      const timer = setInterval(() => {
+        checkKycStatus();
+      }, 25000);
+      return () => clearInterval(timer);
+    }
+  }, [screen, worker?.id, worker?.email, worker?.phone]);
 
   // Sign out helper
   const handleSignOut = () => {
@@ -1111,8 +1129,11 @@ export default function WorkerApp() {
   });
 
   return (
-    <div className="worker-viewport">
-      <div id="worker-app">
+    <div className={`worker-viewport ${['kycwait', 'kycrej', 'kycform'].includes(screen) ? 'viewport-kyc-mode' : ''}`}>
+      <div
+        id="worker-app"
+        className={['kycwait', 'kycrej', 'kycform'].includes(screen) ? 'kyc-wide-container' : ''}
+      >
         {/* ============================================================= */}
         {/* HEADER                                                        */}
         {/* ============================================================= */}
@@ -1886,69 +1907,270 @@ export default function WorkerApp() {
         {/* ============================================================= */}
         {/* SCREEN 4: KYC PENDING WAITING FOR ADMIN APPROVAL               */}
         {/* ============================================================= */}
+        {/* ============================================================= */}
+        {/* SCREEN 4: KYC PENDING WAITING FOR ADMIN APPROVAL               */}
+        {/* ============================================================= */}
         {screen === 'kycwait' && (
           <div className="screen active">
-            <div style={{ background: '#123A69', color: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <b style={{ fontSize: 16 }}>Visasra Partner Portal</b>
-                <div style={{ fontSize: 12, color: '#DCEAFB' }}>Application Verification</div>
-              </div>
-              <button
-                type="button"
-                className="link"
-                style={{ color: '#fff', fontSize: 13, textDecoration: 'underline' }}
-                onClick={handleSignOut}
-              >
-                Sign out
-              </button>
-            </div>
-
-            <div className="body" style={{ padding: '16px' }}>
-              <div className="kwait">
-                <div className="hg" style={{ background: '#FFF1E0', color: '#FF8A00' }}>
-                  <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M6 2h12M6 22h12M7 2v3.5c0 2 2.2 3.5 5 6.5-2.8 3-5 4.5-5 6.5V22M17 2v3.5c0 2-2.2 3.5-5 6.5 2.8 3 5 4.5 5 6.5V22" />
-                  </svg>
+            {/* Header */}
+            <header className="kyc-header">
+              <div className="kyc-header-brand">
+                <div className="kyc-logo-wrap">
+                  <img src="/logo.png" alt="Visasra" className="kyc-logo" />
                 </div>
-                <h3>Verification in Progress</h3>
-                <p style={{ lineHeight: 1.5 }}>
-                  Your application along with your Aadhaar, PAN card, Driving License, residential addresses, and photo has been sent to our Admin team.<br /><br />
-                  <b>It will take some time for verification.</b> Once the admin accepts and approves your documents, you will automatically get full access to the portal to view all slots, jobs, and earnings.
+                <div>
+                  <div className="kyc-brand-title">
+                    Visasra <span>Partner Portal</span>
+                  </div>
+                  <div className="kyc-brand-subtitle">
+                    <span className="live-dot" /> Onboarding &amp; Verification
+                  </div>
+                </div>
+              </div>
+
+              <div className="kyc-header-actions">
+                <div className="secure-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  <span>256-Bit Encrypted</span>
+                </div>
+                <button
+                  type="button"
+                  className="kyc-signout-btn"
+                  onClick={handleSignOut}
+                  title="Sign out of Partner Portal"
+                >
+                  Sign out
+                </button>
+              </div>
+            </header>
+
+            {/* Scrollable Verification Body */}
+            <div className="kyc-body">
+              {/* Hero Status Card */}
+              <div className="kyc-hero-card">
+                <div className="kyc-hero-icon-wrap">
+                  <div className="kyc-pulse-ring" />
+                  <div className="kyc-pulse-ring delay" />
+                  <div className="kyc-icon-badge">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2h12M6 22h12M7 2v3.5c0 2 2.2 3.5 5 6.5-2.8 3-5 4.5-5 6.5V22M17 2v3.5c0 2-2.2 3.5-5 6.5 2.8 3 5 4.5 5 6.5V22" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="kyc-status-pill">
+                  <span className="pulse-beacon" />
+                  Admin Review in Progress
+                </div>
+
+                <h2 className="kyc-hero-title">Application Under Verification</h2>
+                <p className="kyc-hero-desc">
+                  Thank you, <b>{worker?.name ? worker.name.split(' ')[0] : 'Partner'}</b>! Your onboarding details, government identity cards, and verification photos are securely lodged with the Visasra Admin Operations team.
                 </p>
+
+                <div className="kyc-estimate-banner">
+                  <div className="kyc-estimate-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                    </svg>
+                    <span>Expected turnaround: <b>30–90 mins</b> during operations (9 AM – 9 PM IST)</span>
+                  </div>
+                  <div className="kyc-estimate-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" />
+                    </svg>
+                    <span>Instant automatic activation upon admin document approval</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3-Step Verification Stepper */}
+              <div className="kyc-stepper-card">
+                <div className="kyc-stepper-title">Verification Journey</div>
+                <div className="kyc-stepper">
+                  <div className="kyc-step completed">
+                    <div className="kyc-step-marker">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    </div>
+                    <div className="kyc-step-heading">Submitted</div>
+                    <div className="kyc-step-sub">Profile &amp; 5 documents</div>
+                  </div>
+
+                  <div className="kyc-step-line active" />
+
+                  <div className="kyc-step current">
+                    <div className="kyc-step-marker">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                      </svg>
+                    </div>
+                    <div className="kyc-step-heading">
+                      Review <span className="step-active-tag">Active</span>
+                    </div>
+                    <div className="kyc-step-sub">Admin ID checks</div>
+                  </div>
+
+                  <div className="kyc-step-line" />
+
+                  <div className="kyc-step">
+                    <div className="kyc-step-marker">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </div>
+                    <div className="kyc-step-heading">Activation</div>
+                    <div className="kyc-step-sub">Slots &amp; payouts</div>
+                  </div>
+                </div>
               </div>
 
               {/* Submitted Details Card */}
-              <div className="card pad" style={{ margin: '14px 0' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#123A69', marginBottom: 8 }}>Submitted Application Dossier</div>
-                <dl className="kv" style={{ fontSize: 13 }}>
-                  <dt>Partner</dt>
-                  <dd>{worker?.name}</dd>
-                  <dt>Primary Mobile</dt>
-                  <dd>{worker?.phone}</dd>
-                  <dt>Alternate Mobile</dt>
-                  <dd>{worker?.altPhone || 'On file'}</dd>
-                  <dt>Aadhaar</dt>
-                  <dd>{worker?.aadhaarNumber ? `XXXX XXXX ${worker.aadhaarNumber.slice(-4)}` : 'Submitted'}</dd>
-                  <dt>PAN</dt>
-                  <dd>{worker?.panNumber ? `${worker.panNumber.slice(0, 3)}••••${worker.panNumber.slice(-1)}` : 'Submitted'}</dd>
-                  <dt>Driving License</dt>
-                  <dd>{worker?.drivingLicenseNumber ? `${worker.drivingLicenseNumber.slice(0, 4)}••••` : 'Submitted'}</dd>
-                  <dt>Current Address</dt>
-                  <dd>{worker?.currentAddress || 'On file'}</dd>
-                </dl>
+              <div className="kyc-dossier-card">
+                <div className="kyc-dossier-header">
+                  <div className="kyc-dossier-title-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    <div>
+                      <div className="kyc-dossier-title">Submitted Application Dossier</div>
+                      <div className="kyc-dossier-sub">Identity &amp; credentials on secure file</div>
+                    </div>
+                  </div>
+                  <span className="kyc-dossier-status-badge">Locked for Review</span>
+                </div>
+
+                <div className="kyc-dossier-grid">
+                  <div className="dossier-item">
+                    <div className="dossier-label">Partner Name</div>
+                    <div className="dossier-val bold">{worker?.name || 'On file'}</div>
+                  </div>
+
+                  <div className="dossier-item">
+                    <div className="dossier-label">Primary Mobile</div>
+                    <div className="dossier-val">{worker?.phone || 'On file'}</div>
+                  </div>
+
+                  <div className="dossier-item">
+                    <div className="dossier-label">Alternate Mobile</div>
+                    <div className="dossier-val">{worker?.altPhone || 'None specified'}</div>
+                  </div>
+
+                  <div className="dossier-item">
+                    <div className="dossier-label">Aadhaar Card</div>
+                    <div className="dossier-val mono">
+                      {worker?.aadhaarNumber ? `XXXX XXXX ${worker.aadhaarNumber.slice(-4)}` : 'Submitted'}
+                      <span className="dossier-chip secure">Encrypted</span>
+                    </div>
+                  </div>
+
+                  <div className="dossier-item">
+                    <div className="dossier-label">PAN Card</div>
+                    <div className="dossier-val mono">
+                      {worker?.panNumber ? `${worker.panNumber.slice(0, 3)}••••${worker.panNumber.slice(-1)}` : 'Submitted'}
+                      <span className="dossier-chip verified">Tax ID</span>
+                    </div>
+                  </div>
+
+                  <div className="dossier-item">
+                    <div className="dossier-label">Driving License</div>
+                    <div className="dossier-val mono">
+                      {worker?.drivingLicenseNumber ? `${worker.drivingLicenseNumber.slice(0, 4)}••••` : 'Submitted'}
+                      <span className="dossier-chip verified">Active</span>
+                    </div>
+                  </div>
+
+                  <div className="dossier-item full-width">
+                    <div className="dossier-label">Current Residential Address</div>
+                    <div className="dossier-val address-text">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" />
+                        <circle cx="12" cy="9.5" r="2.5" />
+                      </svg>
+                      <span>{worker?.currentAddress || 'On file with application'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Uploaded Documents List */}
+                <div className="kyc-docs-strip">
+                  <div className="kyc-docs-strip-label">Verified Attachments Uploaded:</div>
+                  <div className="kyc-docs-tags">
+                    <span className="doc-tag">✓ Aadhaar Front</span>
+                    <span className="doc-tag">✓ Aadhaar Back</span>
+                    <span className="doc-tag">✓ PAN Card</span>
+                    <span className="doc-tag">✓ Driving License</span>
+                    <span className="doc-tag">✓ Partner Photo</span>
+                  </div>
+                </div>
               </div>
 
-              <button type="button" className="btn o" onClick={checkKycStatus}>
-                Refresh Status / Check Admin Approval
-              </button>
-              <button
-                type="button"
-                className="btn red"
-                style={{ marginTop: 10 }}
-                onClick={handleSignOut}
-              >
-                Sign out
-              </button>
+              {/* Action Area */}
+              <div className="kyc-action-card">
+                <button
+                  type="button"
+                  className="kyc-refresh-btn"
+                  disabled={checkingKyc}
+                  onClick={checkKycStatus}
+                >
+                  <svg
+                    className={checkingKyc ? 'spin' : ''}
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                  >
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                  <span>{checkingKyc ? 'Checking Approval Status...' : 'Check Approval Status'}</span>
+                </button>
+
+                <div className="kyc-refresh-meta">
+                  <span>Refreshes automatically every 25s</span>
+                  {lastKycCheck && (
+                    <span> · Checked at {lastKycCheck.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                  )}
+                </div>
+
+                <div className="kyc-support-box">
+                  <div className="kyc-support-text">
+                    <b>Need quick approval or have questions?</b>
+                    <span>Connect directly with the Visasra Partner Onboarding Desk.</span>
+                  </div>
+                  <a
+                    href={`https://wa.me/917032414481?text=${encodeURIComponent(`Hello Visasra Team, I have submitted my partner application for verification. Phone: ${worker?.phone || ''}, Name: ${worker?.name || ''}. Please check my status.`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="kyc-support-btn"
+                  >
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.63c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.24-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.45.06-.68.32-.23.25-.89.87-.89 2.12s.91 2.46 1.04 2.63c.13.17 1.79 2.73 4.33 3.83.6.26 1.08.42 1.45.54.61.19 1.16.17 1.6.1 0.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.17-.48-.3" />
+                    </svg>
+                    Chat with Desk
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  className="kyc-signout-bottom-btn"
+                  onClick={handleSignOut}
+                >
+                  Sign out of this session
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1958,36 +2180,87 @@ export default function WorkerApp() {
         {/* ============================================================= */}
         {screen === 'kycrej' && (
           <div className="screen active">
-            <div style={{ background: '#123A69', color: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <b style={{ fontSize: 16 }}>Visasra Partner Portal</b>
-                <div style={{ fontSize: 12, color: '#DCEAFB' }}>Verification Status</div>
+            {/* Header */}
+            <header className="kyc-header">
+              <div className="kyc-header-brand">
+                <div className="kyc-logo-wrap">
+                  <img src="/logo.png" alt="Visasra" className="kyc-logo" />
+                </div>
+                <div>
+                  <div className="kyc-brand-title">
+                    Visasra <span>Partner Portal</span>
+                  </div>
+                  <div className="kyc-brand-subtitle">
+                    Verification Feedback
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                className="link"
-                style={{ color: '#fff', fontSize: 13, textDecoration: 'underline' }}
-                onClick={handleSignOut}
-              >
-                Sign out
-              </button>
-            </div>
 
-            <div className="body" style={{ padding: '16px' }}>
-              <div className="kwait rej">
-                <div className="hg" style={{ background: '#FCE7E8', color: '#E51D2A' }}>
-                  <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="kyc-header-actions">
+                <button
+                  type="button"
+                  className="kyc-signout-btn"
+                  onClick={handleSignOut}
+                >
+                  Sign out
+                </button>
+              </div>
+            </header>
+
+            <div className="kyc-body">
+              <div className="kyc-rej-card">
+                <div className="kyc-rej-icon-badge">
+                  <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="9" /><path d="M12 7v6M12 16.5v.5" />
                   </svg>
                 </div>
-                <h3>Documents Require Correction</h3>
-                <p>{worker?.kycReason || 'Some documents could not be verified by admin. Please review and resubmit.'}</p>
+
+                <h2 className="kyc-hero-title" style={{ color: '#991B1B' }}>Documents Require Correction</h2>
+                <p className="kyc-hero-desc">
+                  Our admin team reviewed your submitted documents and noticed some items that need correction before account activation.
+                </p>
+
+                <div className="kyc-rej-reason-box">
+                  <div className="kyc-rej-reason-label">Admin Verification Note:</div>
+                  <div className="kyc-rej-reason-text">
+                    {worker?.kycReason || 'One or more submitted document photos were blurry, expired, or had mismatched information. Please re-check and upload clear copies.'}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="kyc-refresh-btn"
+                  style={{ width: '100%', background: 'linear-gradient(180deg, #1261B5 0%, #0E4E94 100%)' }}
+                  onClick={() => setScreen('kycform')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  <span>Update Application &amp; Resubmit</span>
+                </button>
               </div>
 
-              <button type="button" className="btn" onClick={() => setScreen('kycform')}>
-                Update Application &amp; Resubmit
-              </button>
-              <button type="button" className="btn red" style={{ marginTop: 10 }} onClick={handleSignOut}>
+              <div className="kyc-support-box">
+                <div className="kyc-support-text">
+                  <b>Need help understanding the feedback?</b>
+                  <span>Contact our onboarding support team on WhatsApp.</span>
+                </div>
+                <a
+                  href={`https://wa.me/917032414481?text=${encodeURIComponent(`Hello Visasra Team, my application needs document correction (Phone: ${worker?.phone || ''}). Please guide me on what to resubmit.`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="kyc-support-btn"
+                >
+                  Chat with Support
+                </a>
+              </div>
+
+              <button
+                type="button"
+                className="kyc-signout-bottom-btn"
+                onClick={handleSignOut}
+              >
                 Sign out
               </button>
             </div>
