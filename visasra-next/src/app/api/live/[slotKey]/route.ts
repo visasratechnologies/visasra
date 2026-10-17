@@ -12,7 +12,16 @@ export async function GET(
     const session = await prisma.liveSession.findUnique({
       where: { slotKey: decodedKey },
       include: {
-        worker: true,
+        worker: {
+          select: {
+            id: true,
+            name: true,
+            rating: true,
+            ordersDone: true,
+            phone: true,
+            photo: true,
+          },
+        },
         order: {
           include: {
             items: {

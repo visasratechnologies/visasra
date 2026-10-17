@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -23,6 +24,8 @@ model User {
   liveSessions   LiveSession[]
   addresses      UserAddress[]
   reviews        WorkerReview[]
+
+  @@index([phone])
 }
 
 model OtpVerification {
@@ -45,6 +48,8 @@ model WalletTransaction {
   amount    Float
   note      String
   date      DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Worker {
@@ -137,6 +142,10 @@ model Order {
   items           OrderItem[]
   liveSession     LiveSession?
   stageHistory    OrderTrackingStage[]
+
+  @@index([userId])
+  @@index([slotKey])
+  @@index([status])
 }
 
 model OrderItem {
@@ -167,6 +176,9 @@ model OrderItem {
   shopPaymentProof     String?
   shopPaymentAmount    Float?
   options              ProductOption[]
+
+  @@index([orderId])
+  @@index([status])
 }
 
 model ProductOption {
@@ -178,6 +190,8 @@ model ProductOption {
   description String
   status      String    @default("pending") // 'pending' | 'approved' | 'rejected' | 'not_chosen'
   createdAt   DateTime  @default(now())
+
+  @@index([orderItemId])
 }
 
 model LiveSession {
@@ -200,6 +214,10 @@ model LiveSession {
   workerEtaMin Int?
   updatedAt    DateTime  @updatedAt
   createdAt    DateTime  @default(now())
+
+  @@index([workerId])
+  @@index([userId])
+  @@index([status])
 }
 
 model OrderTrackingStage {
@@ -212,6 +230,8 @@ model OrderTrackingStage {
   expected  String?
   note      String?
   updatedAt DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model UserAddress {
@@ -229,6 +249,8 @@ model UserAddress {
   isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model WorkerReview {
@@ -241,5 +263,8 @@ model WorkerReview {
   rating    Float    @default(5.0)
   comment   String?
   createdAt DateTime @default(now())
+
+  @@index([workerId])
+  @@index([userId])
 }
 

@@ -34,7 +34,17 @@ export async function GET(req: Request) {
         },
         liveSession: {
           include: {
-            worker: true,
+            worker: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                rating: true,
+                currentLat: true,
+                currentLng: true,
+                photo: true,
+              },
+            },
           },
         },
         stageHistory: true,

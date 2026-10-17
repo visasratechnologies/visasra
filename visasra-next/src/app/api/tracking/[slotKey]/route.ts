@@ -17,7 +17,17 @@ export async function GET(
           orderBy: { updatedAt: 'asc' },
         },
         liveSession: {
-          include: { worker: true },
+          include: {
+            worker: {
+              select: {
+                name: true,
+                rating: true,
+                ordersDone: true,
+                phone: true,
+                photo: true,
+              },
+            },
+          },
         },
       },
     });

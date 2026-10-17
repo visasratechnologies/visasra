@@ -438,7 +438,10 @@ export default function CustomerApp() {
       syncWallet();
     }
     window.addEventListener('focus', syncWallet);
-    const interval = setInterval(syncWallet, 3000);
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      syncWallet();
+    }, 15000);
     return () => {
       window.removeEventListener('focus', syncWallet);
       clearInterval(interval);
@@ -1065,8 +1068,9 @@ export default function CustomerApp() {
     fetchLiveSession(liveSessionSlot).finally(() => setLiveSessionLoading(false));
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchLiveSession(liveSessionSlot);
-    }, 3500);
+    }, 7000);
 
     return () => clearInterval(interval);
   }, [liveSessionSlot]);
@@ -1080,8 +1084,9 @@ export default function CustomerApp() {
     fetchTracking(trackOrderSlot).finally(() => setTrackingLoading(false));
 
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchTracking(trackOrderSlot);
-    }, 4000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [trackOrderSlot]);
@@ -1290,8 +1295,8 @@ export default function CustomerApp() {
     setTimeout(() => setToastMsg(''), 2600);
   };
 
-  // Load Data from PostgreSQL
-  const loadData = async (targetUser?: User | null) => {
+  // Load Catalog Categories & Products from PostgreSQL once on mount
+  const fetchCatalog = async () => {
     try {
       const catRes = await fetch('/api/categories');
       const catData = await catRes.json();
@@ -1303,43 +1308,56 @@ export default function CustomerApp() {
         });
         setPopularProducts(allProds.slice(0, 8));
       }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
 
+  useEffect(() => {
+    fetchCatalog();
+  }, []);
+
+  // Fetch authoritative saved delivery addresses from PostgreSQL
+  const fetchAddresses = async (activeUser: User) => {
+    if (!activeUser?.email) return;
+    try {
+      const r = await fetch(`/api/user/addresses?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`);
+      const d = await r.json();
+      if (d.success && Array.isArray(d.addresses) && d.addresses.length > 0) {
+        interface DbAddr {
+          id: string;
+          name: string;
+          phone?: string | null;
+          line1: string;
+          line2?: string | null;
+          city: string;
+          region?: string | null;
+          zip: string;
+          country?: string | null;
+        }
+        const mapped: Address[] = (d.addresses as DbAddr[]).map(a => ({
+          id: a.id,
+          name: a.name,
+          phone: a.phone || '',
+          line1: a.line1,
+          line2: a.line2 || '',
+          city: a.city,
+          region: a.region || '',
+          zip: a.zip,
+          country: a.country || 'India',
+          label: 'Home',
+        }));
+        setSavedAddresses(mapped);
+        setSelectedAddressId(prev => prev && mapped.some(m => m.id === prev) ? prev : mapped[0].id);
+      }
+    } catch {}
+  };
+
+  // Load Data from PostgreSQL
+  const loadData = async (targetUser?: User | null) => {
+    try {
       const activeUser = targetUser !== undefined ? targetUser : (isLoggedIn && user?.email ? user : null);
       if (activeUser && activeUser.email) {
-        // Authoritative fetch of saved delivery addresses from PostgreSQL
-        fetch(`/api/user/addresses?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`)
-          .then(r => r.json())
-          .then(d => {
-            if (d.success && Array.isArray(d.addresses) && d.addresses.length > 0) {
-              interface DbAddr {
-                id: string;
-                name: string;
-                phone?: string | null;
-                line1: string;
-                line2?: string | null;
-                city: string;
-                region?: string | null;
-                zip: string;
-                country?: string | null;
-              }
-              const mapped: Address[] = (d.addresses as DbAddr[]).map(a => ({
-                id: a.id,
-                name: a.name,
-                phone: a.phone || '',
-                line1: a.line1,
-                line2: a.line2 || '',
-                city: a.city,
-                region: a.region || '',
-                zip: a.zip,
-                country: a.country || 'India',
-                label: 'Home',
-              }));
-              setSavedAddresses(mapped);
-              setSelectedAddressId(prev => prev && mapped.some(m => m.id === prev) ? prev : mapped[0].id);
-            }
-          })
-          .catch(() => {});
-
         const ordRes = await fetch(`/api/orders?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`);
         const ordData = await ordRes.json();
         if (ordData.orders) {
@@ -1349,16 +1367,20 @@ export default function CustomerApp() {
         setOrders([]);
       }
     } catch (err) {
-      console.error('Failed to load customer data:', err);
+      console.error('Failed to load customer orders:', err);
     }
   };
 
   useEffect(() => {
     const active = isLoggedIn && user?.email ? user : null;
+    if (active) {
+      fetchAddresses(active);
+    }
     loadData(active);
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       loadData(isLoggedIn && user?.email ? user : null);
-    }, 6000);
+    }, 12000);
     return () => clearInterval(interval);
   }, [isLoggedIn, user?.email, user?.id]);
 
@@ -1817,25 +1839,34 @@ export default function CustomerApp() {
           contact: customerPhone || user.phone,
         },
         onSuccess: async (paymentId: string) => {
-          const res = await fetch('/api/wallet', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              email: user.email,
-              amount: amt,
-              razorpayPaymentId: paymentId,
-              note: `Wallet Top-up via Razorpay (${paymentId})`,
-            }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            const newBal = typeof data.balance === 'number' ? data.balance : (user.walletBalance + amt);
-            setUser(prev => ({ ...prev, walletBalance: newBal }));
-            try {
-              localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: newBal }));
-            } catch {}
-            showToast(`Payment successful! Added ₹${amt.toLocaleString('en-IN')} to Visasra Money`);
+          // Instant optimistic feedback: reflect balance immediately
+          const optimisticBal = user.walletBalance + amt;
+          setUser(prev => ({ ...prev, walletBalance: optimisticBal }));
+          showToast(`Payment received! Crediting ₹${amt.toLocaleString('en-IN')} to Visasra Money...`);
+
+          try {
+            const res = await fetch('/api/wallet', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: user.id,
+                email: user.email,
+                amount: amt,
+                razorpayPaymentId: paymentId,
+                note: `Wallet Top-up via Razorpay (${paymentId})`,
+              }),
+            });
+            const data = await res.json();
+            if (data.success) {
+              const newBal = typeof data.balance === 'number' ? data.balance : optimisticBal;
+              setUser(prev => ({ ...prev, walletBalance: newBal }));
+              try {
+                localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: newBal }));
+              } catch {}
+              showToast(`✓ ₹${amt.toLocaleString('en-IN')} added to Visasra Money!`);
+            }
+          } catch {
+            showToast('Wallet balance will synchronize shortly');
           }
         },
         onDismiss: () => {

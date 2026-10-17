@@ -14,27 +14,25 @@ export async function POST(req: Request) {
       const digits = input.replace(/\D/g, '').slice(-10);
       const isPhoneInput = !input.includes('@') && digits.length >= 10;
 
-      let worker = await prisma.worker.findFirst({
-        where: isPhoneInput
-          ? {
-              OR: [
-                { phone: input },
-                { phone: `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` },
-                { phone: `+91${digits}` },
-                { phone: digits },
-                { phone: { contains: digits } },
-              ],
-            }
-          : {
-              OR: [
-                { email: input },
-                { phone: input },
-                { phone: `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` },
-                { phone: `+91${digits}` },
-                { phone: digits },
-              ],
-            },
-      });
+      let worker = null;
+      if (!isPhoneInput) {
+        worker = await prisma.worker.findUnique({
+          where: { email: input },
+        });
+      }
+      if (!worker) {
+        worker = await prisma.worker.findFirst({
+          where: {
+            OR: [
+              { email: input },
+              { phone: input },
+              { phone: `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` },
+              { phone: `+91${digits}` },
+              { phone: digits },
+            ],
+          },
+        });
+      }
 
       if (!worker) {
         return NextResponse.json({ error: 'No partner account found with this email or phone number. Please check or register.' }, { status: 401 });

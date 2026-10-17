@@ -23,7 +23,17 @@ export async function GET(req: Request) {
       },
       include: {
         user: { select: { name: true, phone: true } },
-        worker: true,
+        worker: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            rating: true,
+            status: true,
+            currentLat: true,
+            currentLng: true,
+          },
+        },
         order: {
           include: {
             items: {
@@ -43,6 +53,30 @@ export async function GET(req: Request) {
     if (workerId) {
       worker = await prisma.worker.findUnique({
         where: { id: workerId },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          rating: true,
+          ordersDone: true,
+          status: true,
+          kycStatus: true,
+          walletBalance: true,
+          aadhaarNumber: true,
+          panNumber: true,
+          drivingLicenseNumber: true,
+          currentAddress: true,
+          permanentAddress: true,
+          altPhone: true,
+          bankAccountNumber: true,
+          bankIfscCode: true,
+          bankName: true,
+          bankBranch: true,
+          payoutUpi: true,
+          currentLat: true,
+          currentLng: true,
+        },
       });
     }
 

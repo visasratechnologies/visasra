@@ -74,22 +74,22 @@ export async function POST(req: Request) {
         `91${cleanDigits}`,
       ];
 
-      const user = await prisma.user.findFirst({
-        where: isPhone
-          ? {
-              OR: [
-                ...phoneVariations.map(p => ({ phone: p })),
-                { phone: { contains: cleanDigits } },
-                { email: cleanInput },
-              ],
-            }
-          : {
-              OR: [
-                { email: cleanInput },
-                ...phoneVariations.map(p => ({ phone: p })),
-              ],
-            },
-      });
+      let user = null;
+      if (!isPhone) {
+        user = await prisma.user.findUnique({
+          where: { email: cleanInput },
+        });
+      }
+      if (!user) {
+        user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: cleanInput },
+              ...phoneVariations.map((p) => ({ phone: p })),
+            ],
+          },
+        });
+      }
 
       if (!user) {
         return NextResponse.json({ error: 'No account found with this email or phone number. Please check or sign up.' }, { status: 401 });

@@ -282,6 +282,33 @@ export default function WorkerApp() {
     setTimeout(() => setToastMsg(''), 2600);
   };
 
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+
+  const handleWorkerFileUpload = async (file: File, docKey: string): Promise<string | null> => {
+    setUploadingDoc(docKey);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        showToast('Photo uploaded successfully');
+        return data.url;
+      } else {
+        showToast(data.error || 'Upload failed');
+        return null;
+      }
+    } catch {
+      showToast('Image upload failed');
+      return null;
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
   // Helper to populate application form fields from worker data
   const populateAppState = (w: WorkerProfile) => {
     setAppFullName(w.name || '');
@@ -447,7 +474,10 @@ export default function WorkerApp() {
 
   useEffect(() => {
     fetchJobs();
-    const iv = setInterval(fetchJobs, 4000);
+    const iv = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      fetchJobs();
+    }, 8000);
     return () => clearInterval(iv);
   }, [worker?.id]);
 
@@ -1666,7 +1696,11 @@ export default function WorkerApp() {
                   <span className={`pill ${appAadhaarFront ? 'g' : 'o'}`}>{appAadhaarFront ? 'Uploaded' : 'Required'}</span>
                 </div>
                 <label className="upload kd">
-                  {appAadhaarFront ? (
+                  {uploadingDoc === 'aadhaarFront' ? (
+                    <div style={{ padding: 14, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                      Uploading Aadhaar Front...
+                    </div>
+                  ) : appAadhaarFront ? (
                     <>
                       <img src={appAadhaarFront} alt="Aadhaar Front" />
                       <span className="chg">Change</span>
@@ -1681,12 +1715,12 @@ export default function WorkerApp() {
                     type="file"
                     accept="image/*"
                     hidden
-                    onChange={(e) => {
+                    disabled={uploadingDoc === 'aadhaarFront'}
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (f) {
-                        const reader = new FileReader();
-                        reader.onload = () => setAppAadhaarFront(String(reader.result));
-                        reader.readAsDataURL(f);
+                        const url = await handleWorkerFileUpload(f, 'aadhaarFront');
+                        if (url) setAppAadhaarFront(url);
                       }
                     }}
                   />
@@ -1699,7 +1733,11 @@ export default function WorkerApp() {
                   <span className={`pill ${appAadhaarBack ? 'g' : 'o'}`}>{appAadhaarBack ? 'Uploaded' : 'Required'}</span>
                 </div>
                 <label className="upload kd">
-                  {appAadhaarBack ? (
+                  {uploadingDoc === 'aadhaarBack' ? (
+                    <div style={{ padding: 14, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                      Uploading Aadhaar Back...
+                    </div>
+                  ) : appAadhaarBack ? (
                     <>
                       <img src={appAadhaarBack} alt="Aadhaar Back" />
                       <span className="chg">Change</span>
@@ -1714,12 +1752,12 @@ export default function WorkerApp() {
                     type="file"
                     accept="image/*"
                     hidden
-                    onChange={(e) => {
+                    disabled={uploadingDoc === 'aadhaarBack'}
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (f) {
-                        const reader = new FileReader();
-                        reader.onload = () => setAppAadhaarBack(String(reader.result));
-                        reader.readAsDataURL(f);
+                        const url = await handleWorkerFileUpload(f, 'aadhaarBack');
+                        if (url) setAppAadhaarBack(url);
                       }
                     }}
                   />
@@ -1743,7 +1781,11 @@ export default function WorkerApp() {
                   <span className={`pill ${appPanDoc ? 'g' : 'o'}`}>{appPanDoc ? 'Uploaded' : 'Required'}</span>
                 </div>
                 <label className="upload kd">
-                  {appPanDoc ? (
+                  {uploadingDoc === 'panDoc' ? (
+                    <div style={{ padding: 14, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                      Uploading PAN Card...
+                    </div>
+                  ) : appPanDoc ? (
                     <>
                       <img src={appPanDoc} alt="PAN Card" />
                       <span className="chg">Change</span>
@@ -1758,12 +1800,12 @@ export default function WorkerApp() {
                     type="file"
                     accept="image/*"
                     hidden
-                    onChange={(e) => {
+                    disabled={uploadingDoc === 'panDoc'}
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (f) {
-                        const reader = new FileReader();
-                        reader.onload = () => setAppPanDoc(String(reader.result));
-                        reader.readAsDataURL(f);
+                        const url = await handleWorkerFileUpload(f, 'panDoc');
+                        if (url) setAppPanDoc(url);
                       }
                     }}
                   />
@@ -1787,7 +1829,11 @@ export default function WorkerApp() {
                   <span className={`pill ${appDlDoc ? 'g' : 'o'}`}>{appDlDoc ? 'Uploaded' : 'Required'}</span>
                 </div>
                 <label className="upload kd">
-                  {appDlDoc ? (
+                  {uploadingDoc === 'dlDoc' ? (
+                    <div style={{ padding: 14, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                      Uploading Driving License...
+                    </div>
+                  ) : appDlDoc ? (
                     <>
                       <img src={appDlDoc} alt="Driving License" />
                       <span className="chg">Change</span>
@@ -1802,12 +1848,12 @@ export default function WorkerApp() {
                     type="file"
                     accept="image/*"
                     hidden
-                    onChange={(e) => {
+                    disabled={uploadingDoc === 'dlDoc'}
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (f) {
-                        const reader = new FileReader();
-                        reader.onload = () => setAppDlDoc(String(reader.result));
-                        reader.readAsDataURL(f);
+                        const url = await handleWorkerFileUpload(f, 'dlDoc');
+                        if (url) setAppDlDoc(url);
                       }
                     }}
                   />
@@ -1822,7 +1868,11 @@ export default function WorkerApp() {
                   <span className={`pill ${appSelfie ? 'g' : 'o'}`}>{appSelfie ? 'Uploaded' : 'Required'}</span>
                 </div>
                 <label className="upload kd">
-                  {appSelfie ? (
+                  {uploadingDoc === 'selfie' ? (
+                    <div style={{ padding: 14, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                      Uploading Live Selfie...
+                    </div>
+                  ) : appSelfie ? (
                     <>
                       <img src={appSelfie} alt="Selfie" />
                       <span className="chg">Change</span>
@@ -1837,12 +1887,12 @@ export default function WorkerApp() {
                     type="file"
                     accept="image/*"
                     hidden
-                    onChange={(e) => {
+                    disabled={uploadingDoc === 'selfie'}
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
                       if (f) {
-                        const reader = new FileReader();
-                        reader.onload = () => setAppSelfie(String(reader.result));
-                        reader.readAsDataURL(f);
+                        const url = await handleWorkerFileUpload(f, 'selfie');
+                        if (url) setAppSelfie(url);
                       }
                     }}
                   />
@@ -2878,17 +2928,25 @@ export default function WorkerApp() {
                     </summary>
                     <div style={{ marginTop: 8, padding: 8, background: '#fff', borderRadius: 8, border: '1px solid var(--border)' }}>
                       <label className="upload">
-                        {shopQrImage ? <img src={shopQrImage} alt="QR" /> : <>{svg(ICONS.cam)}<span>Upload Shop Counter QR</span></>}
+                        {uploadingDoc === 'shopQr' ? (
+                          <div style={{ padding: 14, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                            Uploading QR Code...
+                          </div>
+                        ) : shopQrImage ? (
+                          <img src={shopQrImage} alt="QR" />
+                        ) : (
+                          <>{svg(ICONS.cam)}<span>Upload Shop Counter QR</span></>
+                        )}
                         <input
                           type="file"
                           accept="image/*"
                           hidden
-                          onChange={(e) => {
+                          disabled={uploadingDoc === 'shopQr'}
+                          onChange={async (e) => {
                             const f = e.target.files?.[0];
                             if (f) {
-                              const r = new FileReader();
-                              r.onload = () => setShopQrImage(String(r.result));
-                              r.readAsDataURL(f);
+                              const url = await handleWorkerFileUpload(f, 'shopQr');
+                              if (url) setShopQrImage(url);
                             }
                           }}
                         />
@@ -3009,17 +3067,25 @@ export default function WorkerApp() {
 
               <label>Photo of the product</label>
               <label className="upload">
-                {optionImage ? <img src={optionImage} alt="" /> : <>{svg(ICONS.cam)}<span>Take or choose photo</span></>}
+                {uploadingDoc === 'optionImage' ? (
+                  <div style={{ padding: 16, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>
+                    Uploading photo to cloud...
+                  </div>
+                ) : optionImage ? (
+                  <img src={optionImage} alt="" />
+                ) : (
+                  <>{svg(ICONS.cam)}<span>Take or choose photo</span></>
+                )}
                 <input
                   type="file"
                   accept="image/*"
                   hidden
-                  onChange={(e) => {
+                  disabled={uploadingDoc === 'optionImage'}
+                  onChange={async (e) => {
                     const f = e.target.files?.[0];
                     if (f) {
-                      const r = new FileReader();
-                      r.onload = () => setOptionImage(String(r.result));
-                      r.readAsDataURL(f);
+                      const url = await handleWorkerFileUpload(f, 'optionImage');
+                      if (url) setOptionImage(url);
                     }
                   }}
                 />
