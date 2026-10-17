@@ -1,0 +1,12 @@
+{
+  "name": "visasra-suite",
+  "version": "1.0.0",
+  "description": "Visasra Full-Stack Suite with Next.js TSX and PostgreSQL",
+  "scripts": {
+    "dev": "npm --prefix visasra-next run dev",
+    "build": "npm --prefix visasra-next run build",
+    "start": "npm --prefix visasra-next run start",
+    "db:push": "npm --prefix visasra-next run db:push",
+    "db:seed": "npm --prefix visasra-next run db:seed"
+  }
+}

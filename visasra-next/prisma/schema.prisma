@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String              @id @default(uuid())
+  name           String
+  email          String              @unique
+  password       String
+  phone          String?
+  location       String?
+  avatar         String?
+  walletBalance  Float               @default(50000)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  orders         Order[]
+  transactions   WalletTransaction[]
+  liveSessions   LiveSession[]
+  addresses      UserAddress[]
+  reviews        WorkerReview[]
+}
+
+model OtpVerification {
+  id        String   @id @default(uuid())
+  email     String
+  otp       String
+  type      String   // 'signup' | 'login' | 'reset_password'
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+}
+
+model WalletTransaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // 'credit' | 'debit'
+  amount    Float
+  note      String
+  date      DateTime @default(now())
+}
+
+model Worker {
+  id                   String        @id @default(uuid())
+  name                 String
+  phone                String        @unique
+  email                String?       @unique
+  password             String?
+  rating               Float         @default(4.8)
+  ordersDone           Int           @default(320)
+  photo                String?
+  status               String        @default("active") // 'active' | 'offline' | 'busy'
+  kycStatus            String        @default("none") // 'none' | 'pending' | 'verified' | 'rejected'
+  aadhaarNumber        String?
+  aadhaarFront         String?
+  aadhaarBack          String?
+  panNumber            String?
+  panDoc               String?
+  drivingLicenseNumber String?
+  drivingLicenseDoc    String?
+  currentAddress       String?
+  permanentAddress     String?
+  altPhone             String?
+  selfie               String?
+  currentLat           Float?        @default(13.0600)
+  currentLng           Float?        @default(80.2500)
+  walletBalance        Float         @default(4200)
+  payoutUpi            String?
+  bankAccountNumber    String?
+  bankIfscCode         String?
+  bankName             String?
+  bankBranch           String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  liveSessions         LiveSession[]
+  reviews              WorkerReview[]
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("superadmin") // 'superadmin' | 'ops' | 'finance'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id       String           @id @default(uuid())
+  slug     String           @unique
+  name     String
+  image    String
+  sort     Int              @default(0)
+  products ProductCatalog[]
+}
+
+model ProductCatalog {
+  id          String   @id @default(uuid())
+  name        String
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  price       Float
+  estMin      Float
+  estMax      Float
+  image       String
+  description String?
+  tag         String?  // 'popular' | 'trending' | 'bestseller'
+  unit        String?  @default("piece")
+  types       Json?
+  createdAt   DateTime @default(now())
+}
+
+model Order {
+  id              String            @id @default(uuid())
+  orderNumber     String            @unique // e.g. VIS-92014
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slotKey         String            // e.g. 2026-10-16|h2-1
+  slotDate        String
+  slotWindow      String
+  slotLabel       String
+  status          String            @default("confirmed") // 'confirmed' | 'shopping' | 'purchased' | 'packed' | 'shipped' | 'delivered' | 'cancelled'
+  trackingStage   String            @default("slot_confirmed") // 'slot_confirmed' | 'worker_assigned' | 'shopping' | 'purchased' | 'packed' | 'shipped' | 'out_for_delivery'
+  orderType       String            @default("market") // 'market' | 'online' | 'hybrid'
+  totalAmount     Float             @default(0)
+  shippingAddress Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  items           OrderItem[]
+  liveSession     LiveSession?
+  stageHistory    OrderTrackingStage[]
+}
+
+model OrderItem {
+  id                   String          @id @default(uuid())
+  orderId              String
+  order                Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId            String?
+  name                 String
+  category             String?
+  qty                  Int             @default(1)
+  estMin               Float
+  estMax               Float
+  image                String?
+  notes                String?
+  sourceType           String?         @default("market") // 'market' | 'online' | 'mind' | 'catalog'
+  sourceUrl            String?         // Online product link (Amazon, Flipkart, etc.)
+  onlinePlatform       String?         // 'Amazon' | 'Flipkart' | 'Myntra' | 'Other'
+  onlineOrderStatus    String?         @default("none") // 'none' | 'pending_admin' | 'ordered_online' | 'received_at_hub'
+  onlineOrderNumber    String?         // Retailer order reference
+  onlineTrackingNumber String?         // Courier tracking number / URL
+  onlinePurchaseNotes  String?         // Admin notes on purchase
+  onlinePurchasedAt    DateTime?
+  onlineReceivedAt     DateTime?
+  status               String          @default("waiting") // 'waiting' | 'options_ready' | 'needs_options' | 'approved' | 'purchased'
+  approvedAmount       Float?
+  shopPaymentStatus    String?         @default("none") // 'none' | 'qr_uploaded' | 'paid'
+  shopPaymentQr        String?
+  shopPaymentProof     String?
+  shopPaymentAmount    Float?
+  options              ProductOption[]
+}
+
+model ProductOption {
+  id          String    @id @default(uuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  image       String
+  price       Float     // exact per unit price
+  description String
+  status      String    @default("pending") // 'pending' | 'approved' | 'rejected' | 'not_chosen'
+  createdAt   DateTime  @default(now())
+}
+
+model LiveSession {
+  id           String    @id @default(uuid())
+  slotKey      String    @unique
+  orderId      String?   @unique
+  order        Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workerId     String?
+  worker       Worker?   @relation(fields: [workerId], references: [id], onDelete: SetNull)
+  status       String    @default("scheduled") // 'scheduled' | 'live' | 'completed'
+  stage        String    @default("scheduled") // 'scheduled' | 'assigned' | 'heading_to_store' | 'shopping' | 'purchased' | 'packed'
+  storeName    String?
+  storeAddress String?
+  storeLat     Float?
+  storeLng     Float?
+  workerLat    Float?
+  workerLng    Float?
+  workerEtaMin Int?
+  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+}
+
+model OrderTrackingStage {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stageKey  String   // 'slot_confirmed' | 'worker_assigned' | 'shopping' | 'purchased' | 'packed' | 'shipped' | 'out_for_delivery'
+  title     String
+  status    String   // 'done' | 'current' | 'pending'
+  expected  String?
+  note      String?
+  updatedAt DateTime @default(now())
+}
+
+model UserAddress {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String   // e.g. 'Home', 'Office'
+  phone      String?
+  line1      String
+  line2      String?
+  city       String
+  region     String?
+  zip        String
+  country    String   @default("India")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model WorkerReview {
+  id        String   @id @default(uuid())
+  workerId  String
+  worker    Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String?  @unique
+  rating    Float    @default(5.0)
+  comment   String?
+  createdAt DateTime @default(now())
+}

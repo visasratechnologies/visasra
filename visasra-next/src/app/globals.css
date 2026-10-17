@@ -1,0 +1,306 @@
+@import 'leaflet/dist/leaflet.css';
+
+/* Global Leaflet Map Fixes */
+.leaflet-attribution-flag {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.leaflet-container svg {
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Base Reset & Fonts */
+:root {
+  --fd: 'Fraunces', Georgia, serif;
+  --fu: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+/* ================= Custom Component Enhancements ================= */
+
+/* Clean form inputs, selects, textareas */
+.inp {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(9, 43, 85, 0.03);
+}
+
+.inp:focus {
+  border-color: var(--gold);
+  background: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(18, 97, 181, 0.14);
+}
+
+.inp::placeholder {
+  color: var(--text-faint);
+}
+
+select.inp {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234C6180' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+}
+
+input[type="date"].inp {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Category & Duration Filter Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(9, 43, 85, 0.04);
+}
+
+.chip:hover {
+  border-color: var(--gold);
+  color: var(--gold-soft);
+  background: #F4F8FD;
+  transform: translateY(-1px);
+}
+
+.chip.on {
+  background: linear-gradient(135deg, #123A69 0%, #1656A0 100%);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 14px -3px rgba(18, 58, 105, 0.45);
+}
+
+/* Scrollbar hiding for horizontal category rails */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Slot Time Windows */
+.slot-pill-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text);
+  text-align: center;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(9, 43, 85, 0.03);
+}
+
+.slot-pill-card:hover {
+  border-color: var(--gold);
+  background: #F4F8FE;
+  transform: translateY(-1px);
+}
+
+.slot-pill-card.selected {
+  border-color: var(--gold);
+  background: #E8F2FC;
+  color: var(--gold-soft);
+  box-shadow: 0 0 0 2px rgba(18, 97, 181, 0.15);
+}
+
+/* Global Sleek Floating Portal Switcher */
+.floating-portal-bar {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  bottom: auto;
+  left: auto;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(18, 58, 105, 0.94);
+  backdrop-filter: blur(10px);
+  padding: 5px 8px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(9, 43, 85, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.floating-portal-bar a {
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--fu);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.floating-portal-bar a:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.floating-portal-bar a.active {
+  background: #ffffff;
+  color: #123A69;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 860px) {
+  .floating-portal-bar {
+    top: 10px !important;
+    right: 10px !important;
+    bottom: auto !important;
+    left: auto !important;
+    padding: 3px 6px !important;
+    transform: scale(0.85);
+    transform-origin: top right;
+    box-shadow: 0 4px 14px rgba(9, 43, 85, 0.45);
+  }
+}
+
+
+/* Modal styling polish */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100005;
+  background: rgba(4, 16, 34, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 26px;
+  width: min(560px, 100%);
+  max-height: min(88vh, 840px);
+  overflow-y: auto;
+  box-shadow: 0 25px 60px -15px rgba(2, 14, 30, 0.6);
+  border: 1px solid rgba(18, 58, 105, 0.14);
+  animation: modalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
+}
+
+.modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-card::-webkit-scrollbar-thumb {
+  background: rgba(18, 58, 105, 0.2);
+  border-radius: 4px;
+}
+
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Authentication Screen Enhancements */
+.auth-segmented-switch {
+  display: flex;
+  background: #EEF3FA;
+  padding: 4px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(18, 58, 105, 0.08);
+}
+.auth-segmented-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  font-family: var(--fu);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #4C6180;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.auth-segmented-btn.active {
+  background: #ffffff;
+  color: #0B192E;
+  box-shadow: 0 2px 8px rgba(9, 43, 85, 0.1);
+}
+.auth-forgot-link {
+  background: none;
+  border: none;
+  color: #1261B5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+.auth-forgot-link:hover {
+  color: #092B55;
+}
+.auth-switch-link {
+  background: none;
+  border: none;
+  color: #1261B5;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.auth-switch-link:hover {
+  color: #092B55;
+}

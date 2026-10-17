@@ -1,0 +1,220 @@
+Product photos: one folder per category inside images/products/, named as below
+(.jpg, .jpeg, .png or .webp all work).
+
+images/products/cookware/   (Cookware, 21 products)
+  Cooker                   -> cooker.jpg
+    has 8 types -> put their photos in images/products/cookware/cooker/
+      Electric Pressure Cooker -> electric-pressure-cooker.jpg
+      Idli Steamer              -> idli-steamer.jpg
+      Steel Idli Steamer        -> steel-idli-steamer.jpg
+      Aluminium Idli Steamer    -> aluminium-idli-steamer.jpg
+      2 Litre Cooker            -> 2-litre-cooker.jpg
+      3 Litre Cooker            -> 3-litre-cooker.jpg
+      Dual Lid Cooker           -> dual-lid-cooker.jpg
+      Rice Cooker               -> rice-cooker.jpg
+  Pots                     -> pots.jpg
+    has 5 types -> put their photos in images/products/cookware/pots/
+      Bowls Set               -> bowls-set.jpg
+      Handi Set               -> handi-set.jpg
+      Copper Bottom Handi Set -> copper-bottom-handi-set.jpg
+      Milk Pots Combo         -> milk-pots-combo.jpg
+      Cast Iron Pot           -> cast-iron-pot.jpg
+  Pans                     -> pans.jpg
+    has 11 types -> put their photos in images/products/cookware/pans/
+      Appam Pan              -> appam-pan.jpg
+      Cast Iron Appam Pan    -> cast-iron-appam-pan.jpg
+      Cast Iron Tadka Pan    -> cast-iron-tadka-pan.jpg
+      Cast Iron Wok Pan      -> cast-iron-wok-pan.jpg
+      Deep Fry Pan           -> deep-fry-pan.jpg
+      Frying Pan             -> frying-pan.jpg
+      Grill Pan              -> grill-pan.jpg
+      Sauce Pan              -> sauce-pan.jpg
+      Steel Deep Fry Pan     -> steel-deep-fry-pan.jpg
+      Steel Fry Pan          -> steel-fry-pan.jpg
+      Tadka Pan              -> tadka-pan.jpg
+  Tawas                    -> tawas.jpg
+    has 4 types -> put their photos in images/products/cookware/tawas/
+      Non-Stick Tawa         -> non-stick-tawa.jpg
+      Aluminium Tawa         -> aluminium-tawa.jpg
+      Dosa Tawa              -> dosa-tawa.jpg
+      Roti Tawa              -> roti-tawa.jpg
+  Kadai                    -> kadai.jpg
+    has 3 types -> put their photos in images/products/cookware/kadai/
+      Iron Kadai             -> iron-kadai.jpg
+      Non-Stick Kadai        -> non-stick-kadai.jpg
+      Stainless Steel Kadai  -> stainless-steel-kadai.jpg
+  Woks                     -> woks.jpg
+  Handi                    -> handi.jpg
+  Dutch Ovens              -> dutch-ovens.jpg
+  Cookware Sets            -> cookware-sets.jpg
+  Spoons                   -> spoons.jpg
+  Forks                    -> forks.jpg
+  Knives                   -> knives.jpg
+    has 2 types -> put their photos in images/products/cookware/knives/
+      Knife Set               -> knife-set.jpg
+      Knives                  -> knives.jpg
+  Spatula                  -> spatula.jpg
+    has 5 types -> put their photos in images/products/cookware/spatula/
+      Silicone Spatula        -> silicone-spatula.jpg
+      Silicone Utensil Set    -> silicone-utensil-set.jpg
+      Spatula Set             -> spatula-set.jpg
+      Wooden Spatula Set      -> wooden-spatula-set.jpg
+      Whisk                   -> whisk.jpg
+  Plates                   -> plates.jpg
+    has 4 types -> put their photos in images/products/cookware/plates/
+      Steel Plates           -> steel-plates.jpg
+      Dinner Plates          -> dinner-plates.jpg
+      Partition Plate        -> partition-plate.jpg
+      Hammered Plate         -> hammered-plate.jpg
+  Bowls                    -> bowls.jpg
+    has 3 types -> put their photos in images/products/cookware/bowls/
+      Ceramic Bowl           -> ceramic-bowl.jpg
+      Serving Bowls          -> serving-bowls.jpg
+      Steel Bowls            -> steel-bowls.jpg
+  Dinner Sets              -> dinner-sets.jpg
+    has 2 types -> put their photos in images/products/cookware/dinner-sets/
+      Ceramic Dinner Set     -> ceramic-dinner-set.jpg
+      Steel Thali Set        -> steel-thali-set.jpg
+  Serving Sets             -> serving-sets.jpg
+  Trays                    -> trays.jpg
+    has 3 types -> put their photos in images/products/cookware/trays/
+      Trays                  -> trays.jpg
+      Wooden Trays           -> wooden-trays.jpg
+      Steel Trays            -> steel-trays.jpg
+  Cutlery Sets             -> cutlery-sets.jpg
+  Glasses                  -> glasses.jpg
+    has 4 types -> put their photos in images/products/cookware/glasses/
+      Brass Glasses           -> brass-glasses.jpg
+      Copper Glasses          -> copper-glasses.jpg
+      Steel Water Glass       -> steel-water-glass.jpg
+      Glassware Water Glasses -> glassware-water-glasses.jpg
+  Cups & Mugs              -> cups-mugs.jpg
+    has 5 types -> put their photos in images/products/cookware/cups-mugs/
+      Ceramic Tea Cups        -> ceramic-tea-cups.jpg
+      Handcrafted Mugs        -> handcrafted-mugs.jpg
+      Steel Tea Cups          -> steel-tea-cups.jpg
+      Mugs                    -> mugs.jpg
+      Glassware Tea Cups      -> glassware-tea-cups.jpg
+
+images/products/home-decors/   (Home Decors, 11 products)
+  Home Decor               -> home-decor.jpg
+  Wall Decor               -> wall-decor.jpg
+  Lamps & Lighting         -> lamps-lighting.jpg
+  Candles & Diyas          -> candles-diyas.jpg
+  Clocks                   -> clocks.jpg
+  Cushions & Covers        -> cushions-covers.jpg
+  Curtains                 -> curtains.jpg
+  Rugs & Carpets           -> rugs-carpets.jpg
+  Storage & Organizers     -> storage-organizers.jpg
+    has 5 types -> put their photos in images/products/home-decors/storage-organizers/
+      Drying Stand             -> drying-stand.jpg
+      Pot Rack                 -> pot-rack.jpg
+      Shoe Rack                -> shoe-rack.jpg
+      Steel Rack               -> steel-rack.jpg
+      Storage Unit             -> storage-unit.jpg
+  Artificial Flowers       -> artificial-flowers.jpg
+  Decorative Items         -> decorative-items.jpg
+
+images/products/home-furnishing/   (Home Furnishing, 10 products)
+  Bedsheets                -> bedsheets.jpg
+  Blankets                 -> blankets.jpg
+  Comforters               -> comforters.jpg
+  Pillows                  -> pillows.jpg
+  Pillow Covers            -> pillow-covers.jpg
+  Mattress Protectors      -> mattress-protectors.jpg
+  Towels                   -> towels.jpg
+  Bath Mats                -> bath-mats.jpg
+  Table Covers             -> table-covers.jpg
+  Kitchen Towel            -> kitchen-towel.jpg
+
+images/products/electronics-accessories/   (Electronics & Accessories, 9 products)
+  Mobile Accessories       -> mobile-accessories.jpg
+  Chargers                 -> chargers.jpg
+  Cables                   -> cables.jpg
+  Earphones                -> earphones.jpg
+  Headphones               -> headphones.jpg
+  Smart Watches            -> smart-watches.jpg
+  Speakers                 -> speakers.jpg
+  Power Banks              -> power-banks.jpg
+  Small Appliances         -> small-appliances.jpg
+
+images/products/toys-games/   (Toys & Games, 11 products)
+  Educational Toys         -> educational-toys.jpg
+  Remote Control Toys      -> remote-control-toys.jpg
+  Dolls & Doll Sets        -> dolls-doll-sets.jpg
+  Cars & Vehicles          -> cars-vehicles.jpg
+  Board Games              -> board-games.jpg
+  Puzzles                  -> puzzles.jpg
+  Building Blocks          -> building-blocks.jpg
+  Soft Toys                -> soft-toys.jpg
+  Outdoor Games            -> outdoor-games.jpg
+  Musical Toys             -> musical-toys.jpg
+  Baby Toys                -> baby-toys.jpg
+
+images/products/jewellery-accessories/   (Jewellery & Accessories, 11 products)
+  Oxidized Jewellery       -> oxidized-jewellery.jpg
+  Earrings                 -> earrings.jpg
+  Necklaces                -> necklaces.jpg
+  Chains                   -> chains.jpg
+  Bracelets                -> bracelets.jpg
+  Bangles                  -> bangles.jpg
+  Rings                    -> rings.jpg
+  Anklets                  -> anklets.jpg
+  Maang Tikka              -> maang-tikka.jpg
+  Nose Pins                -> nose-pins.jpg
+  Jewellery Sets           -> jewellery-sets.jpg
+
+images/products/pooja-spiritual/   (Pooja & Spiritual, 8 products)
+  Pooja Sets               -> pooja-sets.jpg
+  Diyas                    -> diyas.jpg
+    has 6 types -> put their photos in images/products/pooja-spiritual/diyas/
+      Peacock Standing Diya    -> peacock-standing-diya.jpg
+      Branch Standing Diya     -> branch-standing-diya.jpg
+      Classic Standing Diya    -> classic-standing-diya.jpg
+      Silver Diya              -> silver-diya.jpg
+      Copper Diya              -> copper-diya.jpg
+      Brass Diya               -> brass-diya.jpg
+  Incense Sticks           -> incense-sticks.jpg
+    has 2 types -> put their photos in images/products/pooja-spiritual/incense-sticks/
+      Dhoop Sticks             -> dhoop-sticks.jpg
+      Incense Holder           -> incense-holder.jpg
+  Camphor                  -> camphor.jpg
+  Pooja Utensils           -> pooja-utensils.jpg
+  Brass Idols              -> brass-idols.jpg
+  Decorative Torans        -> decorative-torans.jpg
+  Rangoli Items            -> rangoli-items.jpg
+
+images/products/bags-wallets/   (Bags & Wallets, 11 products)
+  Handbags                 -> handbags.jpg
+  Sling Bags               -> sling-bags.jpg
+  Tote Bags                -> tote-bags.jpg
+  Backpacks                -> backpacks.jpg
+  Clutches                 -> clutches.jpg
+  Wallets                  -> wallets.jpg
+  Card Holders             -> card-holders.jpg
+  Laptop Bags              -> laptop-bags.jpg
+  Travel Bags              -> travel-bags.jpg
+  Duffle Bags              -> duffle-bags.jpg
+  Crossbody Bags           -> crossbody-bags.jpg
+
+images/products/womens-fashion/   (Women's Fashion, 7 products)
+  Tops                     -> tops.jpg
+  Ethnic Wear              -> ethnic-wear.jpg
+  Bottom Wear              -> bottom-wear.jpg
+  Blouses                  -> blouses.jpg
+  Nightwear                -> nightwear.jpg
+  Women's Watches          -> womens-watches.jpg
+  Women's Footwear         -> womens-footwear.jpg
+
+images/products/mens-fashion/   (Men's Fashion, 9 products)
+  Shirts                   -> shirts.jpg
+  T-Shirts                 -> t-shirts.jpg
+  Trousers                 -> trousers.jpg
+  Ethnic Wear              -> ethnic-wear.jpg
+  Jackets                  -> jackets.jpg
+  Sweatshirts              -> sweatshirts.jpg
+  Shorts                   -> shorts.jpg
+  Men's Footwear           -> mens-footwear.jpg
+  Men's Watches            -> mens-watches.jpg
+
+Category card/banner pictures: set in app.js under CATEGORY_IMAGES (keys: cookware, home-decors, home-furnishing, electronics-accessories, toys-games, jewellery-accessories, pooja-spiritual, bags-wallets, womens-fashion, mens-fashion).
