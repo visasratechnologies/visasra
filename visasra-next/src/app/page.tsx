@@ -7,6 +7,15 @@ import { openRazorpayPayment } from '@/lib/razorpay';
 import '@/styles/styles.css';
 import '@/styles/live.css';
 
+import OrderSuccessModal from '@/components/modals/OrderSuccessModal';
+import InsufficientBalanceModal from '@/components/modals/InsufficientBalanceModal';
+import EditBasketItemModal from '@/components/modals/EditBasketItemModal';
+import CustomizeProductModal from '@/components/modals/CustomizeProductModal';
+import OrderTrackingModal from '@/components/modals/OrderTrackingModal';
+import WalletTab from '@/components/tabs/WalletTab';
+import ProfileTab from '@/components/tabs/ProfileTab';
+import LiveShoppingTab from '@/components/tabs/LiveShoppingTab';
+
 const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false });
 
 interface LiveOption {
