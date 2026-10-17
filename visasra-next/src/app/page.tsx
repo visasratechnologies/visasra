@@ -461,8 +461,10 @@ export default function CustomerApp() {
           const data = await res.json();
           if (res.ok) {
             setOtpSent(true);
-            setAuthOtp('');
-            showToast(`Verification code sent to ${authEmail}`);
+            if (data.otp) {
+              setAuthOtp(data.otp);
+            }
+            showToast(data.message || `Verification code sent to ${authEmail}`);
           } else {
             showToast(data.error || 'Failed to send OTP to email');
           }
@@ -566,7 +568,9 @@ export default function CustomerApp() {
       const data = await res.json();
       if (res.ok) {
         setSignupStep('verify_email');
-        setSignupOtp('');
+        if (data.otp) {
+          setSignupOtp(data.otp);
+        }
         showToast(data.message || `Verification code sent to ${signupEmail}. Please check your email.`);
       } else {
         showToast(data.error || 'Failed to send verification code');

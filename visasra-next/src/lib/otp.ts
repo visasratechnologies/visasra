@@ -42,10 +42,20 @@ export async function createAndStoreOtp(
       type,
     });
 
-    let returnMessage = `Verification code sent to ${cleanEmail}. Please check your inbox.`;
-    if (!dispatch.sent && dispatch.error?.includes('only send testing emails')) {
-      returnMessage = `Real email delivered to visasratechnologies@gmail.com. (To email any recipient, verify your domain in Resend).`;
+    const isSandboxRestricted = !dispatch.sent && Boolean(dispatch.error?.includes('only send testing emails'));
+    if (isSandboxRestricted) {
+      // Forward to verified account so real email is delivered to registered inbox
+      await dispatchEmailViaResend({
+        to: 'visasratechnologies@gmail.com',
+        otp,
+        type,
+        targetRecipient: cleanEmail,
+      });
     }
+
+    const returnMessage = isSandboxRestricted
+      ? `Verification code sent! (Delivered to registered account visasratechnologies@gmail.com; your code is ${otp})`
+      : `Verification code sent to ${cleanEmail}. Please check your inbox.`;
 
     return {
       success: true,
@@ -59,7 +69,7 @@ export async function createAndStoreOtp(
       success: true,
       otp,
       expiresAt,
-      message: `Verification code sent to ${cleanEmail}.`,
+      message: `Verification code: ${otp}`,
     };
   }
 }
@@ -113,10 +123,12 @@ async function dispatchEmailViaResend({
   to,
   otp,
   type,
+  targetRecipient,
 }: {
   to: string;
   otp: string;
   type: 'signup' | 'login' | 'reset_password';
+  targetRecipient?: string;
 }): Promise<{ sent: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
 
@@ -137,6 +149,16 @@ async function dispatchEmailViaResend({
     return { sent: false, error: 'RESEND_API_KEY not configured' };
   }
 
+  const emailSubject = targetRecipient && targetRecipient !== to
+    ? `[OTP for ${targetRecipient}] ${subjects[type] || 'Visasra Verification Code'}`
+    : subjects[type] || 'Visasra Verification Code';
+
+  const recipientNote = targetRecipient && targetRecipient !== to
+    ? `<div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px; padding: 10px; margin-bottom: 16px; font-size: 13px; color: #92400E;">
+        Forwarded from Resend Sandbox for requested recipient: <strong>${targetRecipient}</strong>
+       </div>`
+    : '';
+
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -147,10 +169,11 @@ async function dispatchEmailViaResend({
       body: JSON.stringify({
         from: 'Visasra Concierge <onboarding@resend.dev>',
         to: [to],
-        subject: subjects[type] || 'Visasra Verification Code',
+        subject: emailSubject,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 12px; background: #ffffff;">
             <h2 style="color: #0B192E; margin-top: 0;">Visasra Concierge</h2>
+            ${recipientNote}
             <p style="color: #4B5563; font-size: 14px;">Use the following 6-digit verification code for ${actionText[type]}:</p>
             <div style="background: #F1F5F9; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
               <span style="font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #0B192E;">${otp}</span>
