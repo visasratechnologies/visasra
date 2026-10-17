@@ -260,6 +260,12 @@ export async function POST(req: Request) {
         where: { slotKey: decodedKey },
         data: { status: 'live', stage: 'shopping' },
       });
+      if (session.orderId) {
+        await prisma.order.update({
+          where: { id: session.orderId },
+          data: { trackingStage: 'shopping', status: 'shopping' },
+        });
+      }
     }
 
     // 8. Upload Shop QR payment
@@ -355,6 +361,7 @@ export async function POST(req: Request) {
           },
         });
       }
+      return NextResponse.json({ success: true, message: 'Location updated' });
     }
 
     const updated = await prisma.liveSession.findUnique({

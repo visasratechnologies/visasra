@@ -1,15 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 
 const POOLER_TRANSACTION_URL =
-  "postgresql://postgres.xdjqsoveqzmrrbooxkpn:visasra123*@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+  "postgresql://postgres.xdjqsoveqzmrrbooxkpn:visasra123*@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=25&pool_timeout=30";
 const POOLER_SESSION_URL =
   "postgresql://postgres.xdjqsoveqzmrrbooxkpn:visasra123*@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres";
 
 function resolveDatabaseUrl(): string {
-  const envUrl = process.env.DATABASE_URL;
+  let envUrl = process.env.DATABASE_URL;
   // If empty or pointing to the legacy IPv6 direct endpoint that fails on IPv4 networks
   if (!envUrl || envUrl.includes('db.xdjqsoveqzmrrbooxkpn.supabase.co')) {
-    return POOLER_TRANSACTION_URL;
+    envUrl = POOLER_TRANSACTION_URL;
+  }
+  if (!envUrl.includes('connection_limit=')) {
+    const sep = envUrl.includes('?') ? '&' : '?';
+    envUrl = `${envUrl}${sep}connection_limit=25&pool_timeout=30`;
   }
   return envUrl;
 }

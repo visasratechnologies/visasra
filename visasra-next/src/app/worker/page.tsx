@@ -225,6 +225,7 @@ export default function WorkerApp() {
   const [otpShake, setOtpShake] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const lastLocationSentRef = useRef<{ lat: number; lng: number; ts: number }>({ lat: 0, lng: 0, ts: 0 });
 
   // 4. Post-Login Application Form (Gated Access)
   const [appFullName, setAppFullName] = useState('');
@@ -250,6 +251,7 @@ export default function WorkerApp() {
   const [appPayoutUpi, setAppPayoutUpi] = useState('');
   const [appConsent, setAppConsent] = useState(false);
   const [appSubmitting, setAppSubmitting] = useState(false);
+  const [sendingOptions, setSendingOptions] = useState(false);
 
   // Edit Bank Modal State on Profile Screen
   const [showBankModal, setShowBankModal] = useState(false);
@@ -473,28 +475,45 @@ export default function WorkerApp() {
   };
 
   // -------------------------------------------------------------------
-  // LIVE GPS TRACKING
+  // LIVE GPS TRACKING (Throttled, Non-blocking, No infinite re-fetch loop)
   // -------------------------------------------------------------------
+  const activeTripSlotKey = sessions.find(
+    (s) => s.workerId === worker?.id && ['heading_to_store', 'shopping'].includes(s.stage)
+  )?.slotKey;
+
   useEffect(() => {
-    if (!navigator.geolocation || !worker) return;
-    const activeTrip = sessions.find((s) => s.workerId === worker.id && ['heading_to_store', 'shopping'].includes(s.stage));
-    if (!activeTrip) return;
+    if (!navigator.geolocation || !worker?.id || !activeTripSlotKey) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (p) => {
-        execAction({
-          action: 'update_location',
-          slotKey: activeTrip.slotKey,
-          lat: p.coords.latitude,
-          lng: p.coords.longitude,
-        });
+        const now = Date.now();
+        const last = lastLocationSentRef.current;
+        const dist = Math.hypot(p.coords.latitude - last.lat, p.coords.longitude - last.lng);
+        // Throttle: Send at most once every 12 seconds unless moved significantly
+        if (now - last.ts < 12000 && dist < 0.0001) {
+          return;
+        }
+        lastLocationSentRef.current = { lat: p.coords.latitude, lng: p.coords.longitude, ts: now };
+
+        // Send silent ping without triggering fetchJobs() or displaying popups
+        fetch('/api/worker/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_location',
+            slotKey: activeTripSlotKey,
+            workerId: worker.id,
+            lat: p.coords.latitude,
+            lng: p.coords.longitude,
+          }),
+        }).catch(() => {});
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 5000 }
+      { enableHighAccuracy: true, maximumAge: 10000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [sessions, worker?.id]);
+  }, [activeTripSlotKey, worker?.id]);
 
   // -------------------------------------------------------------------
   // SLOT TIMING HELPERS
@@ -1014,15 +1033,20 @@ export default function WorkerApp() {
   };
 
   const handleSendOptionsToCustomer = async () => {
-    if (!selectedSlotKey || !selectedItemId) return;
-    const ok = await execAction({
-      action: 'share_options',
-      slotKey: selectedSlotKey,
-      itemId: selectedItemId,
-    });
-    if (ok) {
-      showToast('Sent! Customer can approve in their app');
-      setScreen('list');
+    if (!selectedSlotKey || !selectedItemId || sendingOptions) return;
+    setSendingOptions(true);
+    try {
+      const ok = await execAction({
+        action: 'share_options',
+        slotKey: selectedSlotKey,
+        itemId: selectedItemId,
+      });
+      if (ok) {
+        showToast('Sent! Customer can approve in their app');
+        setScreen('list');
+      }
+    } finally {
+      setSendingOptions(false);
     }
   };
 
@@ -2960,10 +2984,12 @@ export default function WorkerApp() {
               <div className="bar">
                 <button
                   className="btn"
-                  disabled={currentItem.options.length === 0}
+                  disabled={currentItem.options.length === 0 || sendingOptions}
                   onClick={handleSendOptionsToCustomer}
                 >
-                  Send {currentItem.options.length} option(s) to customer
+                  {sendingOptions
+                    ? 'Sending option(s) to customer...'
+                    : `Send ${currentItem.options.length} option(s) to customer`}
                 </button>
               </div>
             )}
