@@ -243,13 +243,3 @@ model WorkerReview {
   createdAt DateTime @default(now())
 }
 
-model OtpVerification {
-  id        String   @id @default(uuid())
-  email     String
-  otp       String
-  type      String   // 'signup' | 'login' | 'reset_password'
-  expiresAt DateTime
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
