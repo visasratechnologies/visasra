@@ -1,33 +1,23 @@
-'use client';
-
 import React, { useState } from 'react';
-import { User } from '@/types';
-
-interface WalletTransactionItem {
-  id: string;
-  type: string;
-  amount: number;
-  note?: string;
-  date: string;
-}
+import { User, WalletTransaction } from '@/types/customer';
 
 interface WalletTabProps {
   user: User;
-  walletTransactions: WalletTransactionItem[];
-  onAddMoney: (amount: number) => Promise<void>;
+  walletTransactions: WalletTransaction[];
+  onAddMoney: (amount: number) => void;
   onBack: () => void;
   showToast: (msg: string) => void;
 }
 
-export default function WalletTab({
+export const WalletTab: React.FC<WalletTabProps> = ({
   user,
   walletTransactions,
   onAddMoney,
   onBack,
   showToast,
-}: WalletTabProps) {
-  const [selectedQuickAmt, setSelectedQuickAmt] = useState<number | null>(null);
-  const [customTopupAmt, setCustomTopupAmt] = useState('');
+}) => {
+  const [selectedQuickAmt, setSelectedQuickAmt] = useState<number | null>(5000);
+  const [customTopupAmt, setCustomTopupAmt] = useState<string>('5000');
 
   return (
     <section className="screen active" data-screen="wallet">
@@ -51,7 +41,7 @@ export default function WalletTab({
         </div>
       </div>
 
-      {/* Top-Up Box */}
+      {/* Redesigned Compact Top-Up Box */}
       <div className="wallet-topup-card">
         <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Add Money to Wallet</div>
         <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
@@ -59,7 +49,7 @@ export default function WalletTab({
         </div>
 
         <div className="wallet-quick-chips">
-          {[1000, 2500, 5000, 10000].map((amt) => (
+          {[1000, 2500, 5000, 10000].map(amt => (
             <button
               key={amt}
               type="button"
@@ -83,7 +73,7 @@ export default function WalletTab({
               step="100"
               placeholder="Enter amount"
               value={customTopupAmt}
-              onChange={(e) => {
+              onChange={e => {
                 setCustomTopupAmt(e.target.value);
                 setSelectedQuickAmt(null);
               }}
@@ -109,29 +99,12 @@ export default function WalletTab({
       <div className="section-title" style={{ marginTop: 24 }}>Transaction Activity</div>
       <div className="review-card" style={{ marginTop: 0 }}>
         {walletTransactions.length > 0 ? (
-          walletTransactions.map((tx) => (
-            <div
-              key={tx.id}
-              style={{
-                padding: '14px 16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid var(--border-soft)',
-              }}
-            >
+          walletTransactions.map(tx => (
+            <div key={tx.id} style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-soft)' }}>
               <div>
-                <b style={{ fontSize: 13.5 }}>
-                  {tx.note || (tx.type === 'credit' ? 'Wallet Deposit via Razorpay' : 'Slot Booking Fee')}
-                </b>
+                <b style={{ fontSize: 13.5 }}>{tx.note || (tx.type === 'credit' ? 'Wallet Deposit via Razorpay' : 'Slot Booking Fee')}</b>
                 <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 2 }}>
-                  {new Date(tx.date).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {new Date(tx.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
               <b style={{ color: tx.type === 'credit' ? '#2F7D4A' : '#DC2626', fontSize: 14 }}>
@@ -147,4 +120,4 @@ export default function WalletTab({
       </div>
     </section>
   );
-}
+};

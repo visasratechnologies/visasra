@@ -6,15 +6,16 @@ import dynamic from 'next/dynamic';
 import { openRazorpayPayment } from '@/lib/razorpay';
 import '@/styles/styles.css';
 import '@/styles/live.css';
-
-import OrderSuccessModal from '@/components/modals/OrderSuccessModal';
-import InsufficientBalanceModal from '@/components/modals/InsufficientBalanceModal';
-import EditBasketItemModal from '@/components/modals/EditBasketItemModal';
+import { WalletTab } from '@/components/tabs/WalletTab';
+import { ProfileTab } from '@/components/tabs/ProfileTab';
+import { OrdersTab } from '@/components/tabs/OrdersTab';
+import { AddressesTab } from '@/components/tabs/AddressesTab';
+import { LiveShoppingTab } from '@/components/tabs/LiveShoppingTab';
+import { OrderPlacedModal } from '@/components/modals/OrderPlacedModal';
+import { InsufficientBalanceModal } from '@/components/modals/InsufficientBalanceModal';
 import CustomizeProductModal from '@/components/modals/CustomizeProductModal';
+import EditBasketItemModal from '@/components/modals/EditBasketItemModal';
 import OrderTrackingModal from '@/components/modals/OrderTrackingModal';
-import WalletTab from '@/components/tabs/WalletTab';
-import ProfileTab from '@/components/tabs/ProfileTab';
-import LiveShoppingTab from '@/components/tabs/LiveShoppingTab';
 
 const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false });
 
@@ -1227,13 +1228,14 @@ export default function CustomerApp() {
   };
 
 
-  const handleSaveNewAddress = async () => {
-    if (!addressForm.line1 || !addressForm.city || !addressForm.zip) {
+  const handleSaveNewAddress = async (formData?: Omit<Address, 'id'>) => {
+    const src = formData || addressForm;
+    if (!src.line1 || !src.city || !src.zip) {
       showToast('Please fill in street address, city, and ZIP code');
       return;
     }
-    const nameToUse = addressForm.name.trim() || user.name || 'Recipient';
-    const phoneToUse = addressForm.phone.trim() || customerPhone || user.phone;
+    const nameToUse = src.name.trim() || user.name || 'Recipient';
+    const phoneToUse = src.phone.trim() || customerPhone || user.phone;
 
     try {
       const res = await fetch('/api/user/addresses', {
@@ -1244,12 +1246,12 @@ export default function CustomerApp() {
           email: user.email,
           name: nameToUse,
           phone: phoneToUse,
-          line1: addressForm.line1.trim(),
-          line2: addressForm.line2?.trim() || null,
-          city: addressForm.city.trim(),
-          region: addressForm.region?.trim() || null,
-          zip: addressForm.zip.trim(),
-          country: addressForm.country || 'India',
+          line1: src.line1.trim(),
+          line2: src.line2?.trim() || null,
+          city: src.city.trim(),
+          region: src.region?.trim() || null,
+          zip: src.zip.trim(),
+          country: src.country || 'India',
         }),
       });
       const data = await res.json();
@@ -1264,7 +1266,7 @@ export default function CustomerApp() {
           region: data.address.region || '',
           zip: data.address.zip,
           country: data.address.country,
-          label: addressForm.label || 'Home',
+          label: (src.label as 'Home' | 'Office' | 'Other') || 'Home',
         };
         setSavedAddresses(prev => [newAddr, ...prev.filter(a => a.id !== newAddr.id)]);
         setSelectedAddressId(newAddr.id);
@@ -1276,12 +1278,12 @@ export default function CustomerApp() {
 
     const newAddr: Address = {
       id: 'addr-' + Date.now(),
-      ...addressForm,
+      ...src,
+      label: (src.label as 'Home' | 'Office' | 'Other') || 'Home',
     };
-    setSavedAddresses([...savedAddresses, newAddr]);
+    setSavedAddresses(prev => [newAddr, ...prev]);
     setSelectedAddressId(newAddr.id);
     setIsAddingAddress(false);
-    showToast('New delivery address saved!');
   };
 
   const handleDeleteAddress = async (id: string) => {
@@ -3791,7 +3793,7 @@ export default function CustomerApp() {
                         </div>
                         <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
                           <button type="button" className="btn btn-secondary" onClick={() => setIsAddingAddress(false)} style={{ flex: 1 }}>Cancel</button>
-                          <button type="button" className="btn btn-primary" onClick={handleSaveNewAddress} style={{ flex: 2 }}>Save Address</button>
+                          <button type="button" className="btn btn-primary" onClick={() => handleSaveNewAddress()} style={{ flex: 2 }}>Save Address</button>
                         </div>
                       </div>
                     )}
@@ -4368,106 +4370,15 @@ export default function CustomerApp() {
 
           {/* ================= SCREEN 4: ORDERS ================= */}
           {activeTab === 'orders' && (
-            <section className="screen active" data-screen="orders">
-              <img className="corner-leaf" src="/images/decor/leaf-cluster.png" alt="" aria-hidden="true" />
-              <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                Back
-              </button>
-              <div className="page-title">Orders</div>
-              <div className="page-sub">Everything you've booked with us.</div>
-
-              <div id="ordersList" style={{ marginTop: 16 }}>
-                {orders.map(o => (
-                  <div key={o.id} className="booking-card">
-                    <div className="booking-strip"><span style={{ background: 'var(--gold)' }} /></div>
-                    <div className="booking-main">
-                      <div className="booking-top">
-                        <div className="booking-top-left">
-                          <img
-                            src={o.items[0]?.image || '/images/categories/jewellery-accessories.jpg'}
-                            alt=""
-                            style={{ width: 54, height: 54, borderRadius: 10, objectFit: 'cover' }}
-                          />
-                          <div>
-                            <div className="booking-id">{o.orderNumber}</div>
-                            <div className="booking-slot">{o.slotLabel || o.slotKey}</div>
-                            <div className="booking-items">{o.items.map(i => i.name).join(', ')}</div>
-                            <div className="booking-meta">{o.items.length} product(s)</div>
-                          </div>
-                        </div>
-                        <div className="booking-total">₹{o.totalAmount}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                        <div className="status-pill">{o.trackingStage.replace(/_/g, ' ')}</div>
-                        {o.orderType === 'online' && (
-                          <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#EDE9FE', color: '#6D28D9' }}>
-                            Online Concierge (Admin Procurement)
-                          </span>
-                        )}
-                      </div>
-                      {o.orderType !== 'online' && (o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping') && (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          background: '#ECFDF5',
-                          border: '1.2px solid #10B981',
-                          borderRadius: 8,
-                          padding: '6px 10px',
-                          marginTop: 10,
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: '#065F46'
-                        }}>
-                          <span className="live-pulsing-dot" style={{ width: 7, height: 7 }} />
-                          <span>🟢 Personal Shopper Active in Market Right Now</span>
-                        </div>
-                      )}
-                      <div className="booking-actions-row" style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-                        {o.orderType !== 'online' && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-primary live-track-btn"
-                            style={{
-                              flex: '1 1 130px',
-                              minWidth: 110,
-                              justifyContent: 'center',
-                              ...((o.trackingStage === 'shopping' || o.status === 'shopping') ? {
-                                background: 'linear-gradient(135deg, #059669, #047857)',
-                                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.35)',
-                                border: 'none',
-                              } : {})
-                            }}
-                            onClick={() => {
-                              setLiveSessionSlot(o.slotKey);
-                              setActiveTab('live-shopping');
-                            }}
-                          >
-                            {(o.trackingStage === 'shopping' || o.status === 'shopping') ? '● Join Live Shopping' : 'Live Shopping'}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="track-btn"
-                          style={{
-                            flex: '1 1 130px',
-                            minWidth: 110,
-                            margin: 0,
-                            justifyContent: 'center',
-                            ...(o.orderType === 'online' ? { background: 'var(--navy)', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8 } : {})
-                          }}
-                          onClick={() => setTrackOrderSlot(o.slotKey)}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>
-                          <span>{o.orderType === 'online' ? 'Track Procurement' : 'Track order'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <OrdersTab
+              orders={orders}
+              onBack={() => setActiveTab('home')}
+              onJoinLiveShopping={(slotKey) => {
+                setLiveSessionSlot(slotKey);
+                setActiveTab('live-shopping');
+              }}
+              onTrackOrder={(slotKey) => setTrackOrderSlot(slotKey)}
+            />
           )}
 
           {/* ================= SCREEN 5: CART ================= */}
@@ -4535,602 +4446,54 @@ export default function CustomerApp() {
 
           {/* ================= SCREEN 6: WALLET ================= */}
           {activeTab === 'wallet' && (
-            <section className="screen active" data-screen="wallet">
-              <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                Back
-              </button>
-              <div className="page-title">Visasra Money</div>
-              <div className="page-sub">Your personal shopping wallet balance and complete transaction history.</div>
-
-              <div className="wallet-card" style={{ marginTop: 14 }}>
-                <div>
-                  <div className="label">Available balance</div>
-                  <div className="amount money">₹{user.walletBalance.toLocaleString('en-IN')}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 11, color: '#9FC0E6', fontWeight: 600 }}>Zero hold fees</div>
-                  <div style={{ fontSize: 12, color: '#EAF3FF', fontWeight: 700, marginTop: 2 }}>Instant live billing</div>
-                </div>
-              </div>
-
-              {/* Redesigned Compact Top-Up Box */}
-              <div className="wallet-topup-card">
-                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Add Money to Wallet</div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
-                  Funds stay in your balance and are only utilized when you approve actual store receipts during live shopping.
-                </div>
-
-                <div className="wallet-quick-chips">
-                  {[1000, 2500, 5000, 10000].map(amt => (
-                    <button
-                      key={amt}
-                      type="button"
-                      className={`wallet-quick-chip ${selectedQuickAmt === amt ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedQuickAmt(amt);
-                        setCustomTopupAmt(String(amt));
-                      }}
-                    >
-                      +₹{amt.toLocaleString('en-IN')}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="wallet-input-row">
-                  <div className="wallet-currency-box">
-                    <span>₹</span>
-                    <input
-                      type="number"
-                      min="100"
-                      step="100"
-                      placeholder="Enter amount"
-                      value={customTopupAmt}
-                      onChange={e => {
-                        setCustomTopupAmt(e.target.value);
-                        setSelectedQuickAmt(null);
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="wallet-action-btn"
-                    onClick={() => {
-                      const num = Number(customTopupAmt);
-                      if (!num || num <= 0) {
-                        showToast('Please enter an amount greater than 0');
-                        return;
-                      }
-                      handleAddMoney(num);
-                    }}
-                  >
-                    + Add to Wallet
-                  </button>
-                </div>
-              </div>
-
-              <div className="section-title" style={{ marginTop: 24 }}>Transaction Activity</div>
-              <div className="review-card" style={{ marginTop: 0 }}>
-                {walletTransactions.length > 0 ? (
-                  walletTransactions.map(tx => (
-                    <div key={tx.id} style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-soft)' }}>
-                      <div>
-                        <b style={{ fontSize: 13.5 }}>{tx.note || (tx.type === 'credit' ? 'Wallet Deposit via Razorpay' : 'Slot Booking Fee')}</b>
-                        <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 2 }}>
-                          {new Date(tx.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </div>
-                      <b style={{ color: tx.type === 'credit' ? '#2F7D4A' : '#DC2626', fontSize: 14 }}>
-                        {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
-                      </b>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
-                    No wallet transactions yet. Top up using Razorpay to start live sourcing!
-                  </div>
-                )}
-              </div>
-            </section>
+            <WalletTab
+              user={user}
+              walletTransactions={walletTransactions}
+              onAddMoney={handleAddMoney}
+              onBack={() => setActiveTab('home')}
+              showToast={showToast}
+            />
           )}
 
           {/* ================= SCREEN 7: PROFILE ================= */}
           {activeTab === 'profile' && (
-            <section className="screen active" data-screen="profile">
-              <img className="corner-leaf" src="/images/decor/leaf-cluster.png" alt="" aria-hidden="true" />
-              <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                Back
-              </button>
-              <div className="profile-head">
-                <div className="avatar">AI</div>
-                <div>
-                  <div className="profile-name">{user.name}</div>
-                  <div className="profile-loc">San Francisco, California · Phone: {customerPhone}</div>
-                </div>
-              </div>
-
-              <div className="section-title" style={{ marginTop: 22 }}>Account</div>
-              <div className="menu-card">
-                <div className="row-link" onClick={() => setActiveTab('wallet')}>
-                  <div className="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1"/></svg></div>
-                  <div className="rt">Visasra Money<span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--gold-soft)', marginTop: 1 }} className="money">₹{user.walletBalance.toLocaleString('en-IN')}</span></div>
-                  <div className="rc">›</div>
-                </div>
-                <div className="row-link" onClick={() => setActiveTab('orders')}>
-                  <div className="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
-                  <div className="rt">Orders</div>
-                  <div className="rc">›</div>
-                </div>
-                <div className="row-link" onClick={() => setActiveTab('addresses')}>
-                  <div className="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg></div>
-                  <div className="rt">Delivery addresses<span style={{ display: 'block', fontSize: '11.5px', fontWeight: 600, color: 'var(--text-faint)', marginTop: 1 }}>{savedAddresses.length} saved · Primary: {customerPhone}</span></div>
-                  <div className="rc">›</div>
-                </div>
-                <div className="row-link" onClick={handleLogout} style={{ color: '#DC2626' }}>
-                  <div className="ri"><svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9"/><path d="M10 12h11M17 8l4 4-4 4"/></svg></div>
-                  <div className="rt" style={{ fontWeight: 700 }}>Sign out of Visasra</div>
-                  <div className="rc" style={{ color: '#DC2626' }}>›</div>
-                </div>
-              </div>
-            </section>
+            <ProfileTab
+              user={user}
+              customerPhone={customerPhone}
+              savedAddressesCount={savedAddresses.length}
+              onNavigate={(tab) => setActiveTab(tab)}
+              onLogout={handleLogout}
+              onBack={() => setActiveTab('home')}
+            />
           )}
 
           {/* ================= SCREEN 8: SAVED ADDRESSES ================= */}
           {activeTab === 'addresses' && (
-            <section className="screen active" data-screen="addresses">
-              <button className="back-row" onClick={() => setActiveTab('profile')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                Back
-              </button>
-              <div className="page-title">Delivery addresses</div>
-              <div className="page-sub">Addresses and phone numbers saved on your Visasra account.</div>
-
-              <div className="dl-wrap dl-wrap-page" style={{ marginTop: 16 }}>
-                <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-                  {savedAddresses.map(addr => (
-                    <div key={addr.id} className="addr-card">
-                      <span className="addr-pin">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21z" />
-                          <circle cx="12" cy="9.5" r="2.4" />
-                        </svg>
-                      </span>
-                      <div className="addr-body">
-                        <div className="addr-name">
-                          {addr.name} <span className="addr-tag">{addr.label}</span>
-                        </div>
-                        <div className="addr-lines">
-                          {[addr.line1, addr.line2, addr.city, addr.region, addr.zip, addr.country].filter(Boolean).join(', ')}
-                        </div>
-                        <div className="addr-phone">{addr.phone}</div>
-                      </div>
-                      <button
-                        type="button"
-                        className="addr-edit"
-                        style={{ color: 'var(--danger)' }}
-                        onClick={() => handleDeleteAddress(addr.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {!isAddingAddress ? (
-                  <button type="button" className="dl-add" onClick={() => setIsAddingAddress(true)}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Add new address
-                  </button>
-                ) : (
-                  <div className="af" style={{ background: '#F8FAFD', border: '1.5px solid var(--border)', borderRadius: 16, padding: 16 }}>
-                    <div className="af-head">
-                      <div className="af-title">Add New Address</div>
-                      <button type="button" className="af-del" onClick={() => setIsAddingAddress(false)}>Close</button>
-                    </div>
-
-                    <div className="af-sec">Contact Details</div>
-                    <div className="af-grid">
-                      <label className="af-f">
-                        <span>Full name</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="Recipient Name"
-                          value={addressForm.name}
-                          onChange={e => setAddressForm({ ...addressForm, name: e.target.value })}
-                        />
-                      </label>
-                      <label className="af-f">
-                        <span>Phone / Mobile</span>
-                        <input
-                          type="tel"
-                          className="inp"
-                          placeholder="+1 (415) 890-1234"
-                          value={addressForm.phone}
-                          onChange={e => setAddressForm({ ...addressForm, phone: e.target.value })}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="af-sec" style={{ marginTop: 12 }}>Street &amp; Location</div>
-                    <div className="af-grid">
-                      <label className="af-f af-full">
-                        <span>Street address</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="Flat / House no, Building, Street"
-                          value={addressForm.line1}
-                          onChange={e => setAddressForm({ ...addressForm, line1: e.target.value })}
-                        />
-                      </label>
-                      <label className="af-f af-full">
-                        <span>Apartment, suite, landmark (optional)</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="Apartment or landmark"
-                          value={addressForm.line2}
-                          onChange={e => setAddressForm({ ...addressForm, line2: e.target.value })}
-                        />
-                      </label>
-                      <label className="af-f">
-                        <span>City</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="e.g. San Francisco or London"
-                          value={addressForm.city}
-                          onChange={e => setAddressForm({ ...addressForm, city: e.target.value })}
-                        />
-                      </label>
-                      <label className="af-f">
-                        <span>State / Province</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="e.g. California"
-                          value={addressForm.region}
-                          onChange={e => setAddressForm({ ...addressForm, region: e.target.value })}
-                        />
-                      </label>
-                      <label className="af-f">
-                        <span>Postal / ZIP code</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="e.g. 94107"
-                          value={addressForm.zip}
-                          onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
-                        />
-                      </label>
-                      <label className="af-f">
-                        <span>Country</span>
-                        <input
-                          type="text"
-                          className="inp"
-                          placeholder="e.g. United States"
-                          value={addressForm.country}
-                          onChange={e => setAddressForm({ ...addressForm, country: e.target.value })}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="af-foot" style={{ marginTop: 14 }}>
-                      <div className="af-chips">
-                        <span className="af-saveas">Label as:</span>
-                        {(['Home', 'Office', 'Other'] as const).map(lbl => (
-                          <button
-                            key={lbl}
-                            type="button"
-                            className={`af-chip ${addressForm.label === lbl ? 'active' : ''}`}
-                            onClick={() => setAddressForm({ ...addressForm, label: lbl })}
-                          >
-                            {lbl}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-                      <button type="button" className="btn btn-secondary" onClick={() => setIsAddingAddress(false)} style={{ flex: 1 }}>
-                        Cancel
-                      </button>
-                      <button type="button" className="btn btn-primary" onClick={handleSaveNewAddress} style={{ flex: 2 }}>
-                        Save address
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
+            <AddressesTab
+              savedAddresses={savedAddresses}
+              onBack={() => setActiveTab('profile')}
+              onDeleteAddress={handleDeleteAddress}
+              onSaveAddress={handleSaveNewAddress}
+              defaultName={user.name}
+              defaultPhone={customerPhone || user.phone}
+            />
           )}
 
-          {/* ================= SCREEN 8: DEDICATED FULL-PAGE LIVE SHOPPING ================= */}
+          {/* ================= SCREEN 9: DEDICATED FULL-PAGE LIVE SHOPPING ================= */}
           {activeTab === 'live-shopping' && (
-            <section className="screen active" data-screen="live-shopping">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-                <button className="back-row" onClick={() => setActiveTab('orders')} aria-label="Back" style={{ margin: 0, fontWeight: 700, fontSize: 13.5 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                  Back to Orders
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <span className="live-pulsing-badge">
-                    <span className="live-pulsing-dot" />
-                    LIVE IN-STORE CONCIERGE ACTIVE
-                  </span>
-                  {orders.length > 0 && (
-                    <select
-                      className="inp"
-                      style={{ padding: '7px 14px', fontSize: 13, height: 'auto', width: 'auto', background: '#fff', border: '1.5px solid #CBD5E1', borderRadius: 10, fontWeight: 600, color: '#071D3A' }}
-                      value={liveSessionSlot || (orders[0]?.slotKey || '')}
-                      onChange={e => setLiveSessionSlot(e.target.value)}
-                    >
-                      {orders.map(o => (
-                        <option key={o.slotKey} value={o.slotKey}>{o.orderNumber} ({o.slotLabel || o.slotKey})</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              </div>
-
-              {/* Concierge Live Header */}
-              <div className="shopper-banner-hero" style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                  <div className="shopper-avatar-ring">
-                    <span style={{ fontSize: 17, fontWeight: 800, color: '#BAE6FD', letterSpacing: 0.5 }}>
-                      {(liveSessionData?.shopper?.name || 'Personal Concierge').split(' ').map((n: string) => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <h2 style={{ margin: 0, fontSize: 19, fontFamily: 'var(--font-display)', color: '#fff', letterSpacing: '-0.2px' }}>
-                        {liveSessionData?.shopper?.name || 'Personal Shopper'}
-                      </h2>
-                      <span className="shopper-rating-badge">
-                        ★ {liveSessionData?.shopper?.rating || '4.9'} · Verified Concierge
-                      </span>
-                    </div>
-                    <div style={{ color: '#BAE6FD', fontSize: 13, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      {liveSessionData?.store?.name ? `At ${liveSessionData.store.name}` : 'In-store at local markets across India'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="sbh-concierge-panel">
-                  <div className="sbh-live-indicator">
-                    <span className="sbh-live-beacon" />
-                    Live in Store
-                  </div>
-                </div>
-              </div>
-
-              {/* 2-Column Live Session Workspace */}
-              <div className="live-layout-2col">
-                {/* Column 1: Items & Suggestions */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-                    <h3 style={{ margin: 0, fontSize: 17, fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
-                      In-Store Curations &amp; Suggestions
-                    </h3>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', background: '#F1F5F9', padding: '3px 10px', borderRadius: 999 }}>
-                      {liveSessionData?.products?.length || 0} Item(s) in Scope
-                    </span>
-                  </div>
-
-                  {liveSessionLoading && !liveSessionData ? (
-                    <div className="card pad" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)' }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-                        Connecting with Ground Shopper at Store Floor...
-                      </div>
-                      <p style={{ margin: 0, fontSize: 13 }}>Syncing live recommendations, real-time tags, and high-res store photos.</p>
-                    </div>
-                  ) : liveSessionData?.products && liveSessionData.products.length > 0 ? (
-                    <div style={{ display: 'grid', gap: 16 }}>
-                      {liveSessionData.products.map((item, itemIdx) => (
-                        <div key={item.itemId || itemIdx} className="live-item-card">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 11, fontWeight: 800, color: '#0A3A6B', textTransform: 'uppercase', letterSpacing: 0.6, background: '#EFF6FF', display: 'inline-block', padding: '2px 8px', borderRadius: 6, marginBottom: 4 }}>
-                                Sourced Item #{itemIdx + 1}
-                              </div>
-                              <h4 style={{ margin: '2px 0 0', fontSize: 18, color: 'var(--text)', fontWeight: 800 }}>{item.name}</h4>
-                            </div>
-                            <div style={{ textAlign: 'right', minWidth: 0 }}>
-                              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Quantity: <b>{item.qty}</b></div>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: '#0A3A6B', marginTop: 3 }}>
-                                Target Budget: ₹{item.estMin} – ₹{item.estMax}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 16 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A3A6B" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                                Shopper Recommendations ({item.options?.length || 0})
-                              </span>
-                              <span style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>Verified genuine in-store options</span>
-                            </div>
-
-                            {item.options && item.options.length > 0 ? (
-                              <div style={{ display: 'grid', gap: 14 }}>
-                                {item.options.map((opt, optIdx) => (
-                                  <div
-                                    key={opt.id}
-                                    className={`live-suggestion-card ${opt.status === 'approved' ? 'approved' : opt.status === 'rejected' ? 'rejected' : 'pending'}`}
-                                  >
-                                    <div className="live-sugg-content-row" style={{ display: 'flex', gap: 16 }}>
-                                      <div className="live-sugg-img-wrapper">
-                                        <img
-                                          src={opt.image || '/images/categories/jewellery-accessories.jpg'}
-                                          alt=""
-                                          className="live-sugg-img"
-                                          onError={(e) => {
-                                             (e.target as HTMLImageElement).src = '/images/categories/jewellery-accessories.jpg';
-                                          }}
-                                        />
-                                      </div>
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                            Suggestion #{optIdx + 1}
-                                          </span>
-                                          <span className={`live-tag-${opt.status}`}>
-                                            {opt.status === 'approved' ? '✓ Approved & Reserved' : opt.status === 'rejected' ? '✕ Alternative Requested' : '⏳ Awaiting Your Approval'}
-                                          </span>
-                                        </div>
-                                        <div className="live-sugg-price" style={{ flexWrap: 'wrap' }}>
-                                          ₹{opt.price.toLocaleString('en-IN')}
-                                          <span className="live-sugg-price-usd">(~${Math.round(opt.price / 83)} USD)</span>
-                                        </div>
-                                        <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5, marginTop: 4, wordBreak: 'break-word' }}>
-                                          {opt.description || 'Verified authentic item option selected in-store by shopper.'}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {opt.status === 'pending' && (
-                                      <div className="live-sugg-actions" style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-                                        <button
-                                          type="button"
-                                          className="btn-live-approve"
-                                          style={user.walletBalance < opt.price * (item.qty || 1) ? {
-                                            background: 'linear-gradient(135deg, #D97706, #B45309)',
-                                            boxShadow: '0 6px 16px rgba(180, 83, 9, 0.35)',
-                                          } : {}}
-                                          onClick={() => handleApproveOption(item.itemId, opt.id, item, opt)}
-                                        >
-                                          {user.walletBalance < opt.price * (item.qty || 1)
-                                            ? `⚡ Top-Up ₹${(opt.price * (item.qty || 1) - user.walletBalance).toLocaleString('en-IN')} & Approve`
-                                            : `✓ Approve Option (₹${opt.price.toLocaleString('en-IN')})`}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="btn-live-reject"
-                                          onClick={() => handleRejectOption(item.itemId, opt.id)}
-                                        >
-                                          ✕ Request Alternative
-                                        </button>
-                                      </div>
-                                    )}
-
-                                    {opt.status === 'approved' && (
-                                      <div className="live-approved-banner">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                          <span>Reserved for billing! Shopper will include authentic GST store invoice.</span>
-                                        </div>
-                                        <button type="button" className="btn-live-undo" onClick={() => handleRejectOption(item.itemId, opt.id)}>
-                                          Change Decision
-                                        </button>
-                                      </div>
-                                    )}
-
-                                    {opt.status === 'rejected' && (
-                                      <div className="live-rejected-banner">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                                          <span>Alternative requested. Shopper is inspecting other designs.</span>
-                                        </div>
-                                        <button type="button" className="btn-live-undo" onClick={() => handleApproveOption(item.itemId, opt.id, item, opt)}>
-                                          Re-evaluate
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div style={{ background: '#F8FAFC', borderRadius: 14, padding: 22, textAlign: 'center', border: '1.5px dashed #CBD5E1' }}>
-                                <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-                                  Shopper is selecting options in the market...
-                                </div>
-                                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                                  Photos and prices from the store will appear here as items are found.
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="card pad" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)' }}>
-                      No items found for this slot session.
-                    </div>
-                  )}
-                </div>
-
-                {/* Column 2: Running Tally, Verification & Live Chat */}
-                <div style={{ display: 'grid', gap: 20, alignContent: 'start' }}>
-                  {/* Live Running Tally */}
-                  <div className="live-tally-box">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                      <div className="live-tally-title">Session Running Tally</div>
-                      <span className="live-status-badge">
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284C7' }}></span>
-                        Live Sync
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: 6 }}>
-                      <div className="live-tally-row">
-                        <span>Slot Deposit Credit</span>
-                        <span style={{ color: '#16A34A', fontWeight: 700 }}>-₹199</span>
-                      </div>
-                      <div className="live-tally-row">
-                        <span>Approved Items ({liveSessionData?.products?.reduce((acc, p) => acc + (p.options?.filter(o => o.status === 'approved').length || 0), 0) || 0})</span>
-                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>
-                          ₹{(liveSessionData?.products?.reduce((acc, p) => acc + (p.options?.filter(o => o.status === 'approved').reduce((s, o) => s + o.price, 0) || 0), 0) || 2440).toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="live-tally-row">
-                        <span>Official GST Store Bills</span>
-                        <span style={{ color: '#16A34A', fontWeight: 600 }}>Included (Verified)</span>
-                      </div>
-                      <div className="live-tally-row">
-                        <span>International QC &amp; Vault</span>
-                        <span style={{ color: 'var(--text-dim)' }}>Complimentary</span>
-                      </div>
-                      <div className="live-tally-divider" />
-                      <div className="live-tally-total">
-                        <span>Total Payable at Checkout</span>
-                        <span style={{ color: '#0A3A6B' }}>₹{Math.max(0, ((liveSessionData?.products?.reduce((acc, p) => acc + (p.options?.filter(o => o.status === 'approved').reduce((s, o) => s + o.price, 0) || 0), 0) || 2440) - 199)).toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: 16, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>Wallet Balance: <b style={{ color: '#071D3A' }}>₹{user.walletBalance.toLocaleString('en-IN')}</b></span>
-                      <button type="button" className="btn btn-sm btn-outline" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => setActiveTab('wallet')}>+ Top Up</button>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ width: '100%', marginTop: 16, justifyContent: 'center', padding: '12px 18px', fontSize: 14, fontWeight: 800 }}
-                      onClick={() => {
-                        setActiveTab('cart');
-                        showToast('Approved items transferred to checkout cart');
-                      }}
-                    >
-                      Proceed to Secure Checkout →
-                    </button>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, fontSize: 11.5, color: 'var(--text-dim)' }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                      100% Escrow Protected · Authentic Store Bills
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </section>
+            <LiveShoppingTab
+              orders={orders}
+              liveSessionSlot={liveSessionSlot}
+              setLiveSessionSlot={setLiveSessionSlot}
+              liveSessionData={liveSessionData}
+              liveSessionLoading={liveSessionLoading}
+              user={user}
+              onBackToOrders={() => setActiveTab('orders')}
+              onNavigate={(tab) => setActiveTab(tab)}
+              onApproveOption={handleApproveOption}
+              onRejectOption={handleRejectOption}
+              showToast={showToast}
+            />
           )}
         </div>
 
@@ -5160,733 +4523,67 @@ export default function CustomerApp() {
       </div>
 
       {/* Product Customization & Add Modal */}
-      {customizingProduct && (() => {
-        const catSlugClean = productSlug(customizingProduct.categoryName || 'mens-fashion');
-        const fallbackCatImg = `/images/categories/${catSlugClean}.jpg`;
-        const baseImg = customizingProduct.image || fallbackCatImg;
-
-        const availablePhotos: string[] = (customizingProduct.images && customizingProduct.images.length > 0)
-          ? customizingProduct.images.slice(0, 4)
-          : (customizingProduct.types && customizingProduct.types.length > 0 && customizingProduct.categoryName)
-            ? [
-                baseImg,
-                ...customizingProduct.types.slice(0, 3).map(t => getTypeImg(catSlugClean, customizingProduct.name, t.name))
-              ].slice(0, 4)
-            : [baseImg];
-
-        const activeDisplayPhoto = availablePhotos[activeProductPhotoIdx] || baseImg;
-
-        return (
-          <div className="modal-overlay" onClick={() => setCustomizingProduct(null)}>
-            <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 480, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-display)' }}>Customize Product</h3>
-                  <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>{customizingProduct.categoryName || 'Catalog Specialty'}</div>
-                </div>
-                <button className="btn btn-sm btn-ghost" onClick={() => setCustomizingProduct(null)}>✕</button>
-              </div>
-
-              {/* 4-Photo Showcase Gallery */}
-              <div className="product-modal-gallery">
-                <div className="pmg-main-photo-wrap">
-                  <img
-                    src={activeDisplayPhoto}
-                    alt={customizingProduct.name}
-                    className="pmg-main-img"
-                    onError={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      if (!img.src.includes(fallbackCatImg)) {
-                        img.src = fallbackCatImg;
-                      } else {
-                        img.src = '/images/categories/mens-fashion.jpg';
-                      }
-                    }}
-                  />
-                  <span className="pmg-photo-tag">
-                    {availablePhotos.length > 1 ? `Pic ${activeProductPhotoIdx + 1} of ${availablePhotos.length}` : 'Official Product'}
-                  </span>
-                </div>
-
-                {availablePhotos.length > 1 && (
-                  <div className="pmg-thumbs-row">
-                    {availablePhotos.map((photoUrl, pIdx) => (
-                      <button
-                        key={pIdx}
-                        type="button"
-                        className={`pmg-thumb-btn ${activeProductPhotoIdx === pIdx ? 'active' : ''}`}
-                        onClick={() => setActiveProductPhotoIdx(pIdx)}
-                        title={`View Photo ${pIdx + 1}`}
-                      >
-                        <img
-                          src={photoUrl}
-                          alt=""
-                          onError={(e) => {
-                            const img = e.target as HTMLImageElement;
-                            img.src = fallbackCatImg;
-                          }}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{customizingProduct.name}</div>
-                    <div style={{ fontSize: 13, color: '#1261B5', fontWeight: 800, marginTop: 2 }}>
-                      Est. Budget: ₹{customizingProduct.estMin.toLocaleString('en-IN')} – ₹{customizingProduct.estMax.toLocaleString('en-IN')}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right', fontSize: 11, color: '#64748B', fontWeight: 600 }}>
-                    Up to 4 pics attached<br />by ground shopper
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Quantity</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button
-                    type="button"
-                    style={{ width: 34, height: 34, borderRadius: 8, border: '1.5px solid var(--border)', background: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
-                    onClick={() => setCustomizingQty(Math.max(1, customizingQty - 1))}
-                  >
-                    -
-                  </button>
-                  <span style={{ fontWeight: 800, fontSize: 16 }}>{customizingQty}</span>
-                  <button
-                    type="button"
-                    style={{ width: 34, height: 34, borderRadius: 8, border: '1.5px solid var(--border)', background: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
-                    onClick={() => setCustomizingQty(customizingQty + 1)}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>
-                  What&apos;s on your mind? Custom Specifications &amp; Preferences
-                </label>
-                <textarea
-                  className="inp"
-                  rows={2}
-                  placeholder="What's on your mind? e.g. Size M, Peacock blue color, GRT Silks preferred, matte gold finish..."
-                  value={customizingNotes}
-                  onChange={e => setCustomizingNotes(e.target.value)}
-                />
-              </div>
-
-              <div style={{ marginBottom: 18 }}>
-                {renderMultiImageUploadBox(
-                  customizingImgs,
-                  setCustomizingImgs,
-                  'Upload Reference Photos / Sketches (Up to 4 Pics)',
-                  'Add up to 4 photos or sketches from your device so your shopper gets the exact match'
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" className="btn-concierge-secondary" onClick={() => setCustomizingProduct(null)} style={{ flex: 1, padding: '12px' }}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-concierge-primary"
-                  onClick={handleAddCustomizedCatalogProduct}
-                  disabled={isAddingBasket}
-                  style={{
-                    flex: 2,
-                    padding: '12px',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease',
-                    ...(isAddingBasket ? { background: '#10B981', borderColor: '#059669', color: '#fff' } : {})
-                  }}
-                >
-                  {isAddingBasket ? '✓ Added to Sourcing Basket!' : '+ Add to Sourcing Basket'}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-
-      {/* Order Tracking Modal */}
-      {trackOrderSlot && (
-        <div className="modal-overlay" onClick={() => setTrackOrderSlot(null)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 480, width: '100%', maxHeight: '88vh', overflowY: 'auto' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, color: '#0F172A' }}>Order Tracking</h3>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#E0F2FE', color: '#0369A1' }}>
-                    {trackingData?.orderNumber || 'VIS-92014'}
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-                  Slot: <b>{trackingData?.slotLabel || trackOrderSlot}</b>
-                </div>
-              </div>
-              <button className="btn btn-sm btn-ghost" onClick={() => setTrackOrderSlot(null)} style={{ fontSize: 13, padding: '4px 10px' }}>Close</button>
-            </div>
-
-            {/* Simple 4-Step Progress Bar */}
-            {(() => {
-              const status = trackingData?.orderStatus || 'confirmed';
-              const isDelivered = status === 'delivered';
-              const isShipped = isDelivered || status === 'shipped';
-              const isPacked = isShipped || status === 'packed';
-              const isSourced = isPacked || ['purchased', 'bought', 'approved'].includes(status) || trackingData?.items?.some((i: any) => i.status === 'purchased');
-              const isConfirmed = true;
-
-              const steps = [
-                { label: 'Order Placed', done: isSourced, current: !isSourced && isConfirmed },
-                { label: trackingData?.orderType === 'online' ? 'Procured' : 'Sourced', done: isPacked, current: isSourced && !isPacked },
-                { label: 'Shipped', done: isDelivered, current: isPacked && !isDelivered },
-                { label: 'Delivered', done: isDelivered, current: isDelivered },
-              ];
-
-              const progressPct = isDelivered ? '100%' : isShipped ? '70%' : isSourced ? '40%' : '10%';
-
-              return (
-                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 10px', marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
-                    {/* Background Progress Track */}
-                    <div style={{ position: 'absolute', top: 12, left: '12%', right: '12%', height: 3, background: '#E2E8F0', zIndex: 0 }}>
-                      <div style={{ height: '100%', background: '#22C55E', width: progressPct, transition: 'width 0.3s ease' }} />
-                    </div>
-
-                    {steps.map((s, idx) => (
-                      <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, width: '24%' }}>
-                        <div
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            background: s.done ? '#22C55E' : s.current ? '#0284C7' : '#fff',
-                            border: s.done || s.current ? 'none' : '2px solid #CBD5E1',
-                            color: s.done || s.current ? '#fff' : '#94A3B8',
-                            display: 'grid',
-                            placeItems: 'center',
-                            fontSize: 11,
-                            fontWeight: 800,
-                            boxShadow: s.current ? '0 0 0 4px rgba(2, 132, 199, 0.18)' : 'none',
-                          }}
-                        >
-                          {s.done ? '✓' : idx + 1}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: s.current ? 800 : 600,
-                            color: s.current ? '#0284C7' : s.done ? '#1E293B' : '#94A3B8',
-                            marginTop: 6,
-                            textAlign: 'center',
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {s.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Shopper / Sourcing Badge (Physical Market Orders) */}
-            {trackingData?.orderType !== 'online' && trackingData?.shopper && (
-              <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0284C7', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 12 }}>
-                    {trackingData.shopper.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 12.5, color: '#0369A1' }}>{trackingData.shopper.name}</div>
-                    <div style={{ fontSize: 11, color: '#0284C7' }}>Personal Shopper · {trackingData.store?.name || 'Local Store'}</div>
-                  </div>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 999 }}>
-                  ● Active
-                </span>
-              </div>
-            )}
-
-            {/* Items Summary (Simple & Clean) */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
-                Items ({trackingData?.items?.length || 0})
-              </div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {trackingData?.items?.map((it: any) => {
-                  const isBought = it.status === 'purchased';
-                  const isApproved = it.status === 'approved';
-                  return (
-                    <div
-                      key={it.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 12px',
-                        background: '#fff',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: 10,
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                        <span style={{ fontSize: 16 }}>{it.sourceType === 'online' ? '📦' : '🛍️'}</span>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>
-                            {it.name}
-                          </div>
-                          <div style={{ fontSize: 11, color: '#64748B' }}>
-                            Qty: {it.qty || 1} · {it.onlinePlatform || 'In-Store'}
-                          </div>
-                        </div>
-                      </div>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          background: isBought ? '#DCFCE7' : isApproved ? '#EFF6FF' : '#FEF3C7',
-                          color: isBought ? '#166534' : isApproved ? '#1E40AF' : '#92400E',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {isBought ? '✓ Purchased' : isApproved ? 'Approved' : 'Procuring'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Simple Delivery Note */}
-            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 12px', fontSize: 11.5, color: '#64748B', textAlign: 'center' }}>
-              Shipped via Express International Courier directly to your doorstep.
-            </div>
-          </div>
-        </div>
+      {customizingProduct && (
+        <CustomizeProductModal
+          product={customizingProduct}
+          onClose={() => setCustomizingProduct(null)}
+          onAdd={async ({ qty, notes, images }) => {
+            const prod = customizingProduct;
+            const newItem: CartItem = {
+              id: `${prod.id}-${Date.now()}`,
+              name: prod.name,
+              qty,
+              priceMin: prod.estMin,
+              priceMax: prod.estMax,
+              image: images[0] || prod.image,
+              images: images.length > 0 ? images : (prod.images || [prod.image]),
+              notes: notes.trim() || undefined,
+              sourceType: 'catalog',
+              categoryName: prod.categoryName,
+            };
+            setCart(prev => [...prev, newItem]);
+            showToast(`Added ${prod.name} to basket`);
+          }}
+          handleFileUpload={handleFileUpload}
+        />
       )}
+
+{/* Order Tracking Modal */}
+      <OrderTrackingModal
+        slotKey={trackOrderSlot}
+        trackingData={trackingData}
+        onClose={() => setTrackOrderSlot(null)}
+      />
 
       {/* ================= ORDER PLACED SUCCESSFULLY CELEBRATION MODAL ================= */}
-      {orderPlacedSuccess && (
-        <div
-          className="modal-overlay"
-          style={{
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-            background: 'rgba(7, 19, 39, 0.72)',
-            backdropFilter: 'blur(8px)',
-          }}
-          onClick={() => setOrderPlacedSuccess(null)}
-        >
-          <div
-            className="modal-card"
-            style={{
-              maxWidth: 480,
-              width: '100%',
-              padding: '30px 24px 26px',
-              textAlign: 'center',
-              borderRadius: 24,
-              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.45)',
-              background: '#ffffff',
-              animation: 'fadeIn 0.22s ease-out',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Top decorative gradient bar */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 6,
-                background: 'linear-gradient(90deg, #10B981, #059669, #0284C7)',
-              }}
-            />
-
-            {/* Success Icon */}
-            <div
-              style={{
-                width: 68,
-                height: 68,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-                color: '#fff',
-                display: 'grid',
-                placeItems: 'center',
-                margin: '0 auto 16px',
-                boxShadow: '0 12px 28px -6px rgba(16, 185, 129, 0.45)',
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: 34, height: 34 }}>
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ECFDF5', color: '#047857', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
-              <span>●</span> Order Confirmed &amp; Verified
-            </div>
-
-            <h2
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: '#0B192E',
-                margin: '4px 0 6px',
-                fontFamily: 'var(--font-display)',
-              }}
-            >
-              Order Placed Successfully! 🎉
-            </h2>
-
-            <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 18px', lineHeight: 1.5 }}>
-              Your shopping slot is confirmed. A verified personal shopper on the ground in India will source your items with authentic GST bills.
-            </p>
-
-            {/* Order snapshot card */}
-            <div
-              style={{
-                background: '#F8FAFC',
-                border: '1.2px solid #E2E8F0',
-                borderRadius: 16,
-                padding: '16px 18px',
-                textAlign: 'left',
-                marginBottom: 20,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #E2E8F0' }}>
-                <div>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Order Reference</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0B192E', marginTop: 1 }}>{orderPlacedSuccess.orderNumber}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Held in Escrow</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0284C7', marginTop: 1 }}>₹{orderPlacedSuccess.totalAmount.toLocaleString('en-IN')}</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gap: 6, fontSize: 12.5 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>Slot Timing:</span>
-                  <b style={{ color: '#0F172A' }}>{orderPlacedSuccess.slotLabel || orderPlacedSuccess.slotKey}</b>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>Items Booked:</span>
-                  <b style={{ color: '#0F172A' }}>{orderPlacedSuccess.items?.length || 1} product(s)</b>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748B' }}>Personal Shopper:</span>
-                  <span style={{ color: '#059669', fontWeight: 700 }}>Assigned &amp; Ready</span>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#047857' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 14, height: 14, flexShrink: 0 }}>
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                <span>Official GST store bills &amp; live video photo inspection guaranteed</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ display: 'grid', gap: 10 }}>
-              <button
-                type="button"
-                className="btn btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '13px',
-                  fontSize: 14.5,
-                  fontWeight: 800,
-                  borderRadius: 12,
-                  justifyContent: 'center',
-                }}
-                onClick={() => {
-                  setOrderPlacedSuccess(null);
-                  setActiveTab('orders');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                View in Orders List →
-              </button>
-
-              <div style={{ display: 'flex', gap: 8 }}>
-                {orderPlacedSuccess.orderType !== 'online' && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{
-                      flex: 1,
-                      padding: '11px',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      borderRadius: 12,
-                      justifyContent: 'center',
-                    }}
-                    onClick={() => {
-                      setLiveSessionSlot(orderPlacedSuccess.slotKey);
-                      setOrderPlacedSuccess(null);
-                      setActiveTab('live-shopping');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  >
-                    Join Live Shopping
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{
-                    flex: 1,
-                    padding: '11px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    borderRadius: 12,
-                    justifyContent: 'center',
-                    color: '#64748B',
-                  }}
-                  onClick={() => {
-                    setOrderPlacedSuccess(null);
-                    setActiveTab('home');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  Continue Browsing
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <OrderPlacedModal
+        order={orderPlacedSuccess}
+        onClose={() => setOrderPlacedSuccess(null)}
+        onNavigate={(tab) => setActiveTab(tab)}
+        onJoinLiveShopping={(slotKey) => {
+          setLiveSessionSlot(slotKey);
+          setActiveTab('live-shopping');
+        }}
+      />
 
       {/* Insufficient Balance Top-up & Approval Modal */}
-      {insufficientBalanceModal && (
-        <div className="topup-guard-overlay" onClick={() => setInsufficientBalanceModal(null)}>
-          <div className="topup-guard-card" onClick={e => e.stopPropagation()}>
-            <div className="topup-guard-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 20 }}>💳</span>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>Visasra Money Top-Up Needed</h3>
-                  <div style={{ fontSize: 12, color: '#BAE6FD', marginTop: 2 }}>Instant deposit via Razorpay to approve item</div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInsufficientBalanceModal(null)}
-                style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', padding: 4 }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="topup-guard-body">
-              <div className="topup-item-summary">
-                <img
-                  src={insufficientBalanceModal.itemImage || '/images/categories/jewellery-accessories.jpg'}
-                  alt=""
-                  style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover' }}
-                />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {insufficientBalanceModal.itemName}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-                    Quantity: {insufficientBalanceModal.qty} · In-Store Verified Option
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', fontWeight: 800, color: '#0F172A', fontSize: 15 }}>
-                  ₹{insufficientBalanceModal.requiredAmount.toLocaleString('en-IN')}
-                </div>
-              </div>
-
-              <div className="topup-balance-breakdown">
-                <div className="topup-breakdown-row">
-                  <span>Item Total Price</span>
-                  <span>₹{insufficientBalanceModal.requiredAmount.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="topup-breakdown-row">
-                  <span>Current Visasra Money Balance</span>
-                  <span style={{ color: '#059669', fontWeight: 700 }}>₹{insufficientBalanceModal.currentBalance.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="topup-breakdown-row shortfall">
-                  <span>Shortfall to Deposit</span>
-                  <span>₹{insufficientBalanceModal.shortfall.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="topup-action-btn"
-                onClick={() => handleTopupAndApprove(insufficientBalanceModal.shortfall)}
-              >
-                <span>⚡ Pay ₹{insufficientBalanceModal.shortfall.toLocaleString('en-IN')} via Razorpay &amp; Approve</span>
-              </button>
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                {[1000, 2000, 5000].map(extra => (
-                  <button
-                    key={extra}
-                    type="button"
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      background: '#F1F5F9',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: 8,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: '#334155',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => handleTopupAndApprove(insufficientBalanceModal.shortfall + extra)}
-                  >
-                    +₹{extra} buffer
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ fontSize: 11.5, color: '#64748B', textAlign: 'center', marginTop: 14 }}>
-                Instant deposit via UPI, GPay, PhonePe, Cards &amp; NetBanking. Item is approved immediately after payment.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <InsufficientBalanceModal
+        modalData={insufficientBalanceModal}
+        onClose={() => setInsufficientBalanceModal(null)}
+        onTopupAndApprove={(shortfall) => handleTopupAndApprove(shortfall)}
+      />
 
       {/* Edit Sourcing Basket Item Modal */}
-      {editingCartItem && (
-        <div className="edit-basket-overlay" onClick={() => setEditingCartItem(null)}>
-          <div className="edit-basket-card" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-              <div>
-                <span className={`basket-source-tag ${editingCartItem.sourceType === 'online' ? 'tag-online' : editingCartItem.sourceType === 'mind' ? 'tag-mind' : 'tag-catalog'}`} style={{ marginBottom: 6 }}>
-                  {editingCartItem.sourceType === 'online' ? 'Online Store Item' : editingCartItem.sourceType === 'mind' ? 'Customized Product' : 'Catalog Item'}
-                </span>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-                  Edit Sourcing Item
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingCartItem(null)}
-                style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#64748B', padding: '0 4px' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditCartItem}>
-              <label style={{ display: 'block', marginBottom: 12 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Item Name / Title *</span>
-                <input
-                  type="text"
-                  className="inp"
-                  value={editTitle}
-                  onChange={e => setEditTitle(e.target.value)}
-                  placeholder="e.g. Traditional Temple Jewellery Set"
-                  required
-                />
-              </label>
-
-              <label style={{ display: 'block', marginBottom: 12 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Specifications / Notes</span>
-                <textarea
-                  className="inp"
-                  rows={3}
-                  value={editNotes}
-                  onChange={e => setEditNotes(e.target.value)}
-                  placeholder="e.g. Peacock motif, antique matte gold, approx 22-inch length"
-                />
-              </label>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
-                <label>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Min Budget (₹)</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="inp"
-                    placeholder="0"
-                    value={editMin}
-                    onChange={e => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setEditMin(val.replace(/^0+(?=\d)/, ''));
-                    }}
-                  />
-                </label>
-                <label>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Max Budget (₹)</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="inp"
-                    placeholder="0"
-                    value={editMax}
-                    onChange={e => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setEditMax(val.replace(/^0+(?=\d)/, ''));
-                    }}
-                  />
-                </label>
-                <label>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Quantity</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    className="inp"
-                    placeholder="1"
-                    value={editQty}
-                    onChange={e => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setEditQty(val.replace(/^0+(?=\d)/, ''));
-                    }}
-                  />
-                </label>
-              </div>
-
-              {renderMultiImageUploadBox(
-                editImgs,
-                setEditImgs,
-                'Reference Photos / Sketches (Up to 4)',
-                'Add photos to guide your concierge'
-              )}
-
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setEditingCartItem(null)}
-                  style={{ padding: '9px 18px', borderRadius: 10 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn"
-                  style={{ background: '#0A3A6B', color: '#fff', fontWeight: 700, padding: '9px 22px', borderRadius: 10 }}
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditBasketItemModal
+        item={editingCartItem}
+        onClose={() => setEditingCartItem(null)}
+        onSave={(updated) => {
+          setCart(prev => prev.map(c => c.id === updated.id ? updated : c));
+          showToast(`Updated "${updated.name}"`);
+          setEditingCartItem(null);
+        }}
+        handleFileUpload={handleFileUpload}
+      />
 
       {/* Toast Notification */}
       <div id="toast" className={`toast ${toastMsg ? 'show on' : ''}`}>{toastMsg}</div>

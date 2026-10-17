@@ -1,52 +1,50 @@
-'use client';
-
 import React from 'react';
-import { Order } from '@/types';
+import { Order, CustomerTab } from '@/types/customer';
 
-interface OrderSuccessModalProps {
+interface OrderPlacedModalProps {
   order: Order | null;
   onClose: () => void;
-  onViewOrders: () => void;
-  onJoinLive: (slotKey: string) => void;
-  onContinueBrowsing: () => void;
+  onNavigate: (tab: CustomerTab) => void;
+  onJoinLiveShopping: (slotKey: string) => void;
 }
 
-export default function OrderSuccessModal({
+export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
   order,
   onClose,
-  onViewOrders,
-  onJoinLive,
-  onContinueBrowsing,
-}: OrderSuccessModalProps) {
+  onNavigate,
+  onJoinLiveShopping,
+}) => {
   if (!order) return null;
 
   return (
     <div
-      className="modal-overlay"
       style={{
+        position: 'fixed',
+        inset: 0,
         zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        background: 'rgba(7, 19, 39, 0.72)',
+        background: 'rgba(7, 29, 58, 0.72)',
         backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 20,
+        animation: 'fadeIn 0.25s ease-out',
       }}
       onClick={onClose}
     >
       <div
-        className="modal-card"
         style={{
-          maxWidth: 480,
-          width: '100%',
-          padding: '30px 24px 26px',
-          textAlign: 'center',
+          background: '#fff',
           borderRadius: 24,
-          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.45)',
-          background: '#ffffff',
-          animation: 'fadeIn 0.22s ease-out',
+          padding: '28px 24px',
+          maxWidth: 460,
+          width: '100%',
+          textAlign: 'center',
+          boxShadow: '0 25px 60px -15px rgba(7, 29, 58, 0.35)',
+          border: '1.5px solid rgba(226, 232, 240, 0.9)',
           position: 'relative',
           overflow: 'hidden',
+          animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -140,7 +138,7 @@ export default function OrderSuccessModal({
 
           <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#047857' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 14, height: 14, flexShrink: 0 }}>
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             <span>Official GST store bills &amp; live video photo inspection guaranteed</span>
           </div>
@@ -159,7 +157,11 @@ export default function OrderSuccessModal({
               borderRadius: 12,
               justifyContent: 'center',
             }}
-            onClick={onViewOrders}
+            onClick={() => {
+              onClose();
+              onNavigate('orders');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           >
             View in Orders List →
           </button>
@@ -176,8 +178,16 @@ export default function OrderSuccessModal({
                   fontWeight: 700,
                   borderRadius: 12,
                   justifyContent: 'center',
+                  background: '#F0FDF4',
+                  color: '#166534',
+                  borderColor: '#86EFAC',
                 }}
-                onClick={() => onJoinLive(order.slotKey)}
+                onClick={() => {
+                  onJoinLiveShopping(order.slotKey);
+                  onClose();
+                  onNavigate('live-shopping');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               >
                 Join Live Shopping
               </button>
@@ -194,7 +204,11 @@ export default function OrderSuccessModal({
                 justifyContent: 'center',
                 color: '#64748B',
               }}
-              onClick={onContinueBrowsing}
+              onClick={() => {
+                onClose();
+                onNavigate('home');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               Continue Browsing
             </button>
@@ -203,4 +217,4 @@ export default function OrderSuccessModal({
       </div>
     </div>
   );
-}
+};

@@ -1,7 +1,5 @@
-'use client';
-
 import React from 'react';
-import { Order, LiveSessionDetails, LiveProductItem, LiveOption, User } from '@/types';
+import { Order, User, LiveSessionDetails, LiveProductItem, LiveOption, CustomerTab } from '@/types/customer';
 
 interface LiveShoppingTabProps {
   orders: Order[];
@@ -10,46 +8,40 @@ interface LiveShoppingTabProps {
   liveSessionData: LiveSessionDetails | null;
   liveSessionLoading: boolean;
   user: User;
-  onApproveOption: (itemId: string, optionId: string, item: LiveProductItem, option: LiveOption) => Promise<void>;
-  onRejectOption: (itemId: string, optionId: string) => Promise<void>;
-  onBack: () => void;
-  onNavigate: (tab: 'home' | 'categories' | 'sourcing' | 'orders' | 'wallet' | 'profile' | 'cart') => void;
+  onBackToOrders: () => void;
+  onNavigate: (tab: CustomerTab) => void;
+  onApproveOption: (itemId: string, optId: string, item: LiveProductItem, opt: LiveOption) => void;
+  onRejectOption: (itemId: string, optId: string) => void;
   showToast: (msg: string) => void;
 }
 
-export default function LiveShoppingTab({
+export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
   orders,
   liveSessionSlot,
   setLiveSessionSlot,
   liveSessionData,
   liveSessionLoading,
   user,
+  onBackToOrders,
+  onNavigate,
   onApproveOption,
   onRejectOption,
-  onBack,
-  onNavigate,
   showToast,
-}: LiveShoppingTabProps) {
-  const approvedTotal = liveSessionData?.products?.reduce(
-    (acc, p) =>
-      acc +
-      (p.options
-        ?.filter((o) => o.status === 'approved')
-        .reduce((sum, o) => sum + o.price, 0) || 0),
+}) => {
+  const approvedItemsCount = liveSessionData?.products?.reduce(
+    (acc, p) => acc + (p.options?.filter(o => o.status === 'approved').length || 0),
     0
   ) || 0;
 
-  const approvedCount = liveSessionData?.products?.reduce(
-    (acc, p) => acc + (p.options?.filter((o) => o.status === 'approved').length || 0),
+  const approvedItemsTotal = liveSessionData?.products?.reduce(
+    (acc, p) => acc + (p.options?.filter(o => o.status === 'approved').reduce((s, o) => s + o.price, 0) || 0),
     0
-  ) || 0;
-
-  const totalPayable = Math.max(0, (approvedTotal || 2440) - 199);
+  ) || 2440;
 
   return (
     <section className="screen active" data-screen="live-shopping">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <button className="back-row" onClick={onBack} aria-label="Back" style={{ margin: 0, fontWeight: 700, fontSize: 13.5 }}>
+        <button className="back-row" onClick={onBackToOrders} aria-label="Back" style={{ margin: 0, fontWeight: 700, fontSize: 13.5 }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 6l-6 6 6 6" />
           </svg>
@@ -65,12 +57,10 @@ export default function LiveShoppingTab({
               className="inp"
               style={{ padding: '7px 14px', fontSize: 13, height: 'auto', width: 'auto', background: '#fff', border: '1.5px solid #CBD5E1', borderRadius: 10, fontWeight: 600, color: '#071D3A' }}
               value={liveSessionSlot || (orders[0]?.slotKey || '')}
-              onChange={(e) => setLiveSessionSlot(e.target.value)}
+              onChange={e => setLiveSessionSlot(e.target.value)}
             >
-              {orders.map((o) => (
-                <option key={o.slotKey} value={o.slotKey}>
-                  {o.orderNumber} ({o.slotLabel || o.slotKey})
-                </option>
+              {orders.map(o => (
+                <option key={o.slotKey} value={o.slotKey}>{o.orderNumber} ({o.slotLabel || o.slotKey})</option>
               ))}
             </select>
           )}
@@ -204,14 +194,10 @@ export default function LiveShoppingTab({
                                 <button
                                   type="button"
                                   className="btn-live-approve"
-                                  style={
-                                    user.walletBalance < opt.price * (item.qty || 1)
-                                      ? {
-                                          background: 'linear-gradient(135deg, #D97706, #B45309)',
-                                          boxShadow: '0 6px 16px rgba(180, 83, 9, 0.35)',
-                                        }
-                                      : {}
-                                  }
+                                  style={user.walletBalance < opt.price * (item.qty || 1) ? {
+                                    background: 'linear-gradient(135deg, #D97706, #B45309)',
+                                    boxShadow: '0 6px 16px rgba(180, 83, 9, 0.35)',
+                                  } : {}}
                                   onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
                                 >
                                   {user.walletBalance < opt.price * (item.qty || 1)
@@ -231,9 +217,7 @@ export default function LiveShoppingTab({
                             {opt.status === 'approved' && (
                               <div className="live-approved-banner">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <polyline points="20 6 9 17 4 12" />
-                                  </svg>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                                   <span>Reserved for billing! Shopper will include authentic GST store invoice.</span>
                                 </div>
                                 <button type="button" className="btn-live-undo" onClick={() => onRejectOption(item.itemId, opt.id)}>
@@ -245,11 +229,7 @@ export default function LiveShoppingTab({
                             {opt.status === 'rejected' && (
                               <div className="live-rejected-banner">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="15" y1="9" x2="9" y2="15" />
-                                    <line x1="9" y1="9" x2="15" y2="15" />
-                                  </svg>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
                                   <span>Alternative requested. Shopper is inspecting other designs.</span>
                                 </div>
                                 <button type="button" className="btn-live-undo" onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}>
@@ -287,7 +267,7 @@ export default function LiveShoppingTab({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div className="live-tally-title">Session Running Tally</div>
               <span className="live-status-badge">
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284C7' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284C7' }}></span>
                 Live Sync
               </span>
             </div>
@@ -298,9 +278,9 @@ export default function LiveShoppingTab({
                 <span style={{ color: '#16A34A', fontWeight: 700 }}>-₹199</span>
               </div>
               <div className="live-tally-row">
-                <span>Approved Items ({approvedCount})</span>
+                <span>Approved Items ({approvedItemsCount})</span>
                 <span style={{ fontWeight: 700, color: 'var(--text)' }}>
-                  ₹{(approvedTotal || 2440).toLocaleString('en-IN')}
+                  ₹{approvedItemsTotal.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="live-tally-row">
@@ -314,22 +294,13 @@ export default function LiveShoppingTab({
               <div className="live-tally-divider" />
               <div className="live-tally-total">
                 <span>Total Payable at Checkout</span>
-                <span style={{ color: '#0A3A6B' }}>₹{totalPayable.toLocaleString('en-IN')}</span>
+                <span style={{ color: '#0A3A6B' }}>₹{Math.max(0, approvedItemsTotal - 199).toLocaleString('en-IN')}</span>
               </div>
             </div>
 
             <div style={{ marginTop: 16, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
-                Wallet Balance: <b style={{ color: '#071D3A' }}>₹{user.walletBalance.toLocaleString('en-IN')}</b>
-              </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline"
-                style={{ fontSize: 12, padding: '4px 10px' }}
-                onClick={() => onNavigate('wallet')}
-              >
-                + Top Up
-              </button>
+              <span style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>Wallet Balance: <b style={{ color: '#071D3A' }}>₹{user.walletBalance.toLocaleString('en-IN')}</b></span>
+              <button type="button" className="btn btn-sm btn-outline" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => onNavigate('wallet')}>+ Top Up</button>
             </div>
 
             <button
@@ -345,10 +316,7 @@ export default function LiveShoppingTab({
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, fontSize: 11.5, color: 'var(--text-dim)' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
               100% Escrow Protected · Authentic Store Bills
             </div>
           </div>
@@ -356,4 +324,4 @@ export default function LiveShoppingTab({
       </div>
     </section>
   );
-}
+};
