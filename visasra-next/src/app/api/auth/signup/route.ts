@@ -48,7 +48,6 @@ export async function POST(req: Request) {
         message: existing
           ? 'Welcome back! We sent a login verification code to your email.'
           : otpResult.message,
-        otp: otpResult.otp,
       });
     }
 

@@ -36,17 +36,22 @@ export async function createAndStoreOtp(
     );
 
     // 2. Dispatch email via Resend if RESEND_API_KEY is present
-    await dispatchEmailViaResend({
+    const dispatch = await dispatchEmailViaResend({
       to: cleanEmail,
       otp,
       type,
     });
 
+    let returnMessage = `Verification code sent to ${cleanEmail}. Please check your inbox.`;
+    if (!dispatch.sent && dispatch.error?.includes('only send testing emails')) {
+      returnMessage = `Real email delivered to visasratechnologies@gmail.com. (To email any recipient, verify your domain in Resend).`;
+    }
+
     return {
       success: true,
       otp,
       expiresAt,
-      message: `Verification code sent to ${cleanEmail}. Please check your inbox.`,
+      message: returnMessage,
     };
   } catch (err: unknown) {
     console.error('Error storing OTP in PostgreSQL:', err);
@@ -70,11 +75,6 @@ export async function verifyStoredOtp(
   const cleanEmail = email.toLowerCase().trim();
   const cleanOtp = otp.trim();
 
-  // Allow standard demo codes
-  if (cleanOtp === '123456' || cleanOtp === '9999') {
-    return { valid: true };
-  }
-
   try {
     // Query PostgreSQL for active unverified OTP
     const rows: Array<{ id: string; otp: string }> = await prisma.$queryRawUnsafe(
@@ -90,7 +90,7 @@ export async function verifyStoredOtp(
     }
 
     if (rows[0].otp !== cleanOtp) {
-      return { valid: false, error: 'Incorrect verification code. Please check your email or use 123456.' };
+      return { valid: false, error: 'Incorrect verification code. Please check your email.' };
     }
 
     // Mark as verified in PostgreSQL so it cannot be reused
@@ -102,10 +102,6 @@ export async function verifyStoredOtp(
     return { valid: true };
   } catch (err: unknown) {
     console.error('Error verifying OTP from PostgreSQL:', err);
-    // Graceful fallback for demo codes
-    if (cleanOtp === '123456' || cleanOtp === '9999') {
-      return { valid: true };
-    }
     return { valid: false, error: 'Database verification failed' };
   }
 }
@@ -121,7 +117,7 @@ async function dispatchEmailViaResend({
   to: string;
   otp: string;
   type: 'signup' | 'login' | 'reset_password';
-}) {
+}): Promise<{ sent: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
 
   const subjects = {
@@ -138,7 +134,7 @@ async function dispatchEmailViaResend({
 
   if (!apiKey) {
     console.log(`[Visasra OTP Service] RESEND_API_KEY not set. OTP for ${to} (${type}) is: ${otp}`);
-    return;
+    return { sent: false, error: 'RESEND_API_KEY not configured' };
   }
 
   try {
@@ -165,13 +161,16 @@ async function dispatchEmailViaResend({
       }),
     });
 
+    const data = await res.json();
     if (!res.ok) {
-      const errData = await res.json();
-      console.warn('Resend email dispatch returned error:', errData);
-    } else {
-      console.log(`[Visasra OTP Service] Real email dispatched via Resend to ${to}`);
+      console.warn('Resend email dispatch returned error:', data);
+      return { sent: false, error: data?.message || 'Dispatch failed' };
     }
-  } catch (err) {
-    console.error('Failed to send email via Resend:', err);
+    console.log(`[Visasra OTP Service] Real email dispatched via Resend to ${to}`);
+    return { sent: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Resend network error';
+    console.error('Failed to send email via Resend:', message);
+    return { sent: false, error: message };
   }
 }

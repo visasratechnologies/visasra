@@ -18,7 +18,6 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         message: otpResult.message,
-        otp: otpResult.otp,
       });
     }
 

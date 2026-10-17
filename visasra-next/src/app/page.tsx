@@ -566,8 +566,8 @@ export default function CustomerApp() {
       const data = await res.json();
       if (res.ok) {
         setSignupStep('verify_email');
-        setSignupOtp('123456');
-        showToast(`Verification code sent to ${signupEmail}. (Demo OTP: 123456)`);
+        setSignupOtp('');
+        showToast(data.message || `Verification code sent to ${signupEmail}. Please check your email.`);
       } else {
         showToast(data.error || 'Failed to send verification code');
       }
@@ -2202,7 +2202,7 @@ export default function CustomerApp() {
                           autoFocus
                           value={signupOtp}
                           onChange={(e) => setSignupOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="123456"
+                          placeholder="••••••"
                           style={{
                             letterSpacing: 10,
                             fontWeight: 800,
@@ -2213,29 +2213,6 @@ export default function CustomerApp() {
                             borderColor: signupOtp.length === 6 ? '#16A34A' : '#CBD5E1',
                           }}
                         />
-                      </div>
-
-                      {/* 1-Click Demo Shortcut */}
-                      <div style={{ textAlign: 'center', marginTop: 10 }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSignupOtp('123456');
-                            showToast('Filled code: 123456');
-                          }}
-                          style={{
-                            background: '#EFF6FF',
-                            border: '1px solid #BFDBFE',
-                            borderRadius: 8,
-                            padding: '6px 12px',
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: '#1D4ED8',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          ⚡ Quick Paste Demo Code (123456)
-                        </button>
                       </div>
 
                       <button
