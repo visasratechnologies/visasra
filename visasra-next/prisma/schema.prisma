@@ -15,7 +15,7 @@ model User {
   phone          String?
   location       String?
   avatar         String?
-  walletBalance  Float               @default(50000)
+  walletBalance  Float               @default(0)
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   orders         Order[]

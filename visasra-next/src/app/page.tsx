@@ -800,12 +800,16 @@ export default function CustomerApp() {
     return name.toLowerCase().replace(/['\u2019]/g, '').replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   };
 
-  const getProductImg = (catSlug: string, prodName: string) => {
-    return `/images/products/${catSlug}/${productSlug(prodName)}.jpg`;
+  const getProductImg = (catSlug: string, _prodName?: string, fallbackImg?: string) => {
+    if (fallbackImg) return fallbackImg;
+    const cleanCat = productSlug(catSlug);
+    return `/images/categories/${cleanCat}.jpg`;
   };
 
-  const getTypeImg = (catSlug: string, prodName: string, typeName: string) => {
-    return `/images/products/${catSlug}/${productSlug(prodName)}/${productSlug(typeName)}.jpg`;
+  const getTypeImg = (catSlug: string, _prodName: string, typeName: string) => {
+    const cleanCat = productSlug(catSlug);
+    const cleanType = productSlug(typeName);
+    return `/images/products/${cleanCat}/${cleanType}.jpg`;
   };
 
   // Search Bar Interaction
@@ -2835,7 +2839,7 @@ export default function CustomerApp() {
                         .filter(p => p.name.toLowerCase().includes(catSearchQuery.toLowerCase()))
                         .map(p => {
                           const hasTypes = p.types && p.types.length > 0;
-                          const prodImg = getProductImg(selectedCategoryForView.slug, p.name);
+                          const prodImg = p.image || getProductImg(selectedCategoryForView.slug, p.name);
                           const cardPhotos = (p.images && p.images.length > 0)
                             ? p.images.slice(0, 4)
                             : (hasTypes && p.types)
@@ -2852,13 +2856,13 @@ export default function CustomerApp() {
                                   } else {
                                     setCustomizingProduct({
                                       ...p,
-                                      image: prodImg,
+                                      image: p.image || prodImg,
                                       images: cardPhotos,
                                       categoryName: selectedCategoryForView.name,
                                     });
                                     setCustomizingQty(1);
                                     setCustomizingNotes('');
-                                    setCustomizingImg(prodImg);
+                                    setCustomizingImg(p.image || prodImg);
                                     setCustomizingImgs([]);
                                     setActiveProductPhotoIdx(0);
                                   }
@@ -4984,16 +4988,20 @@ export default function CustomerApp() {
 
       {/* Product Customization & Add Modal */}
       {customizingProduct && (() => {
+        const catSlugClean = productSlug(customizingProduct.categoryName || 'mens-fashion');
+        const fallbackCatImg = `/images/categories/${catSlugClean}.jpg`;
+        const baseImg = customizingProduct.image || fallbackCatImg;
+
         const availablePhotos: string[] = (customizingProduct.images && customizingProduct.images.length > 0)
           ? customizingProduct.images.slice(0, 4)
           : (customizingProduct.types && customizingProduct.types.length > 0 && customizingProduct.categoryName)
             ? [
-                customizingProduct.image,
-                ...customizingProduct.types.slice(0, 3).map(t => getTypeImg(productSlug(customizingProduct.categoryName || ''), customizingProduct.name, t.name))
+                baseImg,
+                ...customizingProduct.types.slice(0, 3).map(t => getTypeImg(catSlugClean, customizingProduct.name, t.name))
               ].slice(0, 4)
-            : [customizingProduct.image];
+            : [baseImg];
 
-        const activeDisplayPhoto = availablePhotos[activeProductPhotoIdx] || customizingProduct.image;
+        const activeDisplayPhoto = availablePhotos[activeProductPhotoIdx] || baseImg;
 
         return (
           <div className="modal-overlay" onClick={() => setCustomizingProduct(null)}>
@@ -5014,7 +5022,12 @@ export default function CustomerApp() {
                     alt={customizingProduct.name}
                     className="pmg-main-img"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = customizingProduct.image;
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.includes(fallbackCatImg)) {
+                        img.src = fallbackCatImg;
+                      } else {
+                        img.src = '/images/categories/mens-fashion.jpg';
+                      }
                     }}
                   />
                   <span className="pmg-photo-tag">
@@ -5036,7 +5049,8 @@ export default function CustomerApp() {
                           src={photoUrl}
                           alt=""
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = customizingProduct.image;
+                            const img = e.target as HTMLImageElement;
+                            img.src = fallbackCatImg;
                           }}
                         />
                       </button>

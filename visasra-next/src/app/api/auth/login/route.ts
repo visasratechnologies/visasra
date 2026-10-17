@@ -84,11 +84,11 @@ export async function POST(req: Request) {
         const defaultPassword = await bcrypt.hash('password123', 10);
         user = await prisma.user.create({
           data: {
-            name: 'Hareharan Nagula',
+            name: 'Visasra Customer',
             email: cleanInput,
-            phone: '+91 94914 73081',
+            phone: '+91 91703 24144',
             password: defaultPassword,
-            walletBalance: 50000,
+            walletBalance: 0,
           },
         });
       }
