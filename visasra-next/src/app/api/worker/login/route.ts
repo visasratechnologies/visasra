@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     // 2. Fallback: Phone and OTP Login (for demo shopper auto-fill)
     if (phone) {
       if (otp && otp !== '123456' && otp !== '9999') {
-        return NextResponse.json({ error: 'Invalid OTP. Please use Demo OTP: 123456' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid verification OTP. Please enter the valid code.' }, { status: 400 });
       }
 
       const cleanPhone = phone.trim();

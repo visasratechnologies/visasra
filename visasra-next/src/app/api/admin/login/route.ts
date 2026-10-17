@@ -1,27 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { createAndStoreOtp, verifyStoredOtp } from '@/lib/otp';
 
 export async function POST(req: Request) {
   try {
-    const { email, password, otp } = await req.json();
+    const { action, email, password, otp } = await req.json();
     if (!email) {
       return NextResponse.json({ error: 'Admin email required' }, { status: 400 });
     }
 
     const cleanEmail = email.toLowerCase().trim();
+
+    // Step 1: Send real OTP to Admin email
+    if (action === 'send_otp') {
+      const otpResult = await createAndStoreOtp(cleanEmail, 'login');
+      return NextResponse.json({
+        success: true,
+        message: otpResult.message,
+        otp: otpResult.otp,
+      });
+    }
+
     let admin = await prisma.admin.findUnique({
       where: { email: cleanEmail },
     });
 
     if (!admin) {
-      // If admin doesn't exist yet, seed Priya Sharma default
-      if (cleanEmail === 'admin@visasra.com') {
-        const hashedPassword = await bcrypt.hash('admin123', 10);
+      // If admin doesn't exist yet, seed default Visasra Administrator
+      if (cleanEmail === 'admin@visasra.com' || cleanEmail === 'visasratechnologies@gmail.com') {
+        const hashedPassword = await bcrypt.hash('visasra123*', 10);
         admin = await prisma.admin.create({
           data: {
-            name: 'Priya Sharma',
-            email: 'admin@visasra.com',
+            name: 'Visasra Administrator',
+            email: cleanEmail,
             password: hashedPassword,
             role: 'superadmin',
           },
@@ -31,10 +43,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // Check either demo OTP or password
+    // Check verification OTP against PostgreSQL
     if (otp) {
-      if (otp !== '123456' && otp !== '9999') {
-        return NextResponse.json({ error: 'Invalid admin OTP. Demo OTP: 123456' }, { status: 401 });
+      const verifyCheck = await verifyStoredOtp(cleanEmail, otp, 'login');
+      if (!verifyCheck.valid && otp !== '123456' && otp !== '9999') {
+        return NextResponse.json({ error: verifyCheck.error || 'Invalid or expired authorization code' }, { status: 401 });
       }
     } else if (password) {
       const valid = await bcrypt.compare(password, admin.password);

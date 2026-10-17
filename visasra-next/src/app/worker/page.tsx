@@ -219,7 +219,7 @@ export default function WorkerApp() {
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
 
   const [authLoading, setAuthLoading] = useState(false);
-  const [activeOtpCode, setActiveOtpCode] = useState('123456');
+  const [activeOtpCode, setActiveOtpCode] = useState('');
   const [otpShake, setOtpShake] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -1203,54 +1203,6 @@ export default function WorkerApp() {
             <div className="wm">Vis<b>asra</b></div>
             <p>Shopper Partner Portal<br />Shop, pack &amp; deliver authentic Indian goods</p>
 
-            {/* Quick Demo Partner Auto-fill Card */}
-            <div
-              style={{
-                width: '100%',
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.28)',
-                borderRadius: 14,
-                padding: '10px 14px',
-                margin: '8px 0 14px',
-                textAlign: 'left',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                boxSizing: 'border-box',
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#DCEAFB', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Demo Partner Account
-                </div>
-                <div style={{ fontSize: 12, color: '#fff', fontWeight: 600, marginTop: 1 }}>
-                  ramesh.shopper@visasra.com · password123
-                </div>
-              </div>
-              <button
-                type="button"
-                style={{
-                  background: '#ffffff',
-                  color: '#123A69',
-                  border: 0,
-                  padding: '6px 12px',
-                  borderRadius: 999,
-                  fontWeight: 700,
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
-                }}
-                onClick={() => {
-                  setAuthTab('signin');
-                  setLoginEmail('ramesh.shopper@visasra.com');
-                  setLoginPassword('password123');
-                  showToast('Demo partner credentials filled');
-                }}
-              >
-                Auto-fill
-              </button>
-            </div>
 
             {/* Segmented Auth Mode Switcher */}
             {authTab !== 'forgot' ? (
@@ -1476,44 +1428,8 @@ export default function WorkerApp() {
                       Reset code sent to <b>{forgotEmail}</b>
                     </div>
 
-                    {/* Demo OTP Banner */}
-                    <div
-                      style={{
-                        width: '100%',
-                        background: 'rgba(255, 255, 255, 0.16)',
-                        border: '1.5px dashed rgba(255, 255, 255, 0.42)',
-                        borderRadius: 14,
-                        padding: '10px 14px',
-                        margin: '4px 0 12px',
-                        textAlign: 'center',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <div style={{ fontSize: 11, color: '#DCEAFB', fontWeight: 700, textTransform: 'uppercase' }}>
-                        Password Reset Code
-                      </div>
-                      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '0.25em', color: '#fff', margin: '2px 0 6px' }}>
-                        {activeOtpCode}
-                      </div>
-                      <button
-                        type="button"
-                        style={{
-                          background: '#ffffff',
-                          color: '#123A69',
-                          border: 0,
-                          padding: '5px 14px',
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          fontSize: 11,
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => {
-                          setForgotOtpDigits(activeOtpCode.split(''));
-                          showToast('Reset code entered');
-                        }}
-                      >
-                        Auto-fill Code
-                      </button>
+                    <div style={{ fontSize: 12, color: '#DCEAFB', marginBottom: 14, textAlign: 'center' }}>
+                      Please enter the 6-digit verification code sent to your email address.
                     </div>
 
                     <div className={`otp ${otpShake ? 'shake' : ''}`} style={{ marginBottom: 14 }}>

@@ -135,10 +135,11 @@ interface AdminUser {
 
 export default function AdminPortal() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [adminEmail, setAdminEmail] = useState('admin@visasra.com');
-  const [adminPassword, setAdminPassword] = useState('admin123');
-  const [adminOtp, setAdminOtp] = useState('123456');
-  const [authMethod, setAuthMethod] = useState<'otp' | 'password'>('otp');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminOtp, setAdminOtp] = useState('');
+  const [adminOtpSent, setAdminOtpSent] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'password' | 'otp'>('password');
   const [adminLoading, setAdminLoading] = useState(false);
 
   const [activeNav, setActiveNav] = useState<string>('overview');
@@ -180,16 +181,57 @@ export default function AdminPortal() {
     setTimeout(() => setToastMsg(''), 2800);
   };
 
+  const handleSendAdminOtp = async () => {
+    if (!adminEmail.trim()) {
+      showToast('Please enter your admin email address first');
+      return;
+    }
+    setAdminLoading(true);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_otp', email: adminEmail.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAdminOtpSent(true);
+        if (data.otp) setAdminOtp(data.otp);
+        showToast(data.message || 'Authorization code sent to your email');
+      } else {
+        showToast(data.error || 'Failed to dispatch authorization code');
+      }
+    } catch {
+      showToast('Network error while dispatching code');
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!adminEmail.trim()) {
+      showToast('Please enter your admin email');
+      return;
+    }
     setAdminLoading(true);
     try {
       type AdminPayload = { email: string; otp?: string; password?: string };
       const payload: AdminPayload = { email: adminEmail.trim() };
       if (authMethod === 'otp') {
-        payload.otp = adminOtp || '123456';
+        if (!adminOtp.trim()) {
+          showToast('Please enter your 6-digit authorization code');
+          setAdminLoading(false);
+          return;
+        }
+        payload.otp = adminOtp.trim();
       } else {
-        payload.password = adminPassword || 'admin123';
+        if (!adminPassword.trim()) {
+          showToast('Please enter your admin password');
+          setAdminLoading(false);
+          return;
+        }
+        payload.password = adminPassword.trim();
       }
       const res = await fetch('/api/admin/login', {
         method: 'POST',
@@ -504,60 +546,7 @@ export default function AdminPortal() {
             <p style={{ margin: '6px 0 0', fontSize: 13, color: '#94A3B8' }}>India Ground Concierge Verification &amp; Clearance Portal</p>
           </div>
 
-          {/* 1-Click Demo Admin Card */}
-          <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1.5px dashed #F59E0B', borderRadius: 14, padding: 14, marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: 0.5 }}>Demo Superadmin</span>
-              <span style={{ fontSize: 10, background: '#22C55E', color: '#FFFFFF', padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>PostgreSQL</span>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF' }}>Priya Sharma (admin@visasra.com)</div>
-            <div style={{ fontSize: 12.5, color: '#CBD5E1', marginTop: 4 }}>
-              Demo OTP: <b style={{ color: '#FDE047', background: 'rgba(0,0,0,0.3)', padding: '1px 6px', borderRadius: 4 }}>123456</b> · Password: <b style={{ color: '#FDE047', background: 'rgba(0,0,0,0.3)', padding: '1px 6px', borderRadius: 4 }}>admin123</b>
-            </div>
-            <button
-              type="button"
-              style={{
-                marginTop: 10,
-                width: '100%',
-                background: '#F59E0B',
-                color: '#000000',
-                border: 'none',
-                borderRadius: 8,
-                padding: '9px 12px',
-                fontWeight: 800,
-                fontSize: 12.5,
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(245,158,11,0.3)',
-              }}
-              onClick={() => {
-                setAuthMethod('otp');
-                setAdminEmail('admin@visasra.com');
-                setAdminOtp('123456');
-                showToast('Demo admin filled. Tap Authorize!');
-              }}
-            >
-              ⚡ 1-Click Auto-Fill Demo OTP (123456)
-            </button>
-          </div>
-
           <div style={{ display: 'flex', gap: 8, background: 'rgba(255,255,255,0.06)', padding: 4, borderRadius: 10, marginBottom: 20 }}>
-            <button
-              type="button"
-              style={{
-                flex: 1,
-                padding: '10px 12px',
-                background: authMethod === 'otp' ? '#2563EB' : 'transparent',
-                color: authMethod === 'otp' ? '#FFFFFF' : '#94A3B8',
-                border: authMethod === 'otp' ? '1px solid #3B82F6' : '1px solid transparent',
-                borderRadius: 8,
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-              onClick={() => setAuthMethod('otp')}
-            >
-              Demo OTP Login
-            </button>
             <button
               type="button"
               style={{
@@ -575,6 +564,23 @@ export default function AdminPortal() {
             >
               Password Login
             </button>
+            <button
+              type="button"
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                background: authMethod === 'otp' ? '#2563EB' : 'transparent',
+                color: authMethod === 'otp' ? '#FFFFFF' : '#94A3B8',
+                border: authMethod === 'otp' ? '1px solid #3B82F6' : '1px solid transparent',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+              onClick={() => setAuthMethod('otp')}
+            >
+              Email OTP Authorization
+            </button>
           </div>
 
           <form onSubmit={handleAdminLogin}>
@@ -585,25 +591,40 @@ export default function AdminPortal() {
                 required
                 value={adminEmail}
                 onChange={e => setAdminEmail(e.target.value)}
-                placeholder="admin@visasra.com"
-                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #334155', background: '#0F172A', color: '#FFFFFF', fontSize: 14, outline: 'none' }}
+                placeholder="visasratechnologies@gmail.com or admin@visasra.com"
+                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #334155', background: '#0F172A', color: '#FFFFFF', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
 
             {authMethod === 'otp' ? (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: '#E2E8F0' }}>6-Digit Authorization OTP</label>
-                  <span style={{ fontSize: 11.5, color: '#4ADE80', fontWeight: 800 }}>Demo: 123456</span>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#E2E8F0' }}>6-Digit Authorization Code</label>
+                  <button
+                    type="button"
+                    onClick={handleSendAdminOtp}
+                    disabled={adminLoading || !adminEmail.trim()}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#60A5FA',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {adminOtpSent ? 'Resend Code' : 'Send Code'}
+                  </button>
                 </div>
                 <input
                   type="text"
                   maxLength={6}
                   required
                   value={adminOtp}
-                  onChange={e => setAdminOtp(e.target.value)}
-                  placeholder="123456"
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #334155', background: '#0F172A', color: '#FFFFFF', fontSize: 20, fontWeight: 800, textAlign: 'center', letterSpacing: 6, outline: 'none' }}
+                  onChange={e => setAdminOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #334155', background: '#0F172A', color: '#FFFFFF', fontSize: 20, fontWeight: 800, textAlign: 'center', letterSpacing: 6, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             ) : (
@@ -614,8 +635,8 @@ export default function AdminPortal() {
                   required
                   value={adminPassword}
                   onChange={e => setAdminPassword(e.target.value)}
-                  placeholder="admin123"
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #334155', background: '#0F172A', color: '#FFFFFF', fontSize: 14, outline: 'none' }}
+                  placeholder="Enter administrator password"
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #334155', background: '#0F172A', color: '#FFFFFF', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             )}
@@ -734,11 +755,11 @@ export default function AdminPortal() {
           <div style={{ marginTop: 'auto', paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, marginBottom: 8 }}>
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gold)', color: '#0B192E', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 13 }}>
-                PS
+                VA
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {adminUser?.name || 'Priya Sharma'}
+                  {adminUser?.name || 'Visasra Administrator'}
                 </div>
                 <div style={{ fontSize: 11, color: '#94A3B8' }}>{adminUser?.role || 'Superadmin'}</div>
               </div>
@@ -777,8 +798,8 @@ export default function AdminPortal() {
             </button>
 
             <div className="usr" onClick={() => setMobileDrawerOpen(true)} style={{ cursor: 'pointer' }} title="Menu & Profile">
-              <span className="av">PS</span>
-              <span>Priya Sharma (Superadmin)</span>
+              <span className="av">VA</span>
+              <span>{adminUser?.name || 'Visasra Administrator'} ({adminUser?.role || 'Superadmin'})</span>
             </div>
           </header>
 
@@ -2816,11 +2837,11 @@ export default function AdminPortal() {
             <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#F59E0B', color: '#000', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 13 }}>
-                  PS
+                  VA
                 </div>
                 <div>
-                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>Priya Sharma</div>
-                  <div style={{ color: '#94A3B8', fontSize: 11 }}>admin@visasra.com</div>
+                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{adminUser?.name || 'Visasra Administrator'}</div>
+                  <div style={{ color: '#94A3B8', fontSize: 11 }}>{adminUser?.email || 'visasratechnologies@gmail.com'}</div>
                 </div>
               </div>
               <button

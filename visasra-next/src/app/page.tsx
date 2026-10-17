@@ -658,8 +658,8 @@ export default function CustomerApp() {
         const data = await res.json();
         if (res.ok) {
           setForgotOtpSent(true);
-          setForgotOtp('123456');
-          showToast(`Reset code dispatched to ${forgotEmail}. (Demo OTP: 123456)`);
+          if (data.otp) setForgotOtp(data.otp);
+          showToast(data.message || `Reset code sent to ${forgotEmail}. Please check your email.`);
         } else {
           showToast(data.error || 'Failed to send reset code');
         }
@@ -2246,10 +2246,7 @@ export default function CustomerApp() {
                         type="button"
                         className="auth-switch-link"
                         style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#0F172A', fontWeight: 700 }}
-                        onClick={() => {
-                          showToast(`Verification code resent to ${signupEmail}. (Demo OTP: 123456)`);
-                          setSignupOtp('123456');
-                        }}
+                        onClick={(e) => handleSignUpRequestOtp(e)}
                       >
                         Resend code ↻
                       </button>
