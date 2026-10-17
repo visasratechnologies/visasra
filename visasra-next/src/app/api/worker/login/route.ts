@@ -25,7 +25,13 @@ export async function POST(req: Request) {
               ],
             }
           : {
-              email: input,
+              OR: [
+                { email: input },
+                { phone: input },
+                { phone: `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` },
+                { phone: `+91${digits}` },
+                { phone: digits },
+              ],
             },
       });
 
