@@ -328,6 +328,34 @@ export default function AdminPortal() {
     }
   };
 
+  const handleVerifyHandover = async (slotKey: string) => {
+    if (!confirm('Confirm that all items and shop receipts are verified at the QC counter? This will complete the order and credit ₹350 to the shopper.')) return;
+    try {
+      const res = await fetch('/api/admin/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_handover', slotKey }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchData();
+        if (selectedOrder) {
+          setSelectedOrder(prev => prev ? {
+            ...prev,
+            status: 'packed',
+            trackingStage: 'packed',
+            liveSession: prev.liveSession ? { ...prev.liveSession, stage: 'packed', status: 'completed' } : undefined,
+          } : null);
+        }
+      } else {
+        showToast(data.error || 'Handover verification failed');
+      }
+    } catch {
+      showToast('Handover verification failed');
+    }
+  };
+
   const handleRefundOrder = async (orderId: string, amount: number) => {
     if (!confirm(`Confirm refunding ₹${amount} to customer wallet?`)) return;
     try {
@@ -2565,26 +2593,69 @@ export default function AdminPortal() {
                   <>
                     <div className="sec">Ground Shopper Assignment</div>
                     {selectedOrder.liveSession?.worker ? (
-                      <div className="card pad">
-                        <div className="row">
-                          <span className="av">{selectedOrder.liveSession.worker.name.slice(0, 2).toUpperCase()}</span>
-                          <div className="grow">
-                            <b>{selectedOrder.liveSession.worker.name}</b>
-                            <div className="sm mut">{selectedOrder.liveSession.worker.phone} · ⭐ {selectedOrder.liveSession.worker.rating}</div>
-                            {selectedOrder.liveSession.storeName && (
-                              <div style={{ fontSize: 11, color: '#0369A1', marginTop: 2 }}>
-                                📍 Shopping at: {selectedOrder.liveSession.storeName}
-                              </div>
-                            )}
+                      <>
+                        <div className="card pad">
+                          <div className="row">
+                            <span className="av">{selectedOrder.liveSession.worker.name.slice(0, 2).toUpperCase()}</span>
+                            <div className="grow">
+                              <b>{selectedOrder.liveSession.worker.name}</b>
+                              <div className="sm mut">{selectedOrder.liveSession.worker.phone} · ⭐ {selectedOrder.liveSession.worker.rating}</div>
+                              {selectedOrder.liveSession.storeName && (
+                                <div style={{ fontSize: 11, color: '#0369A1', marginTop: 2 }}>
+                                  📍 Shopping at: {selectedOrder.liveSession.storeName}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              className="btn d s"
+                              onClick={() => handleUnassignWorker(selectedOrder.slotKey)}
+                            >
+                              Unassign
+                            </button>
                           </div>
-                          <button
-                            className="btn d s"
-                            onClick={() => handleUnassignWorker(selectedOrder.slotKey)}
-                          >
-                            Unassign
-                          </button>
                         </div>
-                      </div>
+
+                        {/* QC Inspection & Handover Clearance Card */}
+                        <div style={{ marginTop: 12, padding: 14, background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 12 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 18 }}>🔐</span>
+                              <b style={{ fontSize: 13, color: '#166534' }}>QC Hub Handover Clearance</b>
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 999, background: selectedOrder.liveSession.stage === 'packed' ? '#DCFCE7' : '#FEF3C7', color: selectedOrder.liveSession.stage === 'packed' ? '#166534' : '#92400E' }}>
+                              {selectedOrder.liveSession.stage === 'packed' ? '✅ QC Verified & Packed' : `⏳ Stage: ${selectedOrder.liveSession.stage.toUpperCase()}`}
+                            </span>
+                          </div>
+
+                          <div style={{ background: '#FFFFFF', border: '1px solid #BBF7D0', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Shopper Handover OTP Code:</div>
+                                <div style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', letterSpacing: 6, marginTop: 2 }}>
+                                  8492
+                                </div>
+                                <div style={{ fontSize: 11, color: '#15803D', marginTop: 2 }}>
+                                  Give this 4-digit code to the shopper when they deliver shopping bags to the QC counter.
+                                </div>
+                              </div>
+                              {selectedOrder.liveSession.stage !== 'packed' && (
+                                <button
+                                  type="button"
+                                  className="btn s"
+                                  style={{ background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, padding: '8px 14px' }}
+                                  onClick={() => handleVerifyHandover(selectedOrder.slotKey)}
+                                >
+                                  ✓ Confirm QC Passed &amp; Clear Handover (+₹350)
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: 11.5, color: '#475569', lineHeight: 1.4 }}>
+                            🏢 <b>Visasra Central QC Hub:</b> #42 Cathedral Road, Alwarpet, Chennai - 600086
+                          </div>
+                        </div>
+                      </>
                     ) : (
                       <div className="card pad">
                         <div className="sm mut" style={{ marginBottom: 8 }}>Select an available ground shopper to assign:</div>

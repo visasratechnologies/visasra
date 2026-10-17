@@ -230,6 +230,54 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: 'Online procurement details updated' });
     }
 
+    // 10. Admin Direct Handover Verification for Ground Shoppers
+    if (action === 'verify_handover' && slotKey) {
+      const decodedKey = decodeURIComponent(slotKey);
+      const session = await prisma.liveSession.findUnique({
+        where: { slotKey: decodedKey },
+      });
+      if (!session) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+
+      await prisma.liveSession.update({
+        where: { slotKey: decodedKey },
+        data: {
+          stage: 'packed',
+          status: 'completed',
+        },
+      });
+
+      if (session.orderId) {
+        await prisma.order.update({
+          where: { id: session.orderId },
+          data: {
+            trackingStage: 'packed',
+            status: 'packed',
+          },
+        });
+        await prisma.orderTrackingStage.updateMany({
+          where: { orderId: session.orderId, stageKey: 'packed' },
+          data: { status: 'current', note: 'QC Passed & Packed at Visasra Fulfillment Hub' },
+        });
+      }
+
+      if (session.workerId) {
+        await prisma.worker.update({
+          where: { id: session.workerId },
+          data: {
+            walletBalance: { increment: 350 },
+            ordersDone: { increment: 1 },
+          },
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Shopper packages inspected & Handover verified! ₹350 payout credited to shopper wallet.',
+      });
+    }
+
     return NextResponse.json({ error: 'Invalid admin action' }, { status: 400 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Admin action failed';

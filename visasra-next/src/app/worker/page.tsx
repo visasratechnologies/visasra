@@ -2810,12 +2810,13 @@ export default function WorkerApp() {
                 </div>
               </div>
 
-              {/* Step 1: Customer Delivery / Handover */}
+              {/* Step 1: Drop-Off Location & Delivery Handover */}
               {(() => {
                 const addr = currentSession.order?.shippingAddress as Record<string, string> | undefined;
                 const formattedAddr = addr
                   ? [addr.line1, addr.line2, addr.city, addr.region, addr.zip, addr.country].filter(Boolean).join(', ')
-                  : 'Customer delivery address coordinated via Admin';
+                  : 'Coordinated via Visasra Central Hub';
+                const hubAddress = 'Visasra Central Fulfillment Hub & QC Center, #42 Cathedral Road, Alwarpet, Chennai, Tamil Nadu 600086';
 
                 return (
                   <div
@@ -2827,44 +2828,70 @@ export default function WorkerApp() {
                       padding: 16,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                       <div style={{ width: 34, height: 34, borderRadius: 10, background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                        📦
+                        🏢
                       </div>
                       <div>
                         <div style={{ fontSize: 10.5, fontWeight: 800, color: '#15803D', letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                          Step 1 · Customer Delivery Handover
+                          Step 1 · Bring Packages to QC Hub / Delivery
                         </div>
                         <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0F172A' }}>
-                          Order #{currentSession.order?.orderNumber || 'Delivery'}
+                          Order #{currentSession.order?.orderNumber || 'Handover'}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                    {/* Visasra Central QC Warehouse Hub Location */}
+                    <div style={{ background: '#F8FAFC', border: '1.5px solid #CFE0F3', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#0A3A6B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                        🏢 Primary Drop-Off: Visasra QC &amp; Packaging Hub
+                      </div>
                       <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, fontWeight: 600 }}>
-                        📍 <b>Delivery Address:</b> {formattedAddr}
+                        {hubAddress}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        style={{ width: '100%', fontSize: 12, fontWeight: 700, padding: '8px 12px', marginTop: 8, background: '#FFFFFF', color: '#0A3A6B', borderColor: '#93C5FD' }}
+                        onClick={() => {
+                          window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(hubAddress), '_blank');
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14, marginRight: 6 }}>
+                          <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                        </svg>
+                        Navigate to Visasra QC Hub (Google Maps)
+                      </button>
+                    </div>
+
+                    {/* Customer Destination Address */}
+                    <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                        📍 Final Customer Destination
+                      </div>
+                      <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, fontWeight: 600 }}>
+                        {formattedAddr}
                       </div>
                       {addr?.phone && (
                         <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
                           📞 <b>Customer Contact:</b> {addr.phone}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        style={{ width: '100%', fontSize: 12, fontWeight: 700, padding: '8px 12px', marginTop: 8, background: '#FFFFFF', color: '#15803D', borderColor: '#86EFAC' }}
+                        onClick={() => {
+                          window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(formattedAddr), '_blank');
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14, marginRight: 6 }}>
+                          <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                        </svg>
+                        Navigate to Customer Address (Google Maps)
+                      </button>
                     </div>
-
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      style={{ width: '100%', fontSize: 12.5, fontWeight: 700, padding: '10px 14px', background: '#FFFFFF', color: '#15803D', borderColor: '#86EFAC' }}
-                      onClick={() => {
-                        window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(formattedAddr), '_blank');
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16, marginRight: 6 }}>
-                        <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                      </svg>
-                      Navigate to Delivery Address (Google Maps)
-                    </button>
                   </div>
                 );
               })()}

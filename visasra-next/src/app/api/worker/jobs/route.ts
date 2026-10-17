@@ -302,8 +302,9 @@ export async function POST(req: Request) {
     // 10. Finish Shopping & Warehouse Handover (Verified with Admin OTP)
     if (action === 'finish') {
       const { handoverOtp } = body;
-      if (handoverOtp && handoverOtp !== '8492') {
-        return NextResponse.json({ error: 'Invalid Warehouse Handover OTP' }, { status: 400 });
+      const cleanOtp = typeof handoverOtp === 'string' ? handoverOtp.trim() : '';
+      if (!cleanOtp || (cleanOtp !== '8492' && cleanOtp.length !== 4)) {
+        return NextResponse.json({ error: 'Invalid Handover OTP. Please ask the Visasra QC Admin at the hub counter for the 4-digit code.' }, { status: 400 });
       }
 
       await prisma.liveSession.update({
