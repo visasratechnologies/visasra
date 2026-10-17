@@ -319,9 +319,9 @@ export default function CustomerApp() {
   const [authMethod, setAuthMethod] = useState<'password' | 'email_otp'>('password');
 
   // Sign In State (Email or Mobile Number)
-  const [authEmail, setAuthEmail] = useState('hareharannagula@gmail.com');
-  const [authPassword, setAuthPassword] = useState('password123');
-  const [authOtp, setAuthOtp] = useState('123456');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authOtp, setAuthOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -461,8 +461,8 @@ export default function CustomerApp() {
           const data = await res.json();
           if (res.ok) {
             setOtpSent(true);
-            setAuthOtp('123456');
-            showToast(`Verification code sent to ${authEmail}. (Demo OTP: 123456)`);
+            setAuthOtp('');
+            showToast(`Verification code sent to ${authEmail}`);
           } else {
             showToast(data.error || 'Failed to send OTP to email');
           }
@@ -2006,32 +2006,6 @@ export default function CustomerApp() {
                     </>
                   )}
                 </form>
-
-                {/* 1-Click Demo Shortcut */}
-                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #E2E8F0', textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    style={{
-                      background: '#F1F5F9',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: 8,
-                      padding: '7px 12px',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#334155',
-                      cursor: 'pointer',
-                      width: '100%',
-                    }}
-                    onClick={() => {
-                      setAuthMethod('password');
-                      setAuthEmail('hareharannagula@gmail.com');
-                      setAuthPassword('password123');
-                      showToast('Account filled (hareharannagula@gmail.com)');
-                    }}
-                  >
-                    Quick Fill (hareharannagula@gmail.com)
-                  </button>
-                </div>
               </>
             )}
 

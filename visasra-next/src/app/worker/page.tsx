@@ -201,8 +201,8 @@ export default function WorkerApp() {
   // Auth Modes & State: 'signin' | 'signup' | 'forgot'
   const [authTab, setAuthTab] = useState<'signin' | 'signup' | 'forgot'>('signin');
   // 1. Sign In (Mobile Number or Email)
-  const [loginEmail, setLoginEmail] = useState('9170324144');
-  const [loginPassword, setLoginPassword] = useState('password123');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   // 2. Sign Up (NO Aadhaar! Name, mobile number, mail id, password, email OTP)
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -1393,49 +1393,9 @@ export default function WorkerApp() {
                   </form>
                 ) : (
                   <form onSubmit={handleVerifySignupOtp} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ fontSize: 13, color: '#fff', marginBottom: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: '#fff', marginBottom: 18, textAlign: 'center' }}>
                       Enter the 6-digit verification code sent to<br />
                       <b>{signupEmail}</b>
-                    </div>
-
-                    {/* Prominent Demo OTP Banner */}
-                    <div
-                      style={{
-                        width: '100%',
-                        background: 'rgba(255, 255, 255, 0.16)',
-                        border: '1.5px dashed rgba(255, 255, 255, 0.42)',
-                        borderRadius: 14,
-                        padding: '10px 14px',
-                        margin: '6px 0 14px',
-                        textAlign: 'center',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <div style={{ fontSize: 11, color: '#DCEAFB', fontWeight: 700, textTransform: 'uppercase' }}>
-                        Email Verification Code
-                      </div>
-                      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '0.25em', color: '#fff', margin: '2px 0 6px' }}>
-                        {activeOtpCode}
-                      </div>
-                      <button
-                        type="button"
-                        style={{
-                          background: '#ffffff',
-                          color: '#123A69',
-                          border: 0,
-                          padding: '5px 14px',
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          fontSize: 11,
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => {
-                          setSignupOtpDigits(activeOtpCode.split(''));
-                          showToast('Verification code entered');
-                        }}
-                      >
-                        Auto-fill Code
-                      </button>
                     </div>
 
                     <div className={`otp ${otpShake ? 'shake' : ''}`} style={{ marginBottom: 16 }}>

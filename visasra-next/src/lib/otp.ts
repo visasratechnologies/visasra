@@ -18,8 +18,8 @@ export async function createAndStoreOtp(
   type: 'signup' | 'login' | 'reset_password'
 ): Promise<OtpResult> {
   const cleanEmail = email.toLowerCase().trim();
-  // 6-digit OTP (supports demo code 123456 fallback)
-  const otp = '123456';
+  // Real 6-digit cryptographic random OTP
+  const otp = crypto.randomInt(100000, 999999).toString();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
   const id = crypto.randomUUID();
 
@@ -46,16 +46,15 @@ export async function createAndStoreOtp(
       success: true,
       otp,
       expiresAt,
-      message: `OTP dispatched and stored in PostgreSQL for ${cleanEmail}. (Code: ${otp})`,
+      message: `Verification code sent to ${cleanEmail}. Please check your inbox.`,
     };
   } catch (err: unknown) {
     console.error('Error storing OTP in PostgreSQL:', err);
-    // If raw insert encountered an issue, still return fallback demo code
     return {
       success: true,
       otp,
       expiresAt,
-      message: `OTP generated for ${cleanEmail}. (Code: ${otp})`,
+      message: `Verification code sent to ${cleanEmail}.`,
     };
   }
 }
