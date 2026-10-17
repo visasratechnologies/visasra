@@ -53,9 +53,31 @@ export async function createAndStoreOtp(
       });
     }
 
+    // 3. Dual Delivery: Dispatch real email via Supabase Auth server directly to recipient
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && anonKey) {
+        await fetch(`${supabaseUrl}/auth/v1/otp`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: cleanEmail,
+            create_user: true,
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn('Supabase dual email dispatch skipped:', e);
+    }
+
     const returnMessage = isSandboxRestricted
-      ? `Verification code sent! (Delivered to registered account visasratechnologies@gmail.com; your code is ${otp})`
-      : `Verification code sent to ${cleanEmail}. Please check your inbox.`;
+      ? `Verification code dispatched! (Check your email inbox or spam folder; your code is ${otp})`
+      : `Verification code sent to ${cleanEmail}. Please check your inbox or spam folder.`;
 
     return {
       success: true,
@@ -75,7 +97,7 @@ export async function createAndStoreOtp(
 }
 
 /**
- * Verify OTP directly against PostgreSQL database records.
+ * Verify OTP directly against PostgreSQL database records and Supabase Auth.
  */
 export async function verifyStoredOtp(
   email: string,
@@ -86,7 +108,7 @@ export async function verifyStoredOtp(
   const cleanOtp = otp.trim();
 
   try {
-    // Query PostgreSQL for active unverified OTP
+    // 1. Query PostgreSQL for active unverified OTP
     const rows: Array<{ id: string; otp: string }> = await prisma.$queryRawUnsafe(
       `SELECT "id", "otp" FROM "OtpVerification"
        WHERE "email" = $1 AND "type" = $2 AND "verified" = false AND "expiresAt" > NOW()
@@ -95,23 +117,46 @@ export async function verifyStoredOtp(
       type
     );
 
+    if (rows && rows.length > 0 && rows[0].otp === cleanOtp) {
+      // Mark as verified in PostgreSQL so it cannot be reused
+      await prisma.$executeRawUnsafe(
+        `UPDATE "OtpVerification" SET "verified" = true WHERE "id" = $1`,
+        rows[0].id
+      );
+      return { valid: true };
+    }
+
+    // 2. Secondary check: Verify against Supabase Auth token
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && anonKey) {
+        const sRes = await fetch(`${supabaseUrl}/auth/v1/verify`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'email',
+            email: cleanEmail,
+            token: cleanOtp,
+          }),
+        });
+        if (sRes.ok) {
+          return { valid: true };
+        }
+      }
+    } catch {}
+
     if (!rows || rows.length === 0) {
       return { valid: false, error: 'Verification code expired or not found. Please request a new code.' };
     }
 
-    if (rows[0].otp !== cleanOtp) {
-      return { valid: false, error: 'Incorrect verification code. Please check your email.' };
-    }
-
-    // Mark as verified in PostgreSQL so it cannot be reused
-    await prisma.$executeRawUnsafe(
-      `UPDATE "OtpVerification" SET "verified" = true WHERE "id" = $1`,
-      rows[0].id
-    );
-
-    return { valid: true };
+    return { valid: false, error: 'Incorrect verification code. Please check your email.' };
   } catch (err: unknown) {
-    console.error('Error verifying OTP from PostgreSQL:', err);
+    console.error('Error verifying OTP:', err);
     return { valid: false, error: 'Database verification failed' };
   }
 }
