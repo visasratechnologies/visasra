@@ -392,6 +392,9 @@ export default function CustomerApp() {
           u.walletBalance = 0;
         }
         setUser(u);
+        if (u.phone) {
+          setCustomerPhone(prev => prev || u.phone);
+        }
         setIsLoggedIn(true);
         setActiveTab('home');
 
@@ -616,23 +619,12 @@ export default function CustomerApp() {
       const data = await res.json();
       if (res.ok && data.user) {
         setUser(data.user);
+        if (fullPhone) {
+          setCustomerPhone(fullPhone);
+        }
         setIsLoggedIn(true);
         setActiveTab('home');
         localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
-        setSavedAddresses((prev) => [
-          {
-            id: `addr-${Date.now()}`,
-            name: signupName,
-            phone: fullPhone,
-            line1: signupLocation,
-            city: signupLocation.split(',')[0]?.trim() || signupLocation,
-            region: signupLocation.split(',')[1]?.trim() || 'Global',
-            zip: '90001',
-            country: 'Global',
-            label: 'Home',
-          },
-          ...prev,
-        ]);
         showToast(`Email verified! Welcome to Visasra, ${signupName}!`);
         loadData(data.user);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1359,7 +1351,13 @@ export default function CustomerApp() {
           label: 'Home',
         }));
         setSavedAddresses(mapped);
-        setSelectedAddressId(prev => prev && mapped.some(m => m.id === prev) ? prev : mapped[0].id);
+        setSelectedAddressId(prev => prev && mapped.some(m => m.id === prev) ? prev : (mapped[0]?.id || ''));
+        if (mapped[0]?.phone) {
+          setCustomerPhone(prev => prev || mapped[0].phone);
+        }
+      } else {
+        setSavedAddresses([]);
+        setSelectedAddressId('');
       }
     } catch {}
   };
@@ -1683,17 +1681,32 @@ export default function CustomerApp() {
       return;
     }
 
+    const activeAddress = savedAddresses.find(a => a.id === selectedAddressId) || savedAddresses[0];
+    const contactPhone = customerPhone.trim() || activeAddress?.phone || user.phone;
+
+    if (!contactPhone) {
+      showToast('Please enter your WhatsApp / mobile number in Step 2');
+      setBookingStep(2);
+      return;
+    }
+
+    if (!activeAddress) {
+      showToast('Please add and select your delivery destination in Step 2');
+      setIsAddingAddress(true);
+      setBookingStep(2);
+      return;
+    }
+
     setIsBooking(true);
     const currentSlotFee = slotDuration === 2 ? 250 : slotDuration === 5 ? 600 : 400;
     const merchandiseBudget = cart.reduce((sum, item) => sum + (item.priceMax || item.priceMin || 1000) * (item.qty || 1), 0);
-    // Slot booking requires the slot fee to reserve the personal shopper
-    const requiredDeposit = currentSlotFee;
+    // Total deposit required = product budget held safely in escrow + slot fee for dedicated shopper
+    const requiredDeposit = merchandiseBudget + currentSlotFee;
     const shortfall = Math.max(0, requiredDeposit - (user.walletBalance || 0));
 
     // Finalizes the order and deducts the slot fee after wallet has sufficient funds
     const finalizeOrder = async (confirmedBalance?: number) => {
       try {
-        const activeAddress = savedAddresses.find(a => a.id === selectedAddressId) || savedAddresses[0];
         const slotKey = `${selectedDate}|${selectedSlotWindow}`;
         const res = await fetch('/api/orders', {
           method: 'POST',
@@ -1708,15 +1721,15 @@ export default function CustomerApp() {
             slotFee: currentSlotFee,
             items: cart,
             shippingAddress: {
-              name: activeAddress?.name || user.name,
-              phone: customerPhone || activeAddress?.phone || user.phone,
-              line1: activeAddress?.line1 || '',
-              line2: activeAddress?.line2 || '',
-              city: activeAddress?.city || '',
-              region: activeAddress?.region || '',
-              zip: activeAddress?.zip || '',
-              country: activeAddress?.country || 'United States',
-              label: activeAddress?.label || 'Home',
+              name: activeAddress.name || user.name || 'Recipient',
+              phone: contactPhone,
+              line1: activeAddress.line1 || '',
+              line2: activeAddress.line2 || '',
+              city: activeAddress.city || '',
+              region: activeAddress.region || '',
+              zip: activeAddress.zip || '',
+              country: activeAddress.country || 'India',
+              label: activeAddress.label || 'Home',
               deliveryNotes: deliveryNotes || '',
               marketLocation: 'Direct Artisan & Stores Across India',
               marketNotes: '',
@@ -1786,11 +1799,11 @@ export default function CustomerApp() {
       try {
         await openRazorpayPayment({
           amount: shortfall,
-          description: `Sourcing Slot Booking Fee (${selectedDate})`,
+          description: `Visasra Escrow Deposit & Slot Booking (${selectedDate})`,
           prefill: {
-            name: user.name,
+            name: activeAddress?.name || user.name,
             email: user.email,
-            contact: customerPhone || user.phone,
+            contact: contactPhone,
           },
           onSuccess: async (paymentId: string) => {
             showToast(`Payment successful! Depositing ₹${shortfall.toLocaleString('en-IN')} to Visasra Money...`);
@@ -1802,7 +1815,7 @@ export default function CustomerApp() {
                 email: user.email,
                 amount: shortfall,
                 razorpayPaymentId: paymentId,
-                note: `Slot Deposit (${selectedDate}) · Razorpay: ${paymentId}`,
+                note: `Escrow Deposit & Slot Booking (${selectedDate}) · Razorpay: ${paymentId}`,
               }),
             });
             const topupData = await topupRes.json();
@@ -2439,7 +2452,24 @@ export default function CustomerApp() {
         </div>
       </div>
       {/* Toast Notification */}
-      <div id="toast" className={`toast ${toastMsg ? 'show on' : ''}`}>{toastMsg}</div>
+      <div
+        id="toast"
+        className={`toast ${toastMsg ? 'show on' : ''} ${
+          toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+            ? 'toast-error'
+            : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
+            ? 'toast-success'
+            : ''
+        }`}
+      >
+        {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
+          <span style={{ fontSize: 16 }}>⚠️</span>
+        )}
+        {toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) && (
+          <span style={{ fontSize: 16 }}>✓</span>
+        )}
+        <span>{toastMsg}</span>
+      </div>
     </>
     );
   }
@@ -2658,9 +2688,23 @@ export default function CustomerApp() {
                   <div
                     key={c.id}
                     className="cat-tile home-cat"
-                    style={{ backgroundImage: `url('${c.image}')` }}
-                    onClick={() => setActiveTab('categories')}
+                    onClick={() => {
+                      setSelectedCategoryForView(c);
+                      setActiveTab('categories');
+                    }}
                   >
+                    <img
+                      src={c.image || '/images/categories/womens-fashion.jpg'}
+                      alt={c.name}
+                      className="cat-tile-bg-img"
+                      loading="eager"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.src.includes('womens-fashion.jpg')) {
+                          target.src = '/images/categories/womens-fashion.jpg';
+                        }
+                      }}
+                    />
                     <div className="cat-tile-body">
                       <div className="name">{c.name}</div>
                     </div>
@@ -3136,12 +3180,23 @@ export default function CustomerApp() {
                       <div
                         key={c.id}
                         className="cat-tile"
-                        style={{ backgroundImage: `url('${c.image}')` }}
                         onClick={() => {
                           setSelectedCategoryForView(c);
                           setSelectedProductForTypes(null);
                         }}
                       >
+                        <img
+                          src={c.image || '/images/categories/womens-fashion.jpg'}
+                          alt={c.name}
+                          className="cat-tile-bg-img"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.src.includes('womens-fashion.jpg')) {
+                              target.src = '/images/categories/womens-fashion.jpg';
+                            }
+                          }}
+                        />
                         <div className="cat-tile-count">
                           {(c.products || []).length} products
                         </div>
@@ -3171,7 +3226,7 @@ export default function CustomerApp() {
               </button>
 
               <div className="page-title">Book a Shopping Concierge</div>
-              <div className="page-sub">Add what you want sourced, provide your delivery address, and reserve your dedicated shopping slot.</div>
+              <div className="page-sub">Add sourcing items, provide international delivery details, and reserve your dedicated shopping slot.</div>
 
               <div className="booking-wizard">
                 {/* Luxury Connected Stepper Progress */}
@@ -3238,10 +3293,10 @@ export default function CustomerApp() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                           <div className="luxury-step-title">
-                            <span>1. What would you like us to source?</span>
+                            <span>1. Sourcing Request Basket</span>
                           </div>
                           <div className="luxury-step-subtitle">
-                            Add items from our catalog, describe custom items from your mind with photos, or paste online store links.
+                            Add items from our catalog, describe custom items with photos, or paste online store links.
                           </div>
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 800, padding: '4px 12px', borderRadius: 20, background: cart.length > 0 ? '#ECFDF5' : '#FEF2F2', color: cart.length > 0 ? '#065F46' : '#991B1B' }}>
@@ -3635,6 +3690,9 @@ export default function CustomerApp() {
                             showToast('Please add at least one item first');
                             return;
                           }
+                          if (savedAddresses.length === 0) {
+                            setIsAddingAddress(true);
+                          }
                           setBookingStep(2);
                         }}
                       >
@@ -3650,70 +3708,95 @@ export default function CustomerApp() {
                   <div className="luxury-step-card">
                     <div className="luxury-step-header">
                       <div className="luxury-step-title">
-                        <span>2. Delivery Destination &amp; Contact Details</span>
+                        <span>2. Delivery &amp; Contact Details</span>
                       </div>
                       <div className="luxury-step-subtitle">
-                        Where should we courier your purchases, and which mobile number should receive real-time session notifications?
+                        Where should we courier your purchases? Enter your contact mobile and destination address.
                       </div>
                     </div>
 
                     {/* Contact Mobile */}
-                    <div style={{ marginBottom: 22, background: '#F8FAFD', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 18 }}>
+                    <div style={{ marginBottom: 20, background: '#F8FAFD', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 18 }}>
                       <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#081E3B', marginBottom: 6 }}>
-                        📱 Contact &amp; SMS Notification Number *
+                        📱 WhatsApp &amp; Mobile Notification Number *
                       </label>
                       <input
                         type="tel"
                         className="inp"
-                        placeholder="+1 (415) 890-1234 or +91 98765 43210"
+                        placeholder="e.g. +91 98765 43210 or +1 415 555 0199"
                         value={customerPhone}
                         onChange={e => setCustomerPhone(e.target.value)}
                       />
                       <div style={{ fontSize: 12, color: '#64748B', marginTop: 6, lineHeight: 1.45 }}>
-                        ✨ Real-time slot reminders and order alerts will be sent to this number. Live curations and approvals happen directly in your Visasra live portal.
+                        Live video shopping links, artisan photo approvals, and dispatch alerts are sent to this number.
                       </div>
                     </div>
 
                     {/* Address Selection */}
                     <div style={{ fontSize: 14, fontWeight: 800, color: '#081E3B', marginBottom: 10 }}>
-                      Select International Shipping Destination:
-                    </div>
-                    <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-                      {savedAddresses.map(addr => (
-                        <div
-                          key={addr.id}
-                          className={`addr-card selectable ${selectedAddressId === addr.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedAddressId(addr.id)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <span className="addr-radio" />
-                          <div className="addr-body">
-                            <div className="addr-name">
-                              {addr.name} <span className="addr-tag">{addr.label}</span>
-                            </div>
-                            <div className="addr-lines">
-                              {[addr.line1, addr.line2, addr.city, addr.region, addr.zip, addr.country].filter(Boolean).join(', ')}
-                            </div>
-                            <div className="addr-phone">{addr.phone}</div>
-                          </div>
-                        </div>
-                      ))}
+                      International Shipping Destination:
                     </div>
 
-                    {!isAddingAddress ? (
+                    {savedAddresses.length === 0 && !isAddingAddress && (
+                      <div style={{ background: '#F8FAFD', border: '1.5px dashed #CBD5E1', borderRadius: 14, padding: '20px 16px', textAlign: 'center', marginBottom: 14 }}>
+                        <div style={{ fontSize: 24, marginBottom: 6 }}>📍</div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A', marginBottom: 4 }}>No delivery address added yet</div>
+                        <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 14 }}>
+                          Please add your delivery address so your personal shopper knows where to courier your purchases.
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-concierge-primary"
+                          onClick={() => setIsAddingAddress(true)}
+                          style={{ margin: '0 auto', maxWidth: 260 }}
+                        >
+                          + Add Delivery Address
+                        </button>
+                      </div>
+                    )}
+
+                    {savedAddresses.length > 0 && (
+                      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+                        {savedAddresses.map(addr => (
+                          <div
+                            key={addr.id}
+                            className={`addr-card selectable ${selectedAddressId === addr.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedAddressId(addr.id)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <span className="addr-radio" />
+                            <div className="addr-body">
+                              <div className="addr-name">
+                                {addr.name} <span className="addr-tag">{addr.label}</span>
+                              </div>
+                              <div className="addr-lines">
+                                {[addr.line1, addr.line2, addr.city, addr.region, addr.zip, addr.country].filter(Boolean).join(', ')}
+                              </div>
+                              <div className="addr-phone">{addr.phone}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {savedAddresses.length > 0 && !isAddingAddress && (
                       <button
                         type="button"
                         className="dl-add"
                         onClick={() => setIsAddingAddress(true)}
                         style={{ width: '100%', marginBottom: 16 }}
                       >
-                        + Add new international address
+                        + Add another international address
                       </button>
-                    ) : (
+                    )}
+
+                    {isAddingAddress && (
                       <div className="af" style={{ background: '#F8FAFD', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 18, marginBottom: 16 }}>
                         <div className="af-head">
                           <div className="af-title">New Delivery Address</div>
-                          <button type="button" className="af-del" onClick={() => setIsAddingAddress(false)}>Close</button>
+                          {savedAddresses.length > 0 && (
+                            <button type="button" className="af-del" onClick={() => setIsAddingAddress(false)}>Close</button>
+                          )}
                         </div>
                         <div className="af-sec">Contact Details</div>
                         <div className="af-grid">
@@ -3732,7 +3815,7 @@ export default function CustomerApp() {
                             <input
                               type="tel"
                               className="inp"
-                              placeholder="+1 (415) 890-1234"
+                              placeholder="Recipient Phone (e.g. +91 98765 43210)"
                               value={addressForm.phone}
                               onChange={e => setAddressForm({ ...addressForm, phone: e.target.value })}
                             />
@@ -3745,7 +3828,7 @@ export default function CustomerApp() {
                             <input
                               type="text"
                               className="inp"
-                              placeholder="Flat / House no, Street"
+                              placeholder="Flat / House no, Street, Area"
                               value={addressForm.line1}
                               onChange={e => setAddressForm({ ...addressForm, line1: e.target.value })}
                             />
@@ -3765,7 +3848,7 @@ export default function CustomerApp() {
                             <input
                               type="text"
                               className="inp"
-                              placeholder="State"
+                              placeholder="State / Province"
                               value={addressForm.region}
                               onChange={e => setAddressForm({ ...addressForm, region: e.target.value })}
                             />
@@ -3775,7 +3858,7 @@ export default function CustomerApp() {
                             <input
                               type="text"
                               className="inp"
-                              placeholder="Zip"
+                              placeholder="Postal / Zip code"
                               value={addressForm.zip}
                               onChange={e => setAddressForm({ ...addressForm, zip: e.target.value })}
                             />
@@ -3785,14 +3868,16 @@ export default function CustomerApp() {
                             <input
                               type="text"
                               className="inp"
-                              placeholder="Country"
+                              placeholder="e.g. United States, India, UK, UAE"
                               value={addressForm.country}
                               onChange={e => setAddressForm({ ...addressForm, country: e.target.value })}
                             />
                           </label>
                         </div>
                         <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                          <button type="button" className="btn btn-secondary" onClick={() => setIsAddingAddress(false)} style={{ flex: 1 }}>Cancel</button>
+                          {savedAddresses.length > 0 && (
+                            <button type="button" className="btn btn-secondary" onClick={() => setIsAddingAddress(false)} style={{ flex: 1 }}>Cancel</button>
+                          )}
                           <button type="button" className="btn btn-primary" onClick={() => handleSaveNewAddress()} style={{ flex: 2 }}>Save Address</button>
                         </div>
                       </div>
@@ -3804,12 +3889,34 @@ export default function CustomerApp() {
                         className="btn-concierge-secondary"
                         onClick={() => setBookingStep(1)}
                       >
-                        ← Back to Sourcing Basket
+                        ← Back
                       </button>
                       <button
                         type="button"
                         className="btn-concierge-primary"
-                        onClick={() => setBookingStep(3)}
+                        onClick={() => {
+                          const userPhoneTrimmed = user.phone ? user.phone.trim() : '';
+                          const trimmedPhone = customerPhone.trim() || userPhoneTrimmed;
+                          if (!trimmedPhone) {
+                            showToast('Please enter your WhatsApp / mobile number for shopping updates');
+                            return;
+                          }
+                          if (!customerPhone.trim() && userPhoneTrimmed) {
+                            setCustomerPhone(userPhoneTrimmed);
+                          }
+                          const hasSelected = selectedAddressId && savedAddresses.some(a => a.id === selectedAddressId);
+                          if (!hasSelected) {
+                            if (savedAddresses.length > 0) {
+                              setSelectedAddressId(savedAddresses[0].id);
+                              setBookingStep(3);
+                              return;
+                            }
+                            setIsAddingAddress(true);
+                            showToast('Please add and save your delivery address to continue');
+                            return;
+                          }
+                          setBookingStep(3);
+                        }}
                       >
                         <span>Continue to Slot &amp; Timing</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}><polyline points="9 18 15 12 9 6"/></svg>
@@ -3823,10 +3930,10 @@ export default function CustomerApp() {
                   <div className="luxury-step-card">
                     <div className="luxury-step-header">
                       <div className="luxury-step-title">
-                        <span>3. Choose Shopping Duration &amp; Time Window</span>
+                        <span>3. Shopping Window &amp; Slot</span>
                       </div>
                       <div className="luxury-step-subtitle">
-                        Select your dedicated shopping window. A verified ground shopper is assigned exclusively to source your items.
+                        Select your shopping duration and convenient time window. A dedicated ground shopper is assigned to you.
                       </div>
                     </div>
 
@@ -3975,6 +4082,7 @@ export default function CustomerApp() {
                       const merchandiseBudget = cart.reduce((sum, item) => sum + (item.priceMax || item.priceMin || 1000) * (item.qty || 1), 0);
                       const totalDepositRequired = merchandiseBudget + currentSlotFee;
                       const walletShortfall = Math.max(0, totalDepositRequired - user.walletBalance);
+                      const activeAddr = savedAddresses.find(a => a.id === selectedAddressId) || savedAddresses[0];
 
                       return (
                         <>
@@ -4030,10 +4138,11 @@ export default function CustomerApp() {
                                 <div className="ssc-detail-text">
                                   <span className="ssc-detail-label">Delivery Address:</span>
                                   <span className="ssc-detail-val">
-                                    {savedAddresses.find(a => a.id === selectedAddressId)?.name || user.name}
-                                    {' · '}
-                                    {savedAddresses.find(a => a.id === selectedAddressId)?.city || 'City'},{' '}
-                                    {savedAddresses.find(a => a.id === selectedAddressId)?.country || 'US'}
+                                    {activeAddr ? (
+                                      `${activeAddr.name} · ${[activeAddr.city, activeAddr.country].filter(Boolean).join(', ')}`
+                                    ) : (
+                                      <span style={{ color: '#E11D48' }}>Delivery address pending (Step 2)</span>
+                                    )}
                                   </span>
                                 </div>
                               </div>
@@ -4049,10 +4158,17 @@ export default function CustomerApp() {
                               </div>
                             </div>
 
-                            <div className="ssc-action-banner" style={{ justifyContent: 'flex-end' }}>
+                            <div className="ssc-action-banner">
+                              <div className="ssc-guarantee-text">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.4" style={{ width: 15, height: 15 }}>
+                                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                  <path d="M9 12l2 2 4-4" />
+                                </svg>
+                                <span>100% Escrow Protected</span>
+                              </div>
                               <div className="ssc-view-trigger">
-                                <span>View Trip Details</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 14, height: 14 }}>
+                                <span>View Sourcing &amp; Escrow Plan</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 13, height: 13 }}>
                                   <polyline points="9 18 15 12 9 6" />
                                 </svg>
                               </div>
@@ -4080,14 +4196,14 @@ export default function CustomerApp() {
 
                                 <div className="abhibus-sheet">
                                   <div className="abhibus-sheet-header">
-                                    <h2 className="abhibus-title">Trip Details</h2>
+                                    <h2 className="abhibus-title">Sourcing &amp; Escrow Details</h2>
                                   </div>
 
                                   {/* Service Card (AbhiBus TGSRTC Header Card with Bus Photo) */}
                                   <div className="abhibus-service-card">
                                     <div className="absc-header">
                                       <div className="absc-header-text">
-                                        <div className="absc-service-name">VISASRA SOURCING - {slotDuration}H PASS</div>
+                                        <div className="absc-service-name">VISASRA SOURCING · {slotDuration}H CONCIERGE PASS</div>
                                         <div className="absc-service-type">
                                           {slotDuration === 2 ? 'Super Express Sourcing (1–2 Stores)' : slotDuration === 3 ? 'Comprehensive Multi-Bazaar Concierge' : 'VIP Full-Day Artisan & Boutique Tour'}
                                         </div>
@@ -4123,46 +4239,45 @@ export default function CustomerApp() {
                                         </div>
                                         <div className="absc-stop-content">
                                           <div className="absc-stop-city">
-                                            {savedAddresses.find(a => a.id === selectedAddressId)?.city || 'Destination City'},{' '}
-                                            {savedAddresses.find(a => a.id === selectedAddressId)?.country || 'United States'}
+                                            {activeAddr ? [activeAddr.city, activeAddr.country].filter(Boolean).join(', ') : 'International Destination'}
                                           </div>
                                           <div className="absc-stop-time">
-                                            {savedAddresses.find(a => a.id === selectedAddressId)?.line1 || 'Doorstep Delivery'} (Insured Air Courier)
+                                            {activeAddr ? `${activeAddr.line1} (Insured Air Courier)` : 'Doorstep Delivery (Insured Air Courier)'}
                                           </div>
                                         </div>
                                       </div>
                                     </div>
                                   </div>
 
-                                  {/* Traveller & Seat / Sourcing Details */}
+                                  {/* Customer & Sourcing Details */}
                                   <div className="abhibus-section">
-                                    <div className="abhibus-section-title">TRAVELLER &amp; SEAT DETAILS</div>
+                                    <div className="abhibus-section-title">CUSTOMER &amp; SOURCING CAPACITY</div>
 
                                     <div className="abhibus-traveller-row">
                                       <div className="abhibus-avatar">
-                                        {(savedAddresses.find(a => a.id === selectedAddressId)?.name || user.name)
+                                        {((activeAddr?.name || user.name || 'CU')
                                           .split(' ')
-                                          .map(n => n[0])
+                                          .map((n: string) => n[0])
                                           .join('')
                                           .slice(0, 2)
-                                          .toUpperCase() || 'CU'}
+                                          .toUpperCase()) || 'CU'}
                                       </div>
                                       <div className="abhibus-traveller-info">
                                         <div className="abhibus-traveller-name">
-                                          {savedAddresses.find(a => a.id === selectedAddressId)?.name || user.name}
+                                          {activeAddr?.name || user.name || 'Valued Customer'}
                                         </div>
                                         <div className="abhibus-traveller-sub">
-                                          Verified Customer · {savedAddresses.find(a => a.id === selectedAddressId)?.country || 'USA'}
+                                          {activeAddr ? `Verified Customer · ${activeAddr.country}` : 'Verified Customer'}
                                         </div>
                                       </div>
                                       <div className="abhibus-seat-badge">
-                                        Seat No : {slotDuration}H-PASS
+                                        {slotDuration}H Pass Active
                                       </div>
                                     </div>
 
-                                    {/* Mini Visual Seat Grid representation for Items */}
+                                    {/* Mini Visual Grid representation for Items */}
                                     <div className="abhibus-seat-mini-grid">
-                                      <div className="abhibus-seat-grid-label">Reserved Sourcing Capacity ({cart.length} items):</div>
+                                      <div className="abhibus-seat-grid-label">Reserved Basket Items ({cart.length}):</div>
                                       <div className="abhibus-seat-slots">
                                         {cart.map((item, idx) => (
                                           <div key={item.id || idx} className="abhibus-seat-chip active">
@@ -4184,7 +4299,7 @@ export default function CustomerApp() {
                                     <div className="abhibus-contact-card">
                                       <div className="abhibus-contact-phone">
                                         <span className="abhibus-contact-phone-icon">📞</span>
-                                        <span>{customerPhone || savedAddresses.find(a => a.id === selectedAddressId)?.phone || user.phone}</span>
+                                        <span>{customerPhone || activeAddr?.phone || user.phone || 'Phone Pending'}</span>
                                       </div>
                                       <span className="abhibus-wa-tag">WhatsApp Active</span>
                                     </div>
@@ -4259,60 +4374,57 @@ export default function CustomerApp() {
                             </div>
                           )}
 
-                          {/* Sleek, Clean Visasra Money Balance Bar */}
-                          <div
-                            className={`visasra-money-pay-box ${walletShortfall > 0 ? 'needs-deposit' : 'sufficient'}`}
-                            style={{
-                              padding: '14px 18px',
-                              borderRadius: 14,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: 12,
-                              marginBottom: 18,
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              <div
-                                style={{
-                                  width: 38,
-                                  height: 38,
-                                  borderRadius: 10,
-                                  background: walletShortfall > 0 ? '#FEF3C7' : '#DCFCE7',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: 18,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {walletShortfall > 0 ? '⚠️' : '👛'}
+                          {/* Clean, Responsive Visasra Escrow & Wallet Box */}
+                          <div className={`visasra-money-pay-box ${walletShortfall > 0 ? 'needs-deposit' : 'sufficient'}`}>
+                            <div className="vmp-header">
+                              <div className="vmp-wallet-info">
+                                <div className="vmp-wallet-title">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="#0A3A6B" strokeWidth="2.2" style={{ width: 16, height: 16 }}>
+                                    <rect x="2" y="4" width="20" height="16" rx="3" />
+                                    <path d="M16 12h2" />
+                                    <path d="M2 10h20" />
+                                  </svg>
+                                  <span>Visasra Escrow Wallet</span>
+                                </div>
+                                <div className="vmp-wallet-balance">
+                                  ₹{user.walletBalance.toLocaleString('en-IN')}
+                                </div>
                               </div>
-                              <div>
-                                <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>
-                                  Visasra Money: ₹{user.walletBalance.toLocaleString('en-IN')}
-                                </div>
-                                <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
-                                  {walletShortfall > 0
-                                    ? `Pay ₹${walletShortfall.toLocaleString('en-IN')} via Razorpay (UPI/Card) to complete deposit`
-                                    : `₹${currentSlotFee} slot fee deducted upon confirmation`}
-                                </div>
+                              <div className={walletShortfall > 0 ? 'vmp-badge-warning' : 'vmp-badge-success'}>
+                                {walletShortfall > 0 ? `Shortfall: ₹${walletShortfall.toLocaleString('en-IN')}` : '✓ Sufficient Balance'}
                               </div>
                             </div>
 
-                            <span
-                              style={{
-                                fontSize: 11.5,
-                                fontWeight: 800,
-                                padding: '5px 12px',
-                                borderRadius: 8,
-                                whiteSpace: 'nowrap',
-                                background: walletShortfall > 0 ? '#FEF3C7' : '#DCFCE7',
-                                color: walletShortfall > 0 ? '#B45309' : '#15803D',
-                              }}
-                            >
-                              {walletShortfall > 0 ? `Razorpay: ₹${walletShortfall.toLocaleString('en-IN')}` : '✓ Ready'}
-                            </span>
+                            <div className="vmp-summary-details">
+                              <div className="vmp-row">
+                                <span>Dedicated Shopper Slot Fee ({slotDuration}h):</span>
+                                <b>₹{currentSlotFee}</b>
+                              </div>
+                              <div className="vmp-row">
+                                <span>Merchandise Budget in Escrow:</span>
+                                <b>₹{merchandiseBudget.toLocaleString('en-IN')}</b>
+                              </div>
+                              <div className="vmp-row vmp-total-row">
+                                <span style={{ fontWeight: 800, color: '#0F172A' }}>Total Booking Deposit Required:</span>
+                                <b style={{ fontSize: 14.5, color: '#0A3A6B' }}>₹{totalDepositRequired.toLocaleString('en-IN')}</b>
+                              </div>
+                            </div>
+
+                            {walletShortfall > 0 ? (
+                              <div className="vmp-alert-note">
+                                <div className="vmp-alert-note-header">
+                                  <span>💳</span>
+                                  <span>Deposit ₹{walletShortfall.toLocaleString('en-IN')} via Razorpay to confirm slot</span>
+                                </div>
+                                <div className="vmp-alert-note-body">
+                                  ₹{currentSlotFee} slot fee is deducted now for your personal shopper. ₹{merchandiseBudget.toLocaleString('en-IN')} merchandise budget is held safely in escrow until you approve live samples.
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="vmp-success-note">
+                                ✓ You have sufficient wallet balance. ₹{currentSlotFee} slot fee will be deducted upon confirmation.
+                              </div>
+                            )}
                           </div>
 
                           <div className="wizard-actions">
@@ -4345,17 +4457,22 @@ export default function CustomerApp() {
                                       marginRight: 6,
                                     }}
                                   />
-                                  <span>Confirming Order &amp; Sourcing Slot...</span>
+                                  <span>Confirming Booking...</span>
                                 </>
                               ) : walletShortfall > 0 ? (
-                                <span>Pay ₹{walletShortfall.toLocaleString('en-IN')} via Razorpay &amp; Book ({slotDuration}h)</span>
+                                <>
+                                  <span>Pay ₹{walletShortfall.toLocaleString('en-IN')} &amp; Book Slot</span>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
+                                    <polyline points="9 18 15 12 9 6" />
+                                  </svg>
+                                </>
                               ) : (
-                                <span>Confirm &amp; Book Slot ({slotDuration}h)</span>
-                              )}
-                              {!isBooking && (
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
-                                  <polyline points="9 18 15 12 9 6" />
-                                </svg>
+                                <>
+                                  <span>Confirm &amp; Book Slot ({slotDuration}h)</span>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
+                                    <polyline points="9 18 15 12 9 6" />
+                                  </svg>
+                                </>
                               )}
                             </button>
                           </div>
@@ -4586,7 +4703,24 @@ export default function CustomerApp() {
       />
 
       {/* Toast Notification */}
-      <div id="toast" className={`toast ${toastMsg ? 'show on' : ''}`}>{toastMsg}</div>
+      <div
+        id="toast"
+        className={`toast ${toastMsg ? 'show on' : ''} ${
+          toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+            ? 'toast-error'
+            : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
+            ? 'toast-success'
+            : ''
+        }`}
+      >
+        {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
+          <span style={{ fontSize: 16 }}>⚠️</span>
+        )}
+        {toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) && (
+          <span style={{ fontSize: 16 }}>✓</span>
+        )}
+        <span>{toastMsg}</span>
+      </div>
     </>
   );
 }
