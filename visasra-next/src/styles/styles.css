@@ -2008,7 +2008,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 .time-slot.dur-5.selected { border-color: #D9570F; background: #FDEBDD; color: #D9570F; }
 .time-grid:has(.time-slot.dur-5), .time-grid:has(.time-slot.dur-3) { grid-template-columns: 1fr; }
 
-/* ===== Categories page: flower runs seamlessly to the bottom navigation bar with zero space ===== */
+/* ===== Categories page: flower rests flush on the bottom bar, fully visible without being cut ===== */
 .screens-cat-root,
 .screens:has(.screen-categories-root),
 .screens:has(.screen[data-screen="categories"].active:has(.cat-leaves-decor)) {
@@ -2016,14 +2016,16 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 }
 .screen-categories-root,
 .screen[data-screen="categories"]:has(.cat-leaves-decor) {
-  padding-bottom: 0 !important;
+  padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
 }
 .cat-leaves-decor {
   margin-bottom: 0 !important;
 }
 @media (min-width: 720px) {
-  .screens:has(.screen[data-screen="categories"].active) { padding-bottom: 0; }
-  .screen[data-screen="categories"] { padding-bottom: 0; }
+  .screens-cat-root,
+  .screens:has(.screen[data-screen="categories"].active) { padding-bottom: 0 !important; }
+  .screen-categories-root,
+  .screen[data-screen="categories"] { padding-bottom: 0 !important; }
   .cat-leaves-decor { margin-bottom: 0 !important; }
 }
 .time-grid { grid-template-columns: 1fr; }
