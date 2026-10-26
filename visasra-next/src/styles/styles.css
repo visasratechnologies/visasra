@@ -261,7 +261,7 @@ html, body { height: 100%; margin: 0; }
   }
   .cat-page-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; position: relative; z-index: 1; }
   .cat-leaves-decor {
-    position: relative; z-index: 0; margin: -22px -18px -28px; pointer-events: none; line-height: 0;
+    position: relative; z-index: 0; margin: -22px -18px 0; pointer-events: none; line-height: 0;
   }
   .cat-leaves-decor img {
     display: block; width: 100%; height: auto;
@@ -2008,11 +2008,23 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 .time-slot.dur-5.selected { border-color: #D9570F; background: #FDEBDD; color: #D9570F; }
 .time-grid:has(.time-slot.dur-5), .time-grid:has(.time-slot.dur-3) { grid-template-columns: 1fr; }
 
-/* ===== Categories page (desktop): flower runs to the bottom edge, no empty band under it ===== */
+/* ===== Categories page: flower runs seamlessly to the bottom navigation bar with zero space ===== */
+.screens-cat-root,
+.screens:has(.screen-categories-root),
+.screens:has(.screen[data-screen="categories"].active:has(.cat-leaves-decor)) {
+  padding-bottom: 0 !important;
+}
+.screen-categories-root,
+.screen[data-screen="categories"]:has(.cat-leaves-decor) {
+  padding-bottom: 0 !important;
+}
+.cat-leaves-decor {
+  margin-bottom: 0 !important;
+}
 @media (min-width: 720px) {
   .screens:has(.screen[data-screen="categories"].active) { padding-bottom: 0; }
   .screen[data-screen="categories"] { padding-bottom: 0; }
-  .cat-leaves-decor { margin-bottom: 0; }
+  .cat-leaves-decor { margin-bottom: 0 !important; }
 }
 .time-grid { grid-template-columns: 1fr; }
 .slot-ist { display: block; margin-top: 2px; }
@@ -2040,12 +2052,26 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 #popularScroll .product-photo { height: auto; aspect-ratio: 1 / 1; }
 
 
-/* ===== Categories page: cropped flower + new corner leaf ===== */
-/* Flower: show roughly the upper 85% so it peeks up from the bottom without losing the petals */
-.cat-leaves-decor { overflow: hidden; aspect-ratio: 477 / 235; }
-.cat-leaves-decor img { width: 100%; height: auto; }
+/* ===== Categories page: floral decoration meets bottom navigation with zero gap ===== */
+.cat-leaves-decor {
+  overflow: visible;
+  aspect-ratio: auto;
+  line-height: 0;
+  margin-bottom: 0 !important;
+}
+.cat-leaves-decor img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 @media (min-width: 720px) {
-  .cat-leaves-decor { max-width: 540px; margin-top: 0; margin-bottom: 0; }
+  .cat-leaves-decor {
+    max-width: 540px;
+    margin-top: 0;
+    margin-bottom: 0 !important;
+    overflow: hidden;
+    aspect-ratio: 477 / 235;
+  }
 }
 /* Corner leaf: larger, growing out of the right edge of the screen */
 .screen[data-screen="categories"] { overflow-x: clip; }

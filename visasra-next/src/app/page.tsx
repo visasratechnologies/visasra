@@ -2869,7 +2869,7 @@ export default function CustomerApp() {
         </div>
 
         {/* Screens View Container */}
-        <div className="screens">
+        <div className={`screens ${activeTab === 'categories' && !selectedCategoryForView ? 'screens-cat-root' : ''}`}>
           {/* ================= SCREEN 1: HOME ================= */}
           {activeTab === 'home' && (
             <section className="screen active" data-screen="home">
@@ -3144,7 +3144,10 @@ export default function CustomerApp() {
 
           {/* ================= SCREEN 2: CATEGORIES & CATALOG (3-TIER: CATEGORIES -> SUBCATEGORIES/PRODUCTS -> TYPES) ================= */}
           {activeTab === 'categories' && (
-            <section className="screen active" data-screen="categories">
+            <section
+              className={`screen active ${!selectedCategoryForView ? 'screen-categories-root' : ''}`}
+              data-screen="categories"
+            >
               {selectedCategoryForView && selectedProductForTypes ? (
                 /* Tier 3: Sub-Category / Product Varieties Detail (e.g. Cookware > Pans > Frying Pan, Appam Pan, etc.) */
                 <div>
