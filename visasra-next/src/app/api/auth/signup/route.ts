@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createAndStoreOtp, verifyStoredOtp } from '@/lib/otp';
+import { createSession } from '@/lib/session';
 
 export async function POST(req: Request) {
   try {
@@ -66,13 +67,18 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: verifyCheck.error || 'Invalid verification code' }, { status: 400 });
       }
 
-      // Update phone if supplied
+      // Update phone and location if supplied
       const updatedUser = await prisma.user.update({
         where: { id: existing.id },
         data: {
           phone: phone ? phone.trim() : existing.phone,
+          location: location ? location.trim() : existing.location,
+          lastLoginAt: new Date(),
         },
       });
+
+      // Record authoritative session in PostgreSQL
+      const session = await createSession(updatedUser.id, req);
 
       return NextResponse.json({
         success: true,
@@ -82,10 +88,12 @@ export async function POST(req: Request) {
           name: updatedUser.name,
           email: updatedUser.email,
           phone: updatedUser.phone,
-          location: location || 'Global',
+          location: updatedUser.location || location || 'Global',
+          avatar: updatedUser.avatar,
           walletBalance: updatedUser.walletBalance,
+          lastLoginAt: updatedUser.lastLoginAt,
         },
-        token: 'customer_session_' + Date.now(),
+        token: session.token,
       });
     }
 
@@ -106,9 +114,14 @@ export async function POST(req: Request) {
         email: cleanEmail,
         password: hashedPassword,
         phone: phone ? phone.trim() : null,
+        location: location ? location.trim() : null,
         walletBalance: 0,
+        lastLoginAt: new Date(),
       },
     });
+
+    // Record authoritative session in PostgreSQL and initialize Cart
+    const session = await createSession(user.id, req);
 
     return NextResponse.json({
       success: true,
@@ -118,12 +131,15 @@ export async function POST(req: Request) {
         email: user.email,
         phone: user.phone,
         location: user.location || location || 'Global',
+        avatar: user.avatar,
         walletBalance: user.walletBalance,
+        lastLoginAt: user.lastLoginAt,
       },
-      token: 'customer_session_' + Date.now(),
+      token: session.token,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Registration failed';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

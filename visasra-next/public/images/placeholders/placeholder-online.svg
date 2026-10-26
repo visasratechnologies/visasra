@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="onlineBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EFF6FF" />
+      <stop offset="100%" stop-color="#DBEAFE" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E40AF" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="20" fill="url(#onlineBg)" />
+  <g transform="translate(135, 110)">
+    <!-- Globe & Package / Retail Cart -->
+    <rect x="15" y="30" width="100" height="85" rx="14" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="3" />
+    <circle cx="65" cy="72" r="26" fill="none" stroke="url(#blueGrad)" stroke-width="3" stroke-dasharray="4 2" />
+    <path d="M48 65 L65 52 L82 65 L82 85 L65 95 L48 85 Z" fill="#FFFFFF" stroke="url(#blueGrad)" stroke-width="3" />
+    <path d="M65 52 V95 M48 65 L65 77 L82 65" fill="none" stroke="url(#blueGrad)" stroke-width="2" />
+  </g>
+  <text x="200" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#1E3A8A" text-anchor="middle">Online Retail Product</text>
+  <text x="200" y="293" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#3B82F6" text-anchor="middle">Retail link captured for Visasra Hub</text>
+</svg>

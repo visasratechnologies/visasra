@@ -116,7 +116,10 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+  location?: string;
+  avatar?: string;
   walletBalance: number;
+  lastLoginAt?: string | Date;
 }
 
 export interface ProductType {
@@ -150,6 +153,7 @@ export interface Category {
 
 export interface CartItem {
   id: string;
+  productId?: string;
   name: string;
   qty: number;
   priceMin: number;
@@ -186,14 +190,22 @@ export interface Order {
   trackingStage: string;
   orderType?: string;
   totalAmount: number;
+  customerNotes?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  shippedAt?: string | Date;
+  deliveredAt?: string | Date;
   items: OrderItem[];
   liveSession?: {
     id: string;
     status: string;
     stage: string;
     worker?: {
+      id?: string;
       name: string;
       phone: string;
+      rating?: number;
     };
   };
 }

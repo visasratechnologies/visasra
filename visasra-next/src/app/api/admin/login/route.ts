@@ -57,16 +57,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Password or OTP required' }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      admin: {
-        id: admin.id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-      },
-      token: 'admin_session_' + Date.now(),
-    });
+      const updatedAdmin = await prisma.admin.update({
+        where: { id: admin.id },
+        data: { lastLoginAt: new Date() },
+      });
+
+      return NextResponse.json({
+        success: true,
+        admin: {
+          id: updatedAdmin.id,
+          name: updatedAdmin.name,
+          email: updatedAdmin.email,
+          role: updatedAdmin.role,
+          lastLoginAt: updatedAdmin.lastLoginAt,
+        },
+        token: 'admin_session_' + Date.now(),
+      });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Admin login failed';
     return NextResponse.json({ error: message }, { status: 500 });

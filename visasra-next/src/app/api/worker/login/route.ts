@@ -48,9 +48,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Incorrect password. Please try again or use Forgot Password.' }, { status: 401 });
       }
 
+      const updatedWorker = await prisma.worker.update({
+        where: { id: worker.id },
+        data: { lastLoginAt: new Date() },
+      });
+
       return NextResponse.json({
         success: true,
-        worker,
+        worker: updatedWorker,
         token: 'worker_session_' + Date.now(),
       });
     }
@@ -89,12 +94,16 @@ export async function POST(req: Request) {
             status: 'offline',
             kycStatus: 'none',
             walletBalance: 0,
+            lastLoginAt: new Date(),
           },
         });
-      } else if (name && isSignUp) {
+      } else {
         worker = await prisma.worker.update({
           where: { id: worker.id },
-          data: { name: name.trim() },
+          data: {
+            ...(name && isSignUp ? { name: name.trim() } : {}),
+            lastLoginAt: new Date(),
+          },
         });
       }
 

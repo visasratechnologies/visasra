@@ -49,11 +49,11 @@ export const InsufficientBalanceModal: React.FC<InsufficientBalanceModalProps> =
         <div className="topup-guard-body">
           <div className="topup-item-summary">
             <img
-              src={modalData.itemImage || '/images/categories/jewellery-accessories.jpg'}
+              src={modalData.itemImage || '/images/placeholders/placeholder-item.svg'}
               alt=""
               style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover' }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/categories/jewellery-accessories.jpg';
+                (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
               }}
             />
             <div style={{ minWidth: 0, flex: 1 }}>

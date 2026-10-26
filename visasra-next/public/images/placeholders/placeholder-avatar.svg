@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="avatarBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+    <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="20" fill="url(#avatarBg)" />
+  <g transform="translate(130, 90)">
+    <!-- Avatar circle outline -->
+    <circle cx="70" cy="70" r="66" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="3" />
+    <!-- User icon -->
+    <circle cx="70" cy="52" r="26" fill="url(#avatarGrad)" />
+    <path d="M26 124 C26 94, 50 86, 70 86 C90 86, 114 94, 114 124 Z" fill="url(#avatarGrad)" />
+    <!-- Camera icon badge -->
+    <circle cx="112" cy="112" r="18" fill="#0F172A" stroke="#FFFFFF" stroke-width="2" />
+    <circle cx="112" cy="112" r="6" fill="#FFFFFF" />
+  </g>
+  <text x="200" y="275" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#0F172A" text-anchor="middle">Worker Selfie</text>
+  <text x="200" y="299" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#64748B" text-anchor="middle">Live verification photo</text>
+</svg>

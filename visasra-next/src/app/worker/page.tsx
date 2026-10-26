@@ -2394,7 +2394,7 @@ export default function WorkerApp() {
                     >
                       <div className="row">
                         <img
-                          src={item.image || '/images/categories/jewellery-accessories.jpg'}
+                          src={item.image || '/images/placeholders/placeholder-item.svg'}
                           alt=""
                           className="ph"
                         />
@@ -2616,12 +2616,12 @@ export default function WorkerApp() {
                 <div key={it.id} className="card" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                   <div className="row">
                     <img
-                      src={it.image || '/images/categories/jewellery-accessories.jpg'}
+                      src={it.image || '/images/placeholders/placeholder-item.svg'}
                       alt=""
                       className="ph"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setZoomImg(it.image || '/images/categories/jewellery-accessories.jpg');
+                        setZoomImg(it.image || '/images/placeholders/placeholder-item.svg');
                       }}
                     />
                     <div className="grow">
@@ -2725,7 +2725,7 @@ export default function WorkerApp() {
                     {readyToBuy.map((it) => (
                       <div key={it.id} className="card act buy" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">Admin cleared · {inr(it.approvedAmount || 0)}</div>
@@ -2747,7 +2747,7 @@ export default function WorkerApp() {
                     {sendQr.map((it) => (
                       <div key={it.id} className="card act qr" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">Customer approved · send shop QR</div>
@@ -2769,7 +2769,7 @@ export default function WorkerApp() {
                     {waitingAdmin.map((it) => (
                       <div key={it.id} className="card act" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">Admin is reviewing shop QR transfer</div>
@@ -2789,7 +2789,7 @@ export default function WorkerApp() {
                     {rejected.map((it) => (
                       <div key={it.id} className="card act redo" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">Customer rejected — find different options</div>
@@ -2811,7 +2811,7 @@ export default function WorkerApp() {
                     {toFind.map((it) => (
                       <div key={it.id} className="card act" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">Budget: ₹{it.estMin} – ₹{it.estMax}</div>
@@ -2833,7 +2833,7 @@ export default function WorkerApp() {
                     {waitingCustomer.map((it) => (
                       <div key={it.id} className="card act sent" onClick={() => { setSelectedItemId(it.id); setScreen('prod'); }}>
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">{it.options.length} options with customer</div>
@@ -2853,7 +2853,7 @@ export default function WorkerApp() {
                     {completed.map((it) => (
                       <div key={it.id} className="card act done">
                         <div className="row">
-                          <img src={it.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="ph" />
+                          <img src={it.image || '/images/placeholders/placeholder-item.svg'} alt="" className="ph" />
                           <div className="grow">
                             <div className="b sm">{it.name}</div>
                             <div className="m">Bought · {inr(it.approvedAmount || 0)}</div>
@@ -2891,10 +2891,10 @@ export default function WorkerApp() {
                 </div>
                 <div className="refs">
                   <img
-                    src={currentItem.image || '/images/categories/jewellery-accessories.jpg'}
+                    src={currentItem.image || '/images/placeholders/placeholder-item.svg'}
                     alt="Reference"
                     className="ph"
-                    onClick={() => setZoomImg(currentItem.image || '/images/categories/jewellery-accessories.jpg')}
+                    onClick={() => setZoomImg(currentItem.image || '/images/placeholders/placeholder-item.svg')}
                   />
                 </div>
               </div>

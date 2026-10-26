@@ -68,6 +68,12 @@ export async function GET(
       slotDate: order.slotDate,
       slotLabel: order.slotLabel,
       totalAmount: order.totalAmount,
+      customerNotes: order.customerNotes,
+      carrier: order.carrier,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      shippedAt: order.shippedAt,
+      deliveredAt: order.deliveredAt,
       items: order.items,
       stages,
       shopper: worker

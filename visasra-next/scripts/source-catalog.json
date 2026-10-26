@@ -1,0 +1,924 @@
+{
+  "categories": [
+    {
+      "key": "cookware",
+      "name": "Cookware",
+      "accent": "#C1622D",
+      "desc": "Pots, pans, cutlery & everyday kitchen sets",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6v-3z\"/><path d=\"M2 10h3M19 10h3\"/><path d=\"M9 10V7a3 3 0 0 1 6 0v3\"/></svg>"
+    },
+    {
+      "key": "home-decors",
+      "name": "Home Decors",
+      "accent": "#7C3AED",
+      "desc": "Lighting, wall art, rugs & decorative pieces",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2.5l2.6 5.9 6.4.6-4.8 4.3 1.4 6.3L12 16.6l-5.6 3 1.4-6.3-4.8-4.3 6.4-.6z\"/></svg>"
+    },
+    {
+      "key": "home-furnishing",
+      "name": "Home Furnishing",
+      "accent": "#0E8074",
+      "desc": "Bedsheets, towels, blankets & everyday linen",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"9\" width=\"18\" height=\"9\" rx=\"2\"/><path d=\"M3 13.2h18\"/><path d=\"M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2\"/></svg>"
+    },
+    {
+      "key": "electronics-accessories",
+      "name": "Electronics & Accessories",
+      "accent": "#2563EB",
+      "desc": "Chargers, earphones, smart watches & gadgets",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2.2\"/><path d=\"M11 18.5h2\"/></svg>"
+    },
+    {
+      "key": "toys-games",
+      "name": "Toys & Games",
+      "accent": "#16A34A",
+      "desc": "Puzzles, dolls, board games & toys for every age",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2.5l8.5 4.7v9.6L12 21.5l-8.5-4.7V7.2z\"/><path d=\"M12 12L3.5 7.2M12 12l8.5-4.8M12 12v9.5\"/></svg>"
+    },
+    {
+      "key": "jewellery-accessories",
+      "name": "Jewellery & Accessories",
+      "accent": "#B8860B",
+      "desc": "Earrings, necklaces, bangles & full sets",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6.5 3.5h11l4 5.5L12 21 2.5 9z\"/><path d=\"M2.5 9h19M8.5 3.5L12 9l3.5-5.5M12 21L8.5 9M12 21l3.5-12\"/></svg>"
+    },
+    {
+      "key": "pooja-spiritual",
+      "name": "Pooja & Spiritual",
+      "accent": "#E11D48",
+      "desc": "Pooja sets, diyas, idols & festive essentials",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2.5c.8 3.6 5 5.6 5 10.5a5 5 0 0 1-10 0c0-2 1-3.2 2-4.2 0 2 .9 3 2 3 .8-3.6-.4-6 1-9.3z\"/></svg>"
+    },
+    {
+      "key": "bags-wallets",
+      "name": "Bags & Wallets",
+      "accent": "#7B4B2A",
+      "desc": "Handbags, backpacks, wallets & travel bags",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 8h14l1.5 12.5h-17z\"/><path d=\"M9 8V6.5a3 3 0 0 1 6 0V8\"/></svg>"
+    },
+    {
+      "key": "womens-fashion",
+      "name": "Women's Fashion",
+      "accent": "#DB2777",
+      "desc": "Ethnic wear, tops, footwear & watches",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7.5a2.2 2.2 0 1 0-2.2-2.2\"/><path d=\"M12 7.5v2L3.3 16a1.2 1.2 0 0 0 .7 2.2h16a1.2 1.2 0 0 0 .7-2.2z\"/></svg>"
+    },
+    {
+      "key": "mens-fashion",
+      "name": "Men's Fashion",
+      "accent": "#334155",
+      "desc": "Shirts, trousers, ethnic wear & footwear",
+      "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 3L3 6l2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3a4 4 0 0 1-8 0z\"/></svg>"
+    }
+  ],
+  "catalog": [
+    {
+      "key": "cookware",
+      "name": "Cookware",
+      "products": [
+        {
+          "name": "Cooker",
+          "mid": 1500,
+          "high": 4590,
+          "types": [
+            {
+              "name": "Electric Pressure Cooker"
+            },
+            {
+              "name": "Idli Steamer"
+            },
+            {
+              "name": "Steel Idli Steamer"
+            },
+            {
+              "name": "Aluminium Idli Steamer"
+            },
+            {
+              "name": "2 Litre Cooker"
+            },
+            {
+              "name": "3 Litre Cooker"
+            },
+            {
+              "name": "Dual Lid Cooker"
+            },
+            {
+              "name": "Rice Cooker"
+            }
+          ]
+        },
+        {
+          "name": "Pots",
+          "mid": 1500,
+          "high": 6000,
+          "types": [
+            {
+              "name": "Bowls Set"
+            },
+            {
+              "name": "Handi Set"
+            },
+            {
+              "name": "Copper Bottom Handi Set"
+            },
+            {
+              "name": "Milk Pots Combo"
+            },
+            {
+              "name": "Cast Iron Pot"
+            }
+          ]
+        },
+        {
+          "name": "Pans",
+          "mid": 900,
+          "high": 3300,
+          "types": [
+            {
+              "name": "Appam Pan"
+            },
+            {
+              "name": "Cast Iron Appam Pan"
+            },
+            {
+              "name": "Cast Iron Tadka Pan"
+            },
+            {
+              "name": "Cast Iron Wok Pan"
+            },
+            {
+              "name": "Deep Fry Pan"
+            },
+            {
+              "name": "Frying Pan"
+            },
+            {
+              "name": "Grill Pan"
+            },
+            {
+              "name": "Sauce Pan"
+            },
+            {
+              "name": "Steel Deep Fry Pan"
+            },
+            {
+              "name": "Steel Fry Pan"
+            },
+            {
+              "name": "Tadka Pan"
+            }
+          ]
+        },
+        {
+          "name": "Tawas",
+          "mid": 1400,
+          "high": 5000,
+          "types": [
+            {
+              "name": "Non-Stick Tawa"
+            },
+            {
+              "name": "Aluminium Tawa"
+            },
+            {
+              "name": "Dosa Tawa"
+            },
+            {
+              "name": "Roti Tawa"
+            }
+          ]
+        },
+        {
+          "name": "Kadai",
+          "mid": 1200,
+          "high": 4000,
+          "types": [
+            {
+              "name": "Iron Kadai"
+            },
+            {
+              "name": "Non-Stick Kadai"
+            },
+            {
+              "name": "Stainless Steel Kadai"
+            }
+          ]
+        },
+        {
+          "name": "Woks",
+          "mid": 1800,
+          "high": 3500
+        },
+        {
+          "name": "Handi",
+          "mid": 1800,
+          "high": 3300
+        },
+        {
+          "name": "Dutch Ovens",
+          "mid": 1700,
+          "high": 8500
+        },
+        {
+          "name": "Cookware Sets",
+          "mid": 1800,
+          "high": 5300
+        },
+        {
+          "name": "Spoons",
+          "mid": 300,
+          "high": 1500
+        },
+        {
+          "name": "Forks",
+          "mid": 600,
+          "high": 1600
+        },
+        {
+          "name": "Knives",
+          "mid": 400,
+          "high": 1000,
+          "types": [
+            {
+              "name": "Knife Set"
+            },
+            {
+              "name": "Knives"
+            }
+          ]
+        },
+        {
+          "name": "Spatula",
+          "mid": 450,
+          "high": 900,
+          "types": [
+            {
+              "name": "Silicone Spatula"
+            },
+            {
+              "name": "Silicone Utensil Set"
+            },
+            {
+              "name": "Spatula Set"
+            },
+            {
+              "name": "Wooden Spatula Set"
+            },
+            {
+              "name": "Whisk"
+            }
+          ]
+        },
+        {
+          "name": "Plates",
+          "mid": 700,
+          "high": 1200,
+          "types": [
+            {
+              "name": "Steel Plates"
+            },
+            {
+              "name": "Dinner Plates"
+            },
+            {
+              "name": "Partition Plate"
+            },
+            {
+              "name": "Hammered Plate"
+            }
+          ]
+        },
+        {
+          "name": "Bowls",
+          "mid": 1000,
+          "high": 1600,
+          "types": [
+            {
+              "name": "Ceramic Bowl"
+            },
+            {
+              "name": "Serving Bowls"
+            },
+            {
+              "name": "Steel Bowls"
+            }
+          ]
+        },
+        {
+          "name": "Dinner Sets",
+          "mid": 1600,
+          "high": 6000,
+          "types": [
+            {
+              "name": "Ceramic Dinner Set"
+            },
+            {
+              "name": "Steel Thali Set"
+            }
+          ]
+        },
+        {
+          "name": "Serving Sets",
+          "mid": 900,
+          "high": 3000
+        },
+        {
+          "name": "Trays",
+          "mid": 600,
+          "high": 1800,
+          "types": [
+            {
+              "name": "Trays"
+            },
+            {
+              "name": "Wooden Trays"
+            },
+            {
+              "name": "Steel Trays"
+            }
+          ]
+        },
+        {
+          "name": "Cutlery Sets",
+          "mid": 1800,
+          "high": 4800
+        },
+        {
+          "name": "Glasses",
+          "mid": 1200,
+          "high": 3000,
+          "types": [
+            {
+              "name": "Brass Glasses"
+            },
+            {
+              "name": "Copper Glasses"
+            },
+            {
+              "name": "Steel Water Glass"
+            },
+            {
+              "name": "Glassware Water Glasses"
+            }
+          ]
+        },
+        {
+          "name": "Cups & Mugs",
+          "mid": 1100,
+          "high": 3000,
+          "types": [
+            {
+              "name": "Ceramic Tea Cups"
+            },
+            {
+              "name": "Handcrafted Mugs"
+            },
+            {
+              "name": "Steel Tea Cups"
+            },
+            {
+              "name": "Mugs"
+            },
+            {
+              "name": "Glassware Tea Cups"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "home-decors",
+      "name": "Home Decors",
+      "products": [
+        {
+          "name": "Home Decor",
+          "mid": 1300,
+          "high": 6000
+        },
+        {
+          "name": "Wall Decor",
+          "mid": 1400,
+          "high": 5000
+        },
+        {
+          "name": "Lamps & Lighting",
+          "mid": 1600,
+          "high": 12500
+        },
+        {
+          "name": "Candles & Diyas",
+          "mid": 800,
+          "high": 2000
+        },
+        {
+          "name": "Clocks",
+          "mid": 1000,
+          "high": 4000
+        },
+        {
+          "name": "Cushions & Covers",
+          "mid": 800,
+          "high": 2500
+        },
+        {
+          "name": "Curtains",
+          "mid": 900,
+          "high": 2000
+        },
+        {
+          "name": "Rugs & Carpets",
+          "mid": 2000,
+          "high": 12000
+        },
+        {
+          "name": "Storage & Organizers",
+          "mid": 1000,
+          "high": 3000,
+          "types": [
+            {
+              "name": "Drying Stand"
+            },
+            {
+              "name": "Pot Rack"
+            },
+            {
+              "name": "Shoe Rack"
+            },
+            {
+              "name": "Steel Rack"
+            },
+            {
+              "name": "Storage Unit"
+            }
+          ]
+        },
+        {
+          "name": "Artificial Flowers",
+          "mid": 600,
+          "high": 2500
+        },
+        {
+          "name": "Decorative Items",
+          "mid": 900,
+          "high": 4200
+        }
+      ]
+    },
+    {
+      "key": "home-furnishing",
+      "name": "Home Furnishing",
+      "products": [
+        {
+          "name": "Bedsheets",
+          "mid": 500,
+          "high": 3700
+        },
+        {
+          "name": "Blankets",
+          "mid": 950,
+          "high": 5500
+        },
+        {
+          "name": "Comforters",
+          "mid": 1100,
+          "high": 7000
+        },
+        {
+          "name": "Pillows",
+          "mid": 750,
+          "high": 3500
+        },
+        {
+          "name": "Pillow Covers",
+          "mid": 350,
+          "high": 600
+        },
+        {
+          "name": "Mattress Protectors",
+          "mid": 800,
+          "high": 3500
+        },
+        {
+          "name": "Towels",
+          "mid": 500,
+          "high": 1600
+        },
+        {
+          "name": "Bath Mats",
+          "mid": 1600,
+          "high": 4500
+        },
+        {
+          "name": "Table Covers",
+          "mid": 1600,
+          "high": 4100
+        },
+        {
+          "name": "Kitchen Towel",
+          "mid": 800,
+          "high": 1700
+        }
+      ]
+    },
+    {
+      "key": "electronics-accessories",
+      "name": "Electronics & Accessories",
+      "products": [
+        {
+          "name": "Mobile Accessories",
+          "mid": 100,
+          "high": 1000
+        },
+        {
+          "name": "Chargers",
+          "mid": 500,
+          "high": 2000
+        },
+        {
+          "name": "Cables",
+          "mid": 150,
+          "high": 600
+        },
+        {
+          "name": "Earphones",
+          "mid": 1000,
+          "high": 2000
+        },
+        {
+          "name": "Headphones",
+          "mid": 1000,
+          "high": 3000
+        },
+        {
+          "name": "Smart Watches",
+          "mid": 1500,
+          "high": 5000
+        },
+        {
+          "name": "Speakers",
+          "mid": 1500,
+          "high": 10000
+        },
+        {
+          "name": "Power Banks",
+          "mid": 1000,
+          "high": 3000
+        },
+        {
+          "name": "Small Appliances",
+          "mid": 499,
+          "high": 3000
+        }
+      ]
+    },
+    {
+      "key": "toys-games",
+      "name": "Toys & Games",
+      "products": [
+        {
+          "name": "Educational Toys",
+          "mid": 250,
+          "high": 1000
+        },
+        {
+          "name": "Remote Control Toys",
+          "mid": 500,
+          "high": 2000
+        },
+        {
+          "name": "Dolls & Doll Sets",
+          "mid": 500,
+          "high": 2000
+        },
+        {
+          "name": "Cars & Vehicles",
+          "mid": 500,
+          "high": 8000
+        },
+        {
+          "name": "Board Games",
+          "mid": 300,
+          "high": 1000
+        },
+        {
+          "name": "Puzzles",
+          "mid": 250,
+          "high": 500
+        },
+        {
+          "name": "Building Blocks",
+          "mid": 300,
+          "high": 700
+        },
+        {
+          "name": "Soft Toys",
+          "mid": 300,
+          "high": 1500
+        },
+        {
+          "name": "Outdoor Games",
+          "mid": 700,
+          "high": 3000
+        },
+        {
+          "name": "Musical Toys",
+          "mid": 300,
+          "high": 700
+        },
+        {
+          "name": "Baby Toys",
+          "mid": 250,
+          "high": 700
+        }
+      ]
+    },
+    {
+      "key": "jewellery-accessories",
+      "name": "Jewellery & Accessories",
+      "products": [
+        {
+          "name": "Oxidized Jewellery",
+          "mid": 150,
+          "high": 1000
+        },
+        {
+          "name": "Earrings",
+          "mid": 100,
+          "high": 800
+        },
+        {
+          "name": "Necklaces",
+          "mid": 400,
+          "high": 1200
+        },
+        {
+          "name": "Chains",
+          "mid": 150,
+          "high": 600
+        },
+        {
+          "name": "Bracelets",
+          "mid": 150,
+          "high": 800
+        },
+        {
+          "name": "Bangles",
+          "mid": 250,
+          "high": 800
+        },
+        {
+          "name": "Rings",
+          "mid": 150,
+          "high": 500
+        },
+        {
+          "name": "Anklets",
+          "mid": 300,
+          "high": 1000
+        },
+        {
+          "name": "Maang Tikka",
+          "mid": 250,
+          "high": 1500
+        },
+        {
+          "name": "Nose Pins",
+          "mid": 350,
+          "high": 800
+        },
+        {
+          "name": "Jewellery Sets",
+          "mid": 1500,
+          "high": 5000
+        }
+      ]
+    },
+    {
+      "key": "pooja-spiritual",
+      "name": "Pooja & Spiritual",
+      "products": [
+        {
+          "name": "Pooja Sets",
+          "mid": 800,
+          "high": 2000
+        },
+        {
+          "name": "Diyas",
+          "mid": 400,
+          "high": 1000,
+          "types": [
+            {
+              "name": "Peacock Standing Diya"
+            },
+            {
+              "name": "Branch Standing Diya"
+            },
+            {
+              "name": "Classic Standing Diya"
+            },
+            {
+              "name": "Silver Diya"
+            },
+            {
+              "name": "Copper Diya"
+            },
+            {
+              "name": "Brass Diya"
+            }
+          ]
+        },
+        {
+          "name": "Incense Sticks",
+          "mid": 200,
+          "high": 500,
+          "types": [
+            {
+              "name": "Dhoop Sticks"
+            },
+            {
+              "name": "Incense Holder"
+            }
+          ]
+        },
+        {
+          "name": "Camphor",
+          "mid": 200,
+          "high": 600
+        },
+        {
+          "name": "Pooja Utensils",
+          "mid": 500,
+          "high": 3000
+        },
+        {
+          "name": "Brass Idols",
+          "mid": 1000,
+          "high": 3500
+        },
+        {
+          "name": "Decorative Torans",
+          "mid": 300,
+          "high": 600
+        },
+        {
+          "name": "Rangoli Items",
+          "mid": 300,
+          "high": 600
+        }
+      ]
+    },
+    {
+      "key": "bags-wallets",
+      "name": "Bags & Wallets",
+      "products": [
+        {
+          "name": "Handbags",
+          "mid": 800,
+          "high": 5000
+        },
+        {
+          "name": "Sling Bags",
+          "mid": 600,
+          "high": 2000
+        },
+        {
+          "name": "Tote Bags",
+          "mid": 800,
+          "high": 5000
+        },
+        {
+          "name": "Backpacks",
+          "mid": 1000,
+          "high": 2500
+        },
+        {
+          "name": "Clutches",
+          "mid": 500,
+          "high": 1000
+        },
+        {
+          "name": "Wallets",
+          "mid": 500,
+          "high": 1000
+        },
+        {
+          "name": "Card Holders",
+          "mid": 350,
+          "high": 700
+        },
+        {
+          "name": "Laptop Bags",
+          "mid": 1000,
+          "high": 2000
+        },
+        {
+          "name": "Travel Bags",
+          "mid": 800,
+          "high": 1500
+        },
+        {
+          "name": "Duffle Bags",
+          "mid": 1000,
+          "high": 1500
+        },
+        {
+          "name": "Crossbody Bags",
+          "mid": 500,
+          "high": 1000
+        }
+      ]
+    },
+    {
+      "key": "womens-fashion",
+      "name": "Women's Fashion",
+      "products": [
+        {
+          "name": "Tops",
+          "mid": 400,
+          "high": 1500
+        },
+        {
+          "name": "Ethnic Wear",
+          "mid": 800,
+          "high": 5000
+        },
+        {
+          "name": "Bottom Wear",
+          "mid": 600,
+          "high": 1500
+        },
+        {
+          "name": "Blouses",
+          "mid": 500,
+          "high": 3000
+        },
+        {
+          "name": "Nightwear",
+          "mid": 1000,
+          "high": 2000
+        },
+        {
+          "name": "Women's Watches",
+          "mid": 500,
+          "high": 5000
+        },
+        {
+          "name": "Women's Footwear",
+          "mid": 500,
+          "high": 3000
+        }
+      ]
+    },
+    {
+      "key": "mens-fashion",
+      "name": "Men's Fashion",
+      "products": [
+        {
+          "name": "Shirts",
+          "mid": 1000,
+          "high": 3000
+        },
+        {
+          "name": "T-Shirts",
+          "mid": 500,
+          "high": 1500
+        },
+        {
+          "name": "Trousers",
+          "mid": 1000,
+          "high": 2000
+        },
+        {
+          "name": "Ethnic Wear",
+          "mid": 800,
+          "high": 5000
+        },
+        {
+          "name": "Jackets",
+          "mid": 1000,
+          "high": 2500
+        },
+        {
+          "name": "Sweatshirts",
+          "mid": 700,
+          "high": 2500
+        },
+        {
+          "name": "Shorts",
+          "mid": 700,
+          "high": 1500
+        },
+        {
+          "name": "Men's Footwear",
+          "mid": 800,
+          "high": 2000
+        },
+        {
+          "name": "Men's Watches",
+          "mid": 1000,
+          "high": 5000
+        }
+      ]
+    }
+  ]
+}

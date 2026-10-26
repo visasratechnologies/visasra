@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { openRazorpayPayment } from '@/lib/razorpay';
@@ -111,7 +111,10 @@ interface User {
   name: string;
   email: string;
   phone?: string;
+  location?: string;
+  avatar?: string;
   walletBalance: number;
+  lastLoginAt?: string | Date;
 }
 
 interface ProductType {
@@ -145,6 +148,7 @@ interface Category {
 
 interface CartItem {
   id: string;
+  productId?: string;
   name: string;
   qty: number;
   priceMin: number;
@@ -207,14 +211,22 @@ interface Order {
   trackingStage: string;
   orderType?: string;
   totalAmount: number;
+  customerNotes?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  shippedAt?: string | Date;
+  deliveredAt?: string | Date;
   items: OrderItem[];
   liveSession?: {
     id: string;
     status: string;
     stage: string;
     worker?: {
+      id?: string;
       name: string;
       phone: string;
+      rating?: number;
     };
   };
 }
@@ -381,10 +393,48 @@ export default function CustomerApp() {
     phone: '',
     walletBalance: 0,
   });
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const savedCart = localStorage.getItem('visasra_customer_cart_v1');
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          return parsedCart;
+        }
+      }
+    } catch {}
+    return [];
+  });
 
-  // Load saved session on mount & sync fresh live wallet from Postgres
+  const isCartInitializedRef = useRef(false);
+
+  // Helper to synchronously persist cart to localStorage
+  const persistCartLocally = (newCart: CartItem[]) => {
+    try {
+      localStorage.setItem('visasra_customer_cart_v1', JSON.stringify(newCart));
+    } catch {}
+  };
+
+  // Load saved session, active tab & local cart on mount & sync fresh live wallet from Postgres
   useEffect(() => {
     try {
+      // 1. Restore local cart immediately if not loaded by initial state
+      const savedCart = localStorage.getItem('visasra_customer_cart_v1');
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          setCart(prev => prev.length > 0 ? prev : parsedCart);
+        }
+      }
+
+      // 2. Restore active tab if previously set
+      const savedTab = localStorage.getItem('visasra_customer_active_tab');
+      if (savedTab && ['home', 'categories', 'bookslot', 'orders', 'cart', 'profile', 'wallet', 'addresses', 'live-shopping'].includes(savedTab)) {
+        setActiveTab(savedTab as any);
+      }
+
+      // 3. Restore user session
       const saved = localStorage.getItem('visasra_customer_session_v1');
       if (saved) {
         const u = JSON.parse(saved);
@@ -396,7 +446,6 @@ export default function CustomerApp() {
           setCustomerPhone(prev => prev || u.phone);
         }
         setIsLoggedIn(true);
-        setActiveTab('home');
 
         // Fetch authoritative wallet balance from DB
         if (u.email) {
@@ -415,11 +464,27 @@ export default function CustomerApp() {
         }
       }
     } catch (e) {
-      console.error('Session load error', e);
+      console.error('Session/Cart load error', e);
     } finally {
       setAuthChecking(false);
     }
   }, []);
+
+  // Live Auto-Save cart to localStorage (protected against initial mount wipe)
+  useEffect(() => {
+    if (!isCartInitializedRef.current) {
+      isCartInitializedRef.current = true;
+      return;
+    }
+    persistCartLocally(cart);
+  }, [cart]);
+
+  // Live Auto-Save active tab to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('visasra_customer_active_tab', activeTab);
+    } catch {}
+  }, [activeTab]);
 
   // Live Auto-Sync Wallet Balance from PostgreSQL
   useEffect(() => {
@@ -495,8 +560,9 @@ export default function CustomerApp() {
         if (res.ok && data.user) {
           setUser(data.user);
           setIsLoggedIn(true);
-          setActiveTab('home');
+          setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
           localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
+          if (data.token) localStorage.setItem('visasra_token', data.token);
           showToast(`Welcome back, ${data.user.name || 'Customer'}!`);
           loadData(data.user);
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -514,8 +580,9 @@ export default function CustomerApp() {
         if (res.ok && data.user) {
           setUser(data.user);
           setIsLoggedIn(true);
-          setActiveTab('home');
+          setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
           localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
+          if (data.token) localStorage.setItem('visasra_token', data.token);
           showToast(`Welcome back, ${data.user.name || 'Customer'}!`);
           loadData(data.user);
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -623,8 +690,9 @@ export default function CustomerApp() {
           setCustomerPhone(fullPhone);
         }
         setIsLoggedIn(true);
-        setActiveTab('home');
+        setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
         localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
+        if (data.token) localStorage.setItem('visasra_token', data.token);
         showToast(`Email verified! Welcome to Visasra, ${signupName}!`);
         loadData(data.user);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -706,6 +774,8 @@ export default function CustomerApp() {
 
   const handleLogout = () => {
     localStorage.removeItem('visasra_customer_session_v1');
+    localStorage.removeItem('visasra_token');
+    localStorage.removeItem('visasra_customer_cart_v1');
     setIsLoggedIn(false);
     setUser({
       id: '',
@@ -715,6 +785,7 @@ export default function CustomerApp() {
       walletBalance: 0,
     });
     setOrders([]);
+    setCart([]);
     setActiveTab('home');
     setOtpSent(false);
     showToast('Signed out of Visasra');
@@ -723,7 +794,6 @@ export default function CustomerApp() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -802,16 +872,21 @@ export default function CustomerApp() {
     return name.toLowerCase().replace(/['\u2019]/g, '').replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   };
 
-  const getProductImg = (catSlug: string, _prodName?: string, fallbackImg?: string) => {
+  const getProductImg = (catSlug: string, prodName?: string, fallbackImg?: string) => {
     if (fallbackImg) return fallbackImg;
     const cleanCat = productSlug(catSlug);
+    if (prodName) {
+      const cleanProd = productSlug(prodName);
+      return `/images/products/${cleanCat}/${cleanProd}.jpg`;
+    }
     return `/images/categories/${cleanCat}.jpg`;
   };
 
-  const getTypeImg = (catSlug: string, _prodName: string, typeName: string) => {
+  const getTypeImg = (catSlug: string, prodName: string, typeName: string) => {
     const cleanCat = productSlug(catSlug);
+    const cleanProd = productSlug(prodName);
     const cleanType = productSlug(typeName);
-    return `/images/products/${cleanCat}/${cleanType}.jpg`;
+    return `/images/products/${cleanCat}/${cleanProd}/${cleanType}.jpg`;
   };
 
   // Search Bar Interaction
@@ -856,6 +931,44 @@ export default function CustomerApp() {
   const [isAddingBasket, setIsAddingBasket] = useState(false);
   const [customAddedFeedback, setCustomAddedFeedback] = useState(false);
   const [onlineAddedFeedback, setOnlineAddedFeedback] = useState(false);
+
+  // Worker Review & Rating Modal
+  const [ratingModalOrder, setRatingModalOrder] = useState<Order | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+
+  const handleSubmitReview = async () => {
+    if (!ratingModalOrder || !ratingModalOrder.liveSession?.worker?.id) return;
+    setSubmittingReview(true);
+    try {
+      const res = await fetch('/api/worker/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          workerId: ratingModalOrder.liveSession.worker.id,
+          orderId: ratingModalOrder.id,
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Thank you! Your rating and review have been saved.');
+        setRatingModalOrder(null);
+        setReviewComment('');
+        setReviewRating(5);
+      } else {
+        showToast(data.error || 'Failed to submit review');
+      }
+    } catch {
+      showToast('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Image Upload State & Handlers (Direct Cloudflare Sync / Local Fallback)
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -1165,7 +1278,7 @@ export default function CustomerApp() {
           email: user.email,
           contact: customerPhone || user.phone,
         },
-        onSuccess: async (paymentId: string) => {
+        onSuccess: async (paymentId: string, orderId?: string) => {
           showToast(`Depositing ₹${depositAmt.toLocaleString('en-IN')} to Visasra Money...`);
           const res = await fetch('/api/wallet', {
             method: 'POST',
@@ -1175,6 +1288,7 @@ export default function CustomerApp() {
               email: user.email,
               amount: depositAmt,
               razorpayPaymentId: paymentId,
+              razorpayOrderId: orderId,
               note: `Deposit for item: ${itemName} (${paymentId})`,
             }),
           });
@@ -1305,11 +1419,43 @@ export default function CustomerApp() {
       const catData = await catRes.json();
       if (catData.categories) {
         setCategories(catData.categories);
-        const allProds: Product[] = [];
-        catData.categories.forEach((c: Category) => {
-          (c.products || []).forEach(p => allProds.push({ ...p, categoryName: c.name }));
+
+        // Canonical Popular Items from D:\visasra-suite24 (app.js POPULAR_ITEMS)
+        const CANONICAL_POPULAR = [
+          { cat: 'cookware', name: 'Cooker' },
+          { cat: 'cookware', name: 'Pans' },
+          { cat: 'jewellery-accessories', name: 'Oxidized Jewellery' },
+          { cat: 'jewellery-accessories', name: 'Earrings' },
+          { cat: 'pooja-spiritual', name: 'Diyas' },
+          { cat: 'home-decors', name: 'Wall Decor' },
+          { cat: 'womens-fashion', name: 'Ethnic Wear' },
+          { cat: 'home-furnishing', name: 'Bedsheets' },
+        ];
+
+        const matchedPopular: Product[] = [];
+        CANONICAL_POPULAR.forEach(cp => {
+          const cat = catData.categories.find((c: Category) => c.slug === cp.cat);
+          if (cat) {
+            const prod = (cat.products || []).find((p: Product) => p.name === cp.name);
+            if (prod) {
+              matchedPopular.push({
+                ...prod,
+                categoryName: cat.name,
+                image: prod.image || `/images/products/${cp.cat}/${productSlug(prod.name)}.jpg`,
+              });
+            }
+          }
         });
-        setPopularProducts(allProds.slice(0, 8));
+
+        if (matchedPopular.length > 0) {
+          setPopularProducts(matchedPopular);
+        } else {
+          const allProds: Product[] = [];
+          catData.categories.forEach((c: Category) => {
+            (c.products || []).forEach(p => allProds.push({ ...p, categoryName: c.name }));
+          });
+          setPopularProducts(allProds.slice(0, 8));
+        }
       }
     } catch (err) {
       console.error('Failed to load categories:', err);
@@ -1362,6 +1508,78 @@ export default function CustomerApp() {
     } catch {}
   };
 
+  // Synchronize Cart with PostgreSQL Database
+  const syncCartWithDatabase = async (activeUser: User) => {
+    if (!activeUser?.email) return;
+    try {
+      const res = await fetch(`/api/cart?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`);
+      const data = await res.json();
+      const dbItems: CartItem[] = Array.isArray(data.items) ? data.items : [];
+
+      // Check current in-memory cart and localStorage for items to sync/merge
+      let localItems: CartItem[] = [];
+      try {
+        const localSaved = localStorage.getItem('visasra_customer_cart_v1');
+        if (localSaved) {
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed)) localItems = parsed;
+        }
+      } catch {}
+
+      // Combine in-memory cart and localStorage items
+      const combinedLocal = [...cart];
+      for (const it of localItems) {
+        if (!combinedLocal.some(c => c.id === it.id)) {
+          combinedLocal.push(it);
+        }
+      }
+
+      if (combinedLocal.length > 0) {
+        const toMerge = combinedLocal.filter(l => !dbItems.some(d => (d.productId && d.productId === l.productId) || (d.id === l.id) || d.name.toLowerCase() === l.name.toLowerCase()));
+        if (toMerge.length > 0) {
+          const mergeRes = await fetch(`/api/cart?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'merge',
+              items: toMerge,
+              userId: activeUser.id,
+              email: activeUser.email,
+            }),
+          });
+          const mergeData = await mergeRes.json();
+          if (mergeData.success && Array.isArray(mergeData.items)) {
+            setCart(mergeData.items);
+            persistCartLocally(mergeData.items);
+            return;
+          }
+        }
+      }
+
+      if (dbItems.length > 0) {
+        setCart(dbItems);
+        persistCartLocally(dbItems);
+      }
+    } catch (err) {
+      console.error('Failed to sync cart with database:', err);
+    }
+  };
+
+  // Remove an item from the cart & sync with PostgreSQL
+  const handleRemoveCartItem = (itemId: string) => {
+    setCart(prev => {
+      const updated = prev.filter(i => i.id !== itemId);
+      persistCartLocally(updated);
+      return updated;
+    });
+    if (isLoggedIn && user.email) {
+      fetch(`/api/cart?id=${encodeURIComponent(itemId)}&userId=${encodeURIComponent(user.id || '')}&email=${encodeURIComponent(user.email)}`, {
+        method: 'DELETE',
+      }).catch(() => {});
+    }
+    showToast('Item removed from basket');
+  };
+
   // Load Data from PostgreSQL
   const loadData = async (targetUser?: User | null) => {
     try {
@@ -1372,6 +1590,7 @@ export default function CustomerApp() {
         if (ordData.orders) {
           setOrders(ordData.orders);
         }
+        syncCartWithDatabase(activeUser);
       } else {
         setOrders([]);
       }
@@ -1448,7 +1667,17 @@ export default function CustomerApp() {
                     if (isMobile) setMobileSearchOpen(false);
                   }}
                 >
-                  <img src={c.image} alt="" className="search-item-img" />
+                  <img
+                    src={c.image || '/images/placeholders/placeholder-category.svg'}
+                    alt=""
+                    className="search-item-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('placeholder-category.svg')) {
+                        target.src = '/images/placeholders/placeholder-category.svg';
+                      }
+                    }}
+                  />
                   <div className="search-item-text">
                     <div className="search-item-name">{c.name}</div>
                     <div className="search-item-sub">View category &amp; products →</div>
@@ -1472,7 +1701,17 @@ export default function CustomerApp() {
                     if (isMobile) setMobileSearchOpen(false);
                   }}
                 >
-                  <img src={p.image} alt="" className="search-item-img" />
+                  <img
+                    src={p.image || '/images/placeholders/placeholder-item.svg'}
+                    alt=""
+                    className="search-item-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('placeholder-item.svg')) {
+                        target.src = '/images/placeholders/placeholder-item.svg';
+                      }
+                    }}
+                  />
                   <div className="search-item-text">
                     <div className="search-item-name">{p.name}</div>
                     <div className="search-item-sub">Est. ₹{p.estMin} – ₹{p.estMax} · Customize &amp; Add</div>
@@ -1510,12 +1749,16 @@ export default function CustomerApp() {
       setAddedFeedbackId(prev => (prev === product.id ? null : prev));
     }, 1600);
 
-    const existing = cart.find(i => i.id === product.id);
+    const existing = cart.find(i => i.id === product.id || (i.productId && i.productId === product.id));
+    let itemToSync: CartItem;
+    let newCart: CartItem[];
     if (existing) {
-      setCart(cart.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+      itemToSync = { ...existing, qty: existing.qty + 1 };
+      newCart = cart.map(i => i.id === existing.id ? itemToSync : i);
     } else {
-      setCart([...cart, {
+      itemToSync = {
         id: product.id,
+        productId: product.id,
         name: product.name,
         qty: 1,
         priceMin: product.estMin,
@@ -1523,8 +1766,21 @@ export default function CustomerApp() {
         image: product.image,
         sourceType: 'catalog',
         categoryName: product.categoryName,
-      }]);
+      };
+      newCart = [...cart, itemToSync];
     }
+
+    setCart(newCart);
+    persistCartLocally(newCart);
+
+    if (isLoggedIn && user.email) {
+      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item: itemToSync, userId: user.id, email: user.email }),
+      }).catch(() => {});
+    }
+
     showToast(`Added ${product.name} to sourcing basket`);
   };
 
@@ -1535,6 +1791,7 @@ export default function CustomerApp() {
     const prod = customizingProduct;
     const newItem: CartItem = {
       id: `${prod.id}-${Date.now()}`,
+      productId: prod.id,
       name: prod.name,
       qty: customizingQty,
       priceMin: prod.estMin,
@@ -1545,7 +1802,17 @@ export default function CustomerApp() {
       sourceType: 'catalog',
       categoryName: prod.categoryName,
     };
-    setCart([...cart, newItem]);
+    const newCart = [...cart, newItem];
+    setCart(newCart);
+    persistCartLocally(newCart);
+
+    if (isLoggedIn && user.email) {
+      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
+      }).catch(() => {});
+    }
     showToast(`Added ${prod.name} to basket`);
     setTimeout(() => {
       setIsAddingBasket(false);
@@ -1568,7 +1835,7 @@ export default function CustomerApp() {
     setCustomAddedFeedback(true);
     setTimeout(() => setCustomAddedFeedback(false), 1600);
 
-    const primaryImg = customImgs[0] || customImg.trim() || '/images/categories/pooja-spiritual.jpg';
+    const primaryImg = customImgs[0] || customImg.trim() || '/images/placeholders/placeholder-custom.svg';
     const allImgs = customImgs.length > 0 ? customImgs : [primaryImg];
 
     const minVal = parseInt(customMin, 10) || 0;
@@ -1586,7 +1853,17 @@ export default function CustomerApp() {
       notes: customDesc.trim() || undefined,
       sourceType: 'mind',
     };
-    setCart([...cart, newItem]);
+    const newCart = [...cart, newItem];
+    setCart(newCart);
+    persistCartLocally(newCart);
+
+    if (isLoggedIn && user.email) {
+      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
+      }).catch(() => {});
+    }
     showToast(`Added "${customTitle}" to sourcing basket`);
     setCustomTitle('');
     setCustomDesc('');
@@ -1608,7 +1885,7 @@ export default function CustomerApp() {
     setTimeout(() => setOnlineAddedFeedback(false), 1600);
 
     const title = onlineTitle.trim() || `${onlinePlatform} Product`;
-    const primaryImg = onlineImgs[0] || onlineImg.trim() || '/images/categories/electronics-accessories.jpg';
+    const primaryImg = onlineImgs[0] || onlineImg.trim() || '/images/placeholders/placeholder-online.svg';
     const allImgs = onlineImgs.length > 0 ? onlineImgs : [primaryImg];
     const parsedPrice = parseInt(onlinePrice, 10) || 1500;
 
@@ -1624,16 +1901,21 @@ export default function CustomerApp() {
       sourceType: 'online',
       sourceUrl: onlineUrl.trim(),
     };
-    setCart([...cart, newItem]);
+    const newCart = [...cart, newItem];
+    setCart(newCart);
+    persistCartLocally(newCart);
+
+    if (isLoggedIn && user.email) {
+      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
+      }).catch(() => {});
+    }
     showToast(`Added online product to sourcing basket`);
     setOnlineUrl('');
     setOnlineTitle('');
     setOnlinePrice('2499');
-    setOnlineImg('');
-    setOnlineImgs([]);
-    setOnlineNotes('');
-    setOnlineImgs([]);
-    setOnlineNotes('');
     setOnlineImg('');
     setOnlineImgs([]);
     setOnlineNotes('');
@@ -1656,18 +1938,33 @@ export default function CustomerApp() {
     const minVal = parseInt(editMin, 10) || 0;
     const maxVal = parseInt(editMax, 10) || minVal || 3500;
     const qtyVal = Math.max(1, parseInt(editQty, 10) || 1);
-    const primaryImg = editImgs[0] || editingCartItem.image || '/images/categories/pooja-spiritual.jpg';
+    const fallbackImg = editingCartItem.sourceType === 'online'
+      ? '/images/placeholders/placeholder-online.svg'
+      : editingCartItem.sourceType === 'mind'
+      ? '/images/placeholders/placeholder-custom.svg'
+      : '/images/placeholders/placeholder-item.svg';
+    const primaryImg = editImgs[0] || (editingCartItem.image && !editingCartItem.image.includes('pooja-spiritual.jpg') ? editingCartItem.image : '') || fallbackImg;
 
-    setCart(cart.map(c => c.id === editingCartItem.id ? {
-      ...c,
-      name: editTitle.trim() || c.name,
+    const updated = {
+      name: editTitle.trim() || editingCartItem.name,
       priceMin: minVal,
       priceMax: maxVal,
       qty: qtyVal,
       notes: editNotes.trim() || undefined,
       image: primaryImg,
       images: editImgs.length > 0 ? editImgs : [primaryImg],
-    } : c));
+    };
+
+    const updatedCart = cart.map(c => c.id === editingCartItem.id ? { ...c, ...updated } : c);
+    setCart(updatedCart);
+    persistCartLocally(updatedCart);
+    if (isLoggedIn && user.email) {
+      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingCartItem.id, ...updated, userId: user.id, email: user.email }),
+      }).catch(() => {});
+    }
 
     showToast(`Updated "${editTitle || editingCartItem.name}"`);
     setEditingCartItem(null);
@@ -1720,6 +2017,7 @@ export default function CustomerApp() {
             slotLabel: `${selectedDate} · ${selectedSlotWindow}`,
             slotFee: currentSlotFee,
             items: cart,
+            customerNotes: itemRequirement || deliveryNotes || '',
             shippingAddress: {
               name: activeAddress.name || user.name || 'Recipient',
               phone: contactPhone,
@@ -1751,9 +2049,15 @@ export default function CustomerApp() {
             setOrders(prev => [data.order, ...prev.filter(o => o.id !== data.order.id)]);
           }
 
-          // 2. Clear booking wizard state
+          // 2. Clear booking wizard state & clear database cart
           const bookedCartItems = [...cart];
           setCart([]);
+          localStorage.removeItem('visasra_customer_cart_v1');
+          if (isLoggedIn && user.email) {
+            fetch(`/api/cart?clearAll=true&userId=${encodeURIComponent(user.id || '')}&email=${encodeURIComponent(user.email)}`, {
+              method: 'DELETE',
+            }).catch(() => {});
+          }
           setItemRequirement('');
           setDeliveryNotes('');
           setBookingStep(1);
@@ -1805,7 +2109,7 @@ export default function CustomerApp() {
             email: user.email,
             contact: contactPhone,
           },
-          onSuccess: async (paymentId: string) => {
+          onSuccess: async (paymentId: string, orderId?: string) => {
             showToast(`Payment successful! Depositing ₹${shortfall.toLocaleString('en-IN')} to Visasra Money...`);
             const topupRes = await fetch('/api/wallet', {
               method: 'POST',
@@ -1815,6 +2119,7 @@ export default function CustomerApp() {
                 email: user.email,
                 amount: shortfall,
                 razorpayPaymentId: paymentId,
+                razorpayOrderId: orderId,
                 note: `Escrow Deposit & Slot Booking (${selectedDate}) · Razorpay: ${paymentId}`,
               }),
             });
@@ -1862,7 +2167,7 @@ export default function CustomerApp() {
           email: user.email,
           contact: customerPhone || user.phone,
         },
-        onSuccess: async (paymentId: string) => {
+        onSuccess: async (paymentId: string, orderId?: string) => {
           // Instant optimistic feedback: reflect balance immediately
           const optimisticBal = user.walletBalance + amt;
           setUser(prev => ({ ...prev, walletBalance: optimisticBal }));
@@ -1877,6 +2182,7 @@ export default function CustomerApp() {
                 email: user.email,
                 amount: amt,
                 razorpayPaymentId: paymentId,
+                razorpayOrderId: orderId,
                 note: `Wallet Top-up via Razorpay (${paymentId})`,
               }),
             });
@@ -2627,9 +2933,12 @@ export default function CustomerApp() {
                           <div className="booking-top">
                             <div className="booking-top-left">
                               <img
-                                src={o.items[0]?.image || '/images/categories/jewellery-accessories.jpg'}
+                                src={o.items[0]?.image || '/images/placeholders/placeholder-item.svg'}
                                 alt=""
                                 style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                }}
                               />
                               <div>
                                 <div className="booking-id">{o.orderNumber}</div>
@@ -2684,7 +2993,18 @@ export default function CustomerApp() {
                 <span className="see-all" onClick={() => setActiveTab('categories')}>See all</span>
               </div>
               <div className="cat-grid" id="catGrid">
-                {categories.slice(0, 5).map(c => (
+                {(() => {
+                  const HOME_FEATURED_SLUGS = ['jewellery-accessories', 'womens-fashion', 'pooja-spiritual', 'cookware', 'home-decors'];
+                  const featuredList: Category[] = [];
+                  HOME_FEATURED_SLUGS.forEach(slug => {
+                    const match = categories.find(c => c.slug === slug);
+                    if (match) featuredList.push(match);
+                  });
+                  categories.forEach(c => {
+                    if (!featuredList.some(f => f.id === c.id)) featuredList.push(c);
+                  });
+                  return featuredList.slice(0, 5);
+                })().map(c => (
                   <div
                     key={c.id}
                     className="cat-tile home-cat"
@@ -2694,14 +3014,14 @@ export default function CustomerApp() {
                     }}
                   >
                     <img
-                      src={c.image || '/images/categories/womens-fashion.jpg'}
+                      src={c.image || '/images/placeholders/placeholder-category.svg'}
                       alt={c.name}
                       className="cat-tile-bg-img"
                       loading="eager"
                       onError={(e) => {
                         const target = e.currentTarget;
-                        if (!target.src.includes('womens-fashion.jpg')) {
-                          target.src = '/images/categories/womens-fashion.jpg';
+                        if (!target.src.includes('placeholder-category.svg')) {
+                          target.src = '/images/placeholders/placeholder-category.svg';
                         }
                       }}
                     />
@@ -2730,7 +3050,17 @@ export default function CustomerApp() {
                 <div className="product-scroll" id="popularScroll">
                   {popularProducts.map(p => (
                     <div key={p.id} className="card" style={{ minWidth: 200, padding: 10, flex: 'none', background: '#fff' }}>
-                      <img src={p.image} alt={p.name} style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 10 }} />
+                      <img
+                        src={p.image || '/images/placeholders/placeholder-item.svg'}
+                        alt={p.name}
+                        style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 10 }}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.src.includes('placeholder-item.svg')) {
+                            target.src = '/images/placeholders/placeholder-item.svg';
+                          }
+                        }}
+                      />
                       <div style={{ padding: '8px 4px 4px' }}>
                         <div style={{ fontSize: 11, color: 'var(--text-faint)', fontWeight: 700, textTransform: 'uppercase' }}>{p.categoryName || 'Sourced'}</div>
                         <div style={{ fontWeight: 700, fontSize: 14, margin: '2px 0 6px', color: 'var(--text)' }}>{p.name}</div>
@@ -2898,7 +3228,7 @@ export default function CustomerApp() {
                                 setCustomizingQty(1);
                                 setCustomizingNotes('');
                                 setCustomizingImg(typeImg);
-                                setCustomizingImgs([]);
+                                setCustomizingImgs(subPhotos);
                                 setActiveProductPhotoIdx(0);
                               }}
                             >
@@ -2908,7 +3238,10 @@ export default function CustomerApp() {
                                   alt={t.name}
                                   loading="lazy"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = getProductImg(selectedCategoryForView.slug, selectedProductForTypes.name);
+                                    const target = e.target as HTMLImageElement;
+                                    if (!target.src.includes('placeholder-item.svg')) {
+                                      target.src = '/images/placeholders/placeholder-item.svg';
+                                    }
                                   }}
                                 />
                               </div>
@@ -3043,46 +3376,22 @@ export default function CustomerApp() {
                                   alt={p.name}
                                   className="cat-prod-img"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = selectedCategoryForView.image;
+                                    const target = e.target as HTMLImageElement;
+                                    if (selectedCategoryForView.image && !target.src.includes(selectedCategoryForView.image)) {
+                                      target.src = selectedCategoryForView.image;
+                                    } else if (!target.src.includes('placeholder-item.svg')) {
+                                      target.src = '/images/placeholders/placeholder-item.svg';
+                                    }
                                   }}
                                 />
                                 {hasTypes ? (
                                   <span className="cat-prod-tag" style={{ background: '#0A3A6B', color: '#fff' }}>
-                                    {p.types?.length} Varieties · Up to 4 pics
+                                    {p.types?.length} Varieties
                                   </span>
                                 ) : (
                                   <span className="cat-prod-tag">{p.tag || selectedCategoryForView.name}</span>
                                 )}
                               </div>
-
-                              {cardPhotos.length > 1 && (
-                                <div className="cat-prod-thumbs-row">
-                                  {cardPhotos.slice(0, 4).map((cPic, cIdx) => (
-                                    <img
-                                      key={cIdx}
-                                      src={cPic}
-                                      alt=""
-                                      className="cat-prod-thumb-mini"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src = prodImg;
-                                      }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCustomizingProduct({
-                                          ...p,
-                                          image: prodImg,
-                                          images: cardPhotos,
-                                          categoryName: selectedCategoryForView.name,
-                                        });
-                                        setActiveProductPhotoIdx(cIdx);
-                                      }}
-                                    />
-                                  ))}
-                                  <span style={{ fontSize: 10, color: '#64748B', alignSelf: 'center', fontWeight: 700, marginLeft: 2 }}>
-                                    {cardPhotos.slice(0, 4).length} pics
-                                  </span>
-                                </div>
-                              )}
 
                               <div className="cat-prod-body">
                                 <div className="cat-prod-name">{p.name}</div>
@@ -3186,14 +3495,14 @@ export default function CustomerApp() {
                         }}
                       >
                         <img
-                          src={c.image || '/images/categories/womens-fashion.jpg'}
+                          src={c.image || '/images/placeholders/placeholder-category.svg'}
                           alt={c.name}
                           className="cat-tile-bg-img"
                           loading="lazy"
                           onError={(e) => {
                             const target = e.currentTarget;
-                            if (!target.src.includes('womens-fashion.jpg')) {
-                              target.src = '/images/categories/womens-fashion.jpg';
+                            if (!target.src.includes('placeholder-category.svg')) {
+                              target.src = '/images/placeholders/placeholder-category.svg';
                             }
                           }}
                         />
@@ -3323,9 +3632,12 @@ export default function CustomerApp() {
                           <div key={item.id} className="basket-item-row">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
                               <img
-                                src={item.image || '/images/categories/pooja-spiritual.jpg'}
+                                src={item.image && !item.image.includes('pooja-spiritual.jpg') ? item.image : (item.sourceType === 'mind' ? '/images/placeholders/placeholder-custom.svg' : item.sourceType === 'online' ? '/images/placeholders/placeholder-online.svg' : '/images/placeholders/placeholder-item.svg')}
                                 alt=""
                                 className="basket-item-thumb"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                }}
                               />
                               {item.images && item.images.length > 1 && (
                                 <span style={{ fontSize: 9.5, fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '1px 5px', borderRadius: 4 }}>
@@ -3371,7 +3683,7 @@ export default function CustomerApp() {
                               <button
                                 type="button"
                                 className="basket-del-btn"
-                                onClick={() => setCart(cart.filter(i => i.id !== item.id))}
+                                onClick={() => handleRemoveCartItem(item.id)}
                                 title="Remove item"
                               >
                                 ✕
@@ -4095,9 +4407,12 @@ export default function CustomerApp() {
                               <div className="ssc-item-info">
                                 <div className="ssc-thumb-wrapper">
                                   <img
-                                    src={cart[0]?.image || '/images/categories/pooja-spiritual.jpg'}
+                                    src={cart[0]?.image || '/images/placeholders/placeholder-item.svg'}
                                     alt={cart[0]?.name || 'Sourcing items'}
                                     className="ssc-primary-thumb"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                    }}
                                   />
                                   {cart.length > 1 && (
                                     <span className="ssc-badge-more">+{cart.length - 1}</span>
@@ -4210,9 +4525,12 @@ export default function CustomerApp() {
                                       </div>
                                       <div className="absc-thumb-box">
                                         <img
-                                          src={cart[0]?.image || '/images/categories/pooja-spiritual.jpg'}
+                                          src={cart[0]?.image || '/images/placeholders/placeholder-item.svg'}
                                           alt={cart[0]?.name || 'Item'}
                                           className="absc-bus-img"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                          }}
                                         />
                                       </div>
                                     </div>
@@ -4282,8 +4600,11 @@ export default function CustomerApp() {
                                         {cart.map((item, idx) => (
                                           <div key={item.id || idx} className="abhibus-seat-chip active">
                                             <img
-                                              src={item.image || '/images/categories/pooja-spiritual.jpg'}
+                                              src={item.image && !item.image.includes('pooja-spiritual.jpg') ? item.image : (item.sourceType === 'mind' ? '/images/placeholders/placeholder-custom.svg' : item.sourceType === 'online' ? '/images/placeholders/placeholder-online.svg' : '/images/placeholders/placeholder-item.svg')}
                                               alt={item.name}
+                                              onError={(e) => {
+                                                (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                              }}
                                             />
                                             <span>{item.name} (x{item.qty || 1}) · Est: ₹{(item.priceMax || item.priceMin || 1000).toLocaleString('en-IN')}</span>
                                           </div>
@@ -4431,8 +4752,10 @@ export default function CustomerApp() {
                             <button
                               type="button"
                               className="btn-concierge-secondary"
-                              disabled={isBooking}
-                              onClick={() => setBookingStep(2)}
+                              onClick={() => {
+                                setIsBooking(false);
+                                setBookingStep(2);
+                              }}
                             >
                               ← Back
                             </button>
@@ -4495,6 +4818,11 @@ export default function CustomerApp() {
                 setActiveTab('live-shopping');
               }}
               onTrackOrder={(slotKey) => setTrackOrderSlot(slotKey)}
+              onRateShopper={(order) => {
+                setRatingModalOrder(order);
+                setReviewRating(5);
+                setReviewComment('');
+              }}
             />
           )}
 
@@ -4514,7 +4842,15 @@ export default function CustomerApp() {
                     {cart.map(item => (
                       <div key={item.id} className="cart-item">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                          <img src={item.image || '/images/categories/jewellery-accessories.jpg'} alt="" className="thumb" style={{ width: 56, height: 56, borderRadius: 10, objectFit: 'cover' }} />
+                          <img
+                            src={item.image && !item.image.includes('jewellery-accessories.jpg') && !item.image.includes('pooja-spiritual.jpg') ? item.image : (item.sourceType === 'mind' ? '/images/placeholders/placeholder-custom.svg' : item.sourceType === 'online' ? '/images/placeholders/placeholder-online.svg' : '/images/placeholders/placeholder-item.svg')}
+                            alt=""
+                            className="thumb"
+                            style={{ width: 56, height: 56, borderRadius: 10, objectFit: 'cover' }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                            }}
+                          />
                           {item.images && item.images.length > 1 && (
                             <span style={{ fontSize: 9, fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '1px 5px', borderRadius: 4 }}>
                               {item.images.slice(0, 4).length} pics
@@ -4537,7 +4873,7 @@ export default function CustomerApp() {
                             </div>
                           )}
                           <div className="item-actions" style={{ marginTop: 8 }}>
-                            <button className="icon-btn" onClick={() => setCart(cart.filter(i => i.id !== item.id))}>
+                            <button className="icon-btn" onClick={() => handleRemoveCartItem(item.id)}>
                               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
                             </button>
                           </div>
@@ -4572,7 +4908,6 @@ export default function CustomerApp() {
             />
           )}
 
-          {/* ================= SCREEN 7: PROFILE ================= */}
           {activeTab === 'profile' && (
             <ProfileTab
               user={user}
@@ -4581,6 +4916,14 @@ export default function CustomerApp() {
               onNavigate={(tab) => setActiveTab(tab)}
               onLogout={handleLogout}
               onBack={() => setActiveTab('home')}
+              onUpdateUser={(updated) => {
+                setUser((prev) => ({ ...prev, ...updated }));
+                if (updated.phone) setCustomerPhone(updated.phone);
+                try {
+                  localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, ...updated }));
+                } catch {}
+              }}
+              showToast={showToast}
             />
           )}
 
@@ -4648,6 +4991,7 @@ export default function CustomerApp() {
             const prod = customizingProduct;
             const newItem: CartItem = {
               id: `${prod.id}-${Date.now()}`,
+              productId: prod.id,
               name: prod.name,
               qty,
               priceMin: prod.estMin,
@@ -4658,8 +5002,19 @@ export default function CustomerApp() {
               sourceType: 'catalog',
               categoryName: prod.categoryName,
             };
-            setCart(prev => [...prev, newItem]);
-            showToast(`Added ${prod.name} to basket`);
+            setCart(prev => {
+              const updated = [...prev, newItem];
+              persistCartLocally(updated);
+              return updated;
+            });
+            if (isLoggedIn && user.email) {
+              fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
+              }).catch(() => {});
+            }
+            showToast(`Added ${prod.name} to sourcing basket`);
           }}
           handleFileUpload={handleFileUpload}
         />
@@ -4701,6 +5056,72 @@ export default function CustomerApp() {
         }}
         handleFileUpload={handleFileUpload}
       />
+
+      {/* Rate Personal Shopper Modal */}
+      {ratingModalOrder && (
+        <div className="modal-backdrop show" onClick={() => setRatingModalOrder(null)}>
+          <div className="modal-card" style={{ maxWidth: 440, padding: 24, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>⭐</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
+              Rate Your Personal Shopper
+            </div>
+            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
+              {ratingModalOrder.liveSession?.worker?.name || 'Personal Shopper'} · Order #{ratingModalOrder.orderNumber}
+            </div>
+
+            {/* 5-Star Selector */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: 32,
+                    cursor: 'pointer',
+                    color: star <= reviewRating ? '#F59E0B' : '#CBD5E1',
+                    transform: star <= reviewRating ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onClick={() => setReviewRating(star)}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              className="inp"
+              rows={3}
+              placeholder="Write a brief review about your shopping experience (optional)..."
+              value={reviewComment}
+              onChange={e => setReviewComment(e.target.value)}
+              style={{ width: '100%', marginBottom: 18, resize: 'none' }}
+            />
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setRatingModalOrder(null)}
+                disabled={submittingReview}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSubmitReview}
+                disabled={submittingReview}
+                style={{ minWidth: 120 }}
+              >
+                {submittingReview ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       <div

@@ -6,6 +6,7 @@ interface OrdersTabProps {
   onBack: () => void;
   onJoinLiveShopping: (slotKey: string) => void;
   onTrackOrder: (slotKey: string) => void;
+  onRateShopper?: (order: Order) => void;
 }
 
 export const OrdersTab: React.FC<OrdersTabProps> = ({
@@ -13,6 +14,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
   onBack,
   onJoinLiveShopping,
   onTrackOrder,
+  onRateShopper,
 }) => {
   return (
     <section className="screen active" data-screen="orders">
@@ -40,11 +42,11 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                 <div className="booking-top">
                   <div className="booking-top-left">
                     <img
-                      src={o.items[0]?.image || '/images/categories/jewellery-accessories.jpg'}
+                      src={o.items[0]?.image || '/images/placeholders/placeholder-item.svg'}
                       alt=""
                       style={{ width: 54, height: 54, borderRadius: 10, objectFit: 'cover' }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/categories/jewellery-accessories.jpg';
+                        (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
                       }}
                     />
                     <div>
@@ -57,11 +59,16 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                   <div className="booking-total">₹{o.totalAmount}</div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                   <div className="status-pill">{o.trackingStage.replace(/_/g, ' ')}</div>
                   {o.orderType === 'online' && (
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#EDE9FE', color: '#6D28D9' }}>
                       Online Concierge (Admin Procurement)
+                    </span>
+                  )}
+                  {o.trackingNumber && (
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+                      ✈️ {o.carrier || 'Express'}: {o.trackingNumber}
                     </span>
                   )}
                 </div>
@@ -124,6 +131,27 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                     </svg>
                     <span>{o.orderType === 'online' ? 'Track Procurement' : 'Track order'}</span>
                   </button>
+
+                  {o.liveSession?.worker && onRateShopper && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{
+                        flex: '1 1 110px',
+                        minWidth: 100,
+                        background: '#FEF3C7',
+                        color: '#92400E',
+                        border: '1px solid #FCD34D',
+                        fontWeight: 700,
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => onRateShopper(o)}
+                    >
+                      ⭐ Rate Shopper
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -93,6 +93,12 @@ interface Order {
   trackingStage: string;
   orderType?: string; // 'market' | 'online' | 'hybrid'
   totalAmount: number;
+  customerNotes?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
   createdAt: string;
   shippingAddress?: {
     name?: string;
@@ -163,6 +169,11 @@ export default function AdminPortal() {
   const [procurePrice, setProcurePrice] = useState('');
   const [procureNotes, setProcureNotes] = useState('');
   const [onlineFilter, setOnlineFilter] = useState<'all' | 'pending' | 'ordered' | 'received'>('all');
+
+  // Shipping & International Dispatch State
+  const [dispatchCarrier, setDispatchCarrier] = useState('DHL Express');
+  const [dispatchAwb, setDispatchAwb] = useState('');
+  const [dispatchUrl, setDispatchUrl] = useState('');
 
   // Settings
   const [slotFee, setSlotFee] = useState(199);
@@ -352,6 +363,67 @@ export default function AdminPortal() {
       }
     } catch {
       showToast('Handover verification failed');
+    }
+  };
+
+  const handleMarkShipped = async (orderId: string) => {
+    try {
+      const res = await fetch('/api/admin/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mark_shipped',
+          orderId,
+          carrier: dispatchCarrier,
+          trackingNumber: dispatchAwb,
+          trackingUrl: dispatchUrl,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchData();
+        if (selectedOrder) {
+          setSelectedOrder(prev => prev ? {
+            ...prev,
+            status: 'shipped',
+            trackingStage: 'shipped',
+            carrier: dispatchCarrier,
+            trackingNumber: dispatchAwb || 'EXP-DISPATCHED',
+          } : null);
+        }
+      } else {
+        showToast(data.error || 'Shipping update failed');
+      }
+    } catch {
+      showToast('Shipping update failed');
+    }
+  };
+
+  const handleMarkDelivered = async (orderId: string) => {
+    if (!confirm('Mark this package as delivered to customer doorstep?')) return;
+    try {
+      const res = await fetch('/api/admin/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_delivered', orderId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchData();
+        if (selectedOrder) {
+          setSelectedOrder(prev => prev ? {
+            ...prev,
+            status: 'delivered',
+            trackingStage: 'out_for_delivery',
+          } : null);
+        }
+      } else {
+        showToast(data.error || 'Delivery update failed');
+      }
+    } catch {
+      showToast('Delivery update failed');
     }
   };
 
@@ -1017,10 +1089,10 @@ export default function AdminPortal() {
                                 {o.items.slice(0, 2).map(it => (
                                   <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <img
-                                      src={it.image || '/images/categories/jewellery-accessories.jpg'}
+                                      src={it.image || '/images/placeholders/placeholder-item.svg'}
                                       alt=""
                                       style={{ width: 34, height: 34, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
-                                      onClick={e => { e.stopPropagation(); setZoomImg(it.image || '/images/categories/jewellery-accessories.jpg'); }}
+                                      onClick={e => { e.stopPropagation(); setZoomImg(it.image || '/images/placeholders/placeholder-item.svg'); }}
                                     />
                                     <div style={{ fontSize: 12.5, lineHeight: 1.2 }}>
                                       <b>{it.name}</b>
@@ -1210,10 +1282,10 @@ export default function AdminPortal() {
                                 {o.items.map(it => (
                                   <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <img
-                                      src={it.image || '/images/categories/jewellery-accessories.jpg'}
+                                      src={it.image || '/images/placeholders/placeholder-item.svg'}
                                       alt=""
                                       style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
-                                      onClick={e => { e.stopPropagation(); setZoomImg(it.image || '/images/categories/jewellery-accessories.jpg'); }}
+                                      onClick={e => { e.stopPropagation(); setZoomImg(it.image || '/images/placeholders/placeholder-item.svg'); }}
                                     />
                                     <div style={{ fontSize: 12.5, lineHeight: 1.25 }}>
                                       <b>{it.name}</b>
@@ -1456,10 +1528,10 @@ export default function AdminPortal() {
                             <td style={{ maxWidth: 300 }}>
                               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                 <img
-                                  src={item.image || '/images/categories/electronics-accessories.jpg'}
+                                  src={item.image || '/images/placeholders/placeholder-item.svg'}
                                   alt=""
                                   style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', cursor: 'pointer', flexShrink: 0 }}
-                                  onClick={() => setZoomImg(item.image || '/images/categories/electronics-accessories.jpg')}
+                                  onClick={() => setZoomImg(item.image || '/images/placeholders/placeholder-item.svg')}
                                 />
                                 <div>
                                   <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A', lineHeight: 1.3 }}>{item.name}</div>
@@ -2365,10 +2437,10 @@ export default function AdminPortal() {
                       {/* Item Header */}
                       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                         <img
-                          src={it.image || '/images/categories/jewellery-accessories.jpg'}
+                          src={it.image || '/images/placeholders/placeholder-item.svg'}
                           alt=""
                           style={{ width: 64, height: 64, borderRadius: 10, objectFit: 'cover', cursor: 'zoom-in', border: '1px solid #CBD5E1', flexShrink: 0 }}
-                          onClick={() => setZoomImg(it.image || '/images/categories/jewellery-accessories.jpg')}
+                          onClick={() => setZoomImg(it.image || '/images/placeholders/placeholder-item.svg')}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 6 }}>
@@ -2675,6 +2747,99 @@ export default function AdminPortal() {
                     )}
                   </>
                 )}
+
+                {/* 6. International Express Dispatch & Delivery */}
+                <div className="sec">International Express Cargo &amp; Delivery</div>
+                <div className="card pad" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Current Tracking Stage:</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+                        {selectedOrder.trackingStage.replace(/_/g, ' ').toUpperCase()}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: 11.5,
+                      fontWeight: 800,
+                      padding: '3px 10px',
+                      borderRadius: 999,
+                      background: selectedOrder.status === 'delivered' ? '#DCFCE7' : selectedOrder.status === 'shipped' ? '#EFF6FF' : '#FEF3C7',
+                      color: selectedOrder.status === 'delivered' ? '#166534' : selectedOrder.status === 'shipped' ? '#1E40AF' : '#92400E',
+                    }}>
+                      Status: {selectedOrder.status.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {selectedOrder.customerNotes && (
+                    <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '8px 12px', borderRadius: 8, fontSize: 12, color: '#92400E', marginBottom: 12 }}>
+                      📝 <b>Customer Instructions / Notes:</b> {selectedOrder.customerNotes}
+                    </div>
+                  )}
+
+                  {selectedOrder.trackingNumber ? (
+                    <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                      <div style={{ fontSize: 12, color: '#64748B' }}>
+                        Carrier: <b>{selectedOrder.carrier || 'Express Courier'}</b>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+                        Airway Bill #: <span style={{ color: '#2563EB' }}>{selectedOrder.trackingNumber}</span>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {selectedOrder.status !== 'delivered' && selectedOrder.status !== 'cancelled' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {selectedOrder.status !== 'shipped' ? (
+                        <>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                            <div>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>Carrier:</label>
+                              <select
+                                className="inp"
+                                value={dispatchCarrier}
+                                onChange={e => setDispatchCarrier(e.target.value)}
+                                style={{ marginTop: 2 }}
+                              >
+                                <option value="DHL Express">DHL Express Global</option>
+                                <option value="FedEx Global">FedEx International</option>
+                                <option value="BlueDart Apex">BlueDart Apex Express</option>
+                                <option value="Aramex Overseas">Aramex Overseas</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>Airway Bill / Tracking #:</label>
+                              <input
+                                type="text"
+                                className="inp"
+                                placeholder="e.g. DHL-984210492"
+                                value={dispatchAwb}
+                                onChange={e => setDispatchAwb(e.target.value)}
+                                style={{ marginTop: 2 }}
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn s"
+                            style={{ background: '#2563EB', color: '#fff', fontWeight: 800, padding: '8px 14px', marginTop: 4 }}
+                            onClick={() => handleMarkShipped(selectedOrder.id)}
+                          >
+                            ✈️ Dispatch via International Express Cargo
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn s"
+                          style={{ background: '#16A34A', color: '#fff', fontWeight: 800, padding: '8px 14px' }}
+                          onClick={() => handleMarkDelivered(selectedOrder.id)}
+                        >
+                          ✓ Confirm Delivered to Customer Doorstep
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Footer */}
@@ -2721,19 +2886,19 @@ export default function AdminPortal() {
               <div className="sec">Government ID Documents</div>
               <div className="docs">
                 <img
-                  src={selectedWorker.aadhaarFront || '/images/categories/jewellery-accessories.jpg'}
-                  alt=""
-                  onClick={() => setZoomImg(selectedWorker.aadhaarFront || '/images/categories/jewellery-accessories.jpg')}
+                  src={selectedWorker.aadhaarFront || '/images/placeholders/placeholder-document.svg'}
+                  alt="Aadhaar Front"
+                  onClick={() => setZoomImg(selectedWorker.aadhaarFront || '/images/placeholders/placeholder-document.svg')}
                 />
                 <img
-                  src={selectedWorker.panDoc || '/images/categories/art-crafts.jpg'}
-                  alt=""
-                  onClick={() => setZoomImg(selectedWorker.panDoc || '/images/categories/art-crafts.jpg')}
+                  src={selectedWorker.panDoc || '/images/placeholders/placeholder-document.svg'}
+                  alt="PAN Document"
+                  onClick={() => setZoomImg(selectedWorker.panDoc || '/images/placeholders/placeholder-document.svg')}
                 />
                 <img
-                  src={selectedWorker.selfie || '/images/categories/sarees-ethnic-wear.jpg'}
-                  alt=""
-                  onClick={() => setZoomImg(selectedWorker.selfie || '/images/categories/sarees-ethnic-wear.jpg')}
+                  src={selectedWorker.selfie || '/images/placeholders/placeholder-avatar.svg'}
+                  alt="Worker Selfie"
+                  onClick={() => setZoomImg(selectedWorker.selfie || '/images/placeholders/placeholder-avatar.svg')}
                 />
               </div>
             </div>
@@ -2978,7 +3143,7 @@ export default function AdminPortal() {
             {/* Product summary card */}
             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
               <img
-                src={procureModalItem.item.image || '/images/categories/electronics-accessories.jpg'}
+                src={procureModalItem.item.image || '/images/placeholders/placeholder-item.svg'}
                 alt=""
                 style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }}
               />

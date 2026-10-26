@@ -32,7 +32,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, email, name, phone, line1, line2, city, region, zip, country, isDefault } = body;
+    const { userId, email, name, label, phone, line1, line2, city, region, zip, country, isDefault } = body;
 
     let targetUserId = userId;
     if (!targetUserId && email) {
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       data: {
         userId: targetUserId,
         name: name.trim(),
+        label: label ? label.trim() : 'Home',
         phone: phone ? phone.trim() : null,
         line1: line1.trim(),
         line2: line2 ? line2.trim() : null,
@@ -73,6 +74,45 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, address: addr });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to save address';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, userId, name, label, phone, line1, line2, city, region, zip, country, isDefault } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Address ID required' }, { status: 400 });
+    }
+
+    if (isDefault && userId) {
+      await prisma.userAddress.updateMany({
+        where: { userId },
+        data: { isDefault: false },
+      });
+    }
+
+    const updated = await prisma.userAddress.update({
+      where: { id },
+      data: {
+        ...(name ? { name: name.trim() } : {}),
+        ...(label ? { label: label.trim() } : {}),
+        ...(phone !== undefined ? { phone: phone ? phone.trim() : null } : {}),
+        ...(line1 ? { line1: line1.trim() } : {}),
+        ...(line2 !== undefined ? { line2: line2 ? line2.trim() : null } : {}),
+        ...(city ? { city: city.trim() } : {}),
+        ...(region !== undefined ? { region: region ? region.trim() : null } : {}),
+        ...(zip ? { zip: zip.trim() } : {}),
+        ...(country ? { country: country.trim() } : {}),
+        ...(isDefault !== undefined ? { isDefault: Boolean(isDefault) } : {}),
+      },
+    });
+
+    return NextResponse.json({ success: true, address: updated });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Failed to update address';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

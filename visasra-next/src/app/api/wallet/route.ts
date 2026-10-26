@@ -45,7 +45,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { userId, email, amount, note, razorpayPaymentId } = await req.json();
+    const { userId, email, amount, note, razorpayPaymentId, razorpayOrderId } = await req.json();
     const topupAmount = Number(amount);
 
     if (isNaN(topupAmount) || topupAmount <= 0) {
@@ -68,8 +68,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User identifier required' }, { status: 400 });
     }
 
-    const txNote = razorpayPaymentId
-      ? `${note || 'Visasra Money Deposit'} · Razorpay Ref: ${razorpayPaymentId}`
+    const refString = [
+      razorpayPaymentId ? `Pay: ${razorpayPaymentId}` : '',
+      razorpayOrderId ? `Order: ${razorpayOrderId}` : '',
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    const txNote = refString
+      ? `${note || 'Visasra Money Deposit'} · ${refString}`
       : (note || 'Visasra Money Deposit via Razorpay');
 
     const [updatedUser, tx] = await prisma.$transaction([

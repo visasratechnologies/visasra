@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createAndStoreOtp, verifyStoredOtp } from '@/lib/otp';
+import { createSession } from '@/lib/session';
 
 export async function POST(req: Request) {
   try {
@@ -43,9 +44,13 @@ export async function POST(req: Request) {
             phone: phone ? phone.trim() : null,
             password: defaultPassword,
             walletBalance: 0,
+            lastLoginAt: new Date(),
           },
         });
       }
+
+      // Record authoritative session in PostgreSQL and update lastLoginAt
+      const session = await createSession(user.id, req);
 
       return NextResponse.json({
         success: true,
@@ -54,9 +59,12 @@ export async function POST(req: Request) {
           name: user.name,
           email: user.email,
           phone: user.phone,
+          location: user.location,
+          avatar: user.avatar,
           walletBalance: user.walletBalance,
+          lastLoginAt: user.lastLoginAt,
         },
-        token: 'customer_session_' + Date.now(),
+        token: session.token,
       });
     }
 
@@ -100,6 +108,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Incorrect password. Please try again or use Forgot Password.' }, { status: 401 });
       }
 
+      // Record authoritative session in PostgreSQL and update lastLoginAt
+      const session = await createSession(user.id, req);
+
       return NextResponse.json({
         success: true,
         user: {
@@ -107,9 +118,12 @@ export async function POST(req: Request) {
           name: user.name,
           email: user.email,
           phone: user.phone,
+          location: user.location,
+          avatar: user.avatar,
           walletBalance: user.walletBalance,
+          lastLoginAt: user.lastLoginAt,
         },
-        token: 'customer_session_' + Date.now(),
+        token: session.token,
       });
     }
 
@@ -142,9 +156,13 @@ export async function POST(req: Request) {
             phone: cleanPhone.startsWith('+') ? cleanPhone : `+91 ${digits}`,
             password: defaultPassword,
             walletBalance: 0,
+            lastLoginAt: new Date(),
           },
         });
       }
+
+      // Record authoritative session in PostgreSQL and update lastLoginAt
+      const session = await createSession(user.id, req);
 
       return NextResponse.json({
         success: true,
@@ -153,9 +171,12 @@ export async function POST(req: Request) {
           name: user.name,
           email: user.email,
           phone: user.phone,
+          location: user.location,
+          avatar: user.avatar,
           walletBalance: user.walletBalance,
+          lastLoginAt: user.lastLoginAt,
         },
-        token: 'customer_session_' + Date.now(),
+        token: session.token,
       });
     }
 
@@ -165,3 +186,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

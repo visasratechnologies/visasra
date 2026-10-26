@@ -253,7 +253,7 @@ export async function POST(req: Request) {
       await prisma.productOption.create({
         data: {
           orderItemId: itemId,
-          image: optionData.image || '/images/categories/jewellery-accessories.jpg',
+          image: optionData.image || '/images/placeholders/placeholder-item.svg',
           price: Number(optionData.price) || 1000,
           description: optionData.description || 'Verified in store',
           status: 'pending',

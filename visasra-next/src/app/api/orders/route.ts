@@ -191,7 +191,9 @@ export async function POST(req: Request) {
     const slotFee = !isNaN(incomingSlotFee) && incomingSlotFee >= 0 ? incomingSlotFee : 400;
     const merchandiseBudget = processedItems.reduce((acc, it) => acc + (it.estMax || it.estMin || 1000) * (it.qty || 1), 0);
 
-    // Atomically debit slot fee from Visasra Money, log transaction, and create order
+    const customerNotes = body.customerNotes || body.itemRequirement || (shippingAddress && shippingAddress.deliveryNotes) || null;
+
+    // Atomically debit slot fee from Visasra Money, log transaction, clear cart, and create order
     const [updatedUser, walletTx, order] = await prisma.$transaction([
       prisma.user.update({
         where: { id: targetUserId },
@@ -207,6 +209,14 @@ export async function POST(req: Request) {
           note: `Slot Booking Fee for Dedicated Shopper (${slotLabel || 'Sourcing Slot'})`,
         },
       }),
+      // Atomically clear customer cart in PostgreSQL upon successful checkout
+      prisma.cartItem.deleteMany({
+        where: {
+          cart: {
+            userId: targetUserId,
+          },
+        },
+      }),
       prisma.order.create({
         data: {
           orderNumber,
@@ -219,6 +229,7 @@ export async function POST(req: Request) {
           trackingStage: orderType === 'online' ? 'admin_procurement' : 'slot_confirmed',
           orderType,
           totalAmount: merchandiseBudget,
+          customerNotes,
           shippingAddress: shippingAddress || {},
           items: {
             create: processedItems,
@@ -254,6 +265,38 @@ export async function POST(req: Request) {
         },
       }),
     ]);
+
+    // Auto-save delivery address to UserAddress table so user never loses their saved addresses
+    if (shippingAddress && shippingAddress.line1 && shippingAddress.city && shippingAddress.zip) {
+      try {
+        const existingAddr = await prisma.userAddress.findFirst({
+          where: {
+            userId: targetUserId,
+            line1: String(shippingAddress.line1).trim(),
+            zip: String(shippingAddress.zip).trim(),
+          },
+        });
+        if (!existingAddr) {
+          await prisma.userAddress.create({
+            data: {
+              userId: targetUserId,
+              name: String(shippingAddress.name || 'Recipient').trim(),
+              label: String(shippingAddress.label || 'Home').trim(),
+              phone: shippingAddress.phone ? String(shippingAddress.phone).trim() : null,
+              line1: String(shippingAddress.line1).trim(),
+              line2: shippingAddress.line2 ? String(shippingAddress.line2).trim() : null,
+              city: String(shippingAddress.city).trim(),
+              region: shippingAddress.region ? String(shippingAddress.region).trim() : null,
+              zip: String(shippingAddress.zip).trim(),
+              country: String(shippingAddress.country || 'India').trim(),
+              isDefault: false,
+            },
+          });
+        }
+      } catch (e) {
+        console.warn('Address auto-save skipped:', e);
+      }
+    }
 
     return NextResponse.json({ success: true, order, newWalletBalance: updatedUser.walletBalance });
   } catch (err: unknown) {

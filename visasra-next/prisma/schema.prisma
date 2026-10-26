@@ -17,6 +17,7 @@ model User {
   location       String?
   avatar         String?
   walletBalance  Float               @default(0)
+  lastLoginAt    DateTime?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   orders         Order[]
@@ -24,6 +25,8 @@ model User {
   liveSessions   LiveSession[]
   addresses      UserAddress[]
   reviews        WorkerReview[]
+  cart           Cart?
+  sessions       UserSession[]
 
   @@index([phone])
 }
@@ -82,6 +85,7 @@ model Worker {
   bankIfscCode         String?
   bankName             String?
   bankBranch           String?
+  lastLoginAt          DateTime?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   liveSessions         LiveSession[]
@@ -94,6 +98,7 @@ model Admin {
   email     String   @unique
   password  String
   role      String   @default("superadmin") // 'superadmin' | 'ops' | 'finance'
+  lastLoginAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -137,11 +142,18 @@ model Order {
   orderType       String            @default("market") // 'market' | 'online' | 'hybrid'
   totalAmount     Float             @default(0)
   shippingAddress Json?
+  customerNotes   String?           // Customer special instructions or item requirements
+  carrier         String?           // 'DHL Express' | 'FedEx Global' | 'BlueDart' | etc.
+  trackingNumber  String?           // International / Domestic Airway Bill Number
+  trackingUrl     String?           // Direct carrier tracking URL
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   items           OrderItem[]
   liveSession     LiveSession?
   stageHistory    OrderTrackingStage[]
+  review          WorkerReview?
 
   @@index([userId])
   @@index([slotKey])
@@ -238,7 +250,8 @@ model UserAddress {
   id         String   @id @default(uuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String   // e.g. 'Home', 'Office'
+  name       String   // e.g. 'Sai Kiran' (Recipient name)
+  label      String?  @default("Home") // 'Home' | 'Office' | 'Other'
   phone      String?
   line1      String
   line2      String?
@@ -260,11 +273,60 @@ model WorkerReview {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   orderId   String?  @unique
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
   rating    Float    @default(5.0)
   comment   String?
   createdAt DateTime @default(now())
 
   @@index([workerId])
   @@index([userId])
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id           String   @id @default(uuid())
+  cartId       String
+  cart         Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId    String?
+  name         String
+  qty          Int      @default(1)
+  priceMin     Float
+  priceMax     Float
+  image        String?
+  images       Json?
+  notes        String?
+  sourceType   String   @default("catalog") // 'catalog' | 'mind' | 'online'
+  sourceUrl    String?
+  categoryName String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([cartId])
+  @@index([productId])
+}
+
+model UserSession {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String    @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  lastActiveAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
 

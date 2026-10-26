@@ -35,7 +35,7 @@ export default function CustomizeProductModal({
 
   if (!product) return null;
 
-  const fallbackCatImg = '/images/categories/jewellery-accessories.jpg';
+  const fallbackCatImg = '/images/placeholders/placeholder-item.svg';
   const baseImg = product.image || fallbackCatImg;
   const availablePhotos = product.images && product.images.length > 0 ? product.images : [baseImg];
   const activeDisplayPhoto = availablePhotos[activePhotoIdx] || baseImg;
@@ -80,11 +80,7 @@ export default function CustomizeProductModal({
               className="pmg-main-img"
               onError={(e) => {
                 const img = e.target as HTMLImageElement;
-                if (!img.src.includes(fallbackCatImg)) {
-                  img.src = fallbackCatImg;
-                } else {
-                  img.src = '/images/categories/mens-fashion.jpg';
-                }
+                img.src = fallbackCatImg;
               }}
             />
             <span className="pmg-photo-tag">

@@ -162,11 +162,11 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                             <div className="live-sugg-content-row" style={{ display: 'flex', gap: 16 }}>
                               <div className="live-sugg-img-wrapper">
                                 <img
-                                  src={opt.image || '/images/categories/jewellery-accessories.jpg'}
+                                  src={opt.image || '/images/placeholders/placeholder-item.svg'}
                                   alt=""
                                   className="live-sugg-img"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/images/categories/jewellery-accessories.jpg';
+                                    (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
                                   }}
                                 />
                               </div>

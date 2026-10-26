@@ -278,6 +278,76 @@ export async function POST(req: Request) {
       });
     }
 
+    // 11. Mark Order Shipped with Airway Bill / Tracking Carrier
+    if (action === 'mark_shipped' && orderId) {
+      const { carrier, trackingNumber, trackingUrl, note } = body;
+      const carrierName = carrier ? String(carrier).trim() : 'DHL Express';
+      const awb = trackingNumber ? String(trackingNumber).trim() : 'EXP-' + Math.floor(10000000 + Math.random() * 90000000);
+      const url = trackingUrl ? String(trackingUrl).trim() : null;
+
+      const updatedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'shipped',
+          trackingStage: 'shipped',
+          carrier: carrierName,
+          trackingNumber: awb,
+          trackingUrl: url,
+          shippedAt: new Date(),
+        },
+      });
+
+      // Update tracking stages in PostgreSQL
+      await prisma.orderTrackingStage.updateMany({
+        where: { orderId, stageKey: 'packed' },
+        data: { status: 'done' },
+      });
+      await prisma.orderTrackingStage.updateMany({
+        where: { orderId, stageKey: 'shipped' },
+        data: {
+          status: 'current',
+          note: note ? String(note).trim() : `Dispatched via ${carrierName} (AWB: ${awb})`,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Order #${updatedOrder.orderNumber} dispatched via ${carrierName}! AWB: ${awb}`,
+        order: updatedOrder,
+      });
+    }
+
+    // 12. Mark Order Delivered
+    if (action === 'mark_delivered' && orderId) {
+      const { note } = body;
+      const updatedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'delivered',
+          trackingStage: 'out_for_delivery',
+          deliveredAt: new Date(),
+        },
+      });
+
+      await prisma.orderTrackingStage.updateMany({
+        where: { orderId, stageKey: 'shipped' },
+        data: { status: 'done' },
+      });
+      await prisma.orderTrackingStage.updateMany({
+        where: { orderId, stageKey: 'out_for_delivery' },
+        data: {
+          status: 'done',
+          note: note ? String(note).trim() : 'Package successfully delivered to customer doorstep with signature verification',
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Order #${updatedOrder.orderNumber} marked as successfully delivered!`,
+        order: updatedOrder,
+      });
+    }
+
     return NextResponse.json({ error: 'Invalid admin action' }, { status: 400 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Admin action failed';
