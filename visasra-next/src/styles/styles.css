@@ -1939,19 +1939,20 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 /* confirmation art (wider image now) */
 .confirm-hero { width: 290px; }
 
-/* ===== Corner leaf clusters (categories / orders / profile): upright, pointing left ===== */
+/* ===== Corner leaf clusters (categories / orders / profile): flush top-right corner ===== */
 .screen[data-screen="categories"],
 .screen[data-screen="orders"],
 .screen[data-screen="profile"] { position: relative; }
 .corner-leaf {
-  position: absolute; top: 6px; right: 12px; width: 92px; height: auto;
+  position: absolute; top: 0; right: 0; width: 140px; height: auto;
   z-index: 0; pointer-events: none; user-select: none;
   filter: drop-shadow(0 6px 10px rgba(70, 110, 190, .20));
 }
 @media (min-width: 720px) {
-  .corner-leaf { top: 14px; right: 48px; width: 130px; }
-  .screen[data-screen="categories"] .corner-leaf { top: 8px; width: 172px; }
-  .screen[data-screen="orders"] .corner-leaf { width: 118px; }
+  .corner-leaf { top: 0; right: 0; width: 250px; }
+  .screen[data-screen="categories"] .corner-leaf,
+  .screen[data-screen="orders"] .corner-leaf,
+  .screen[data-screen="profile"] .corner-leaf { top: 0; right: 0; width: 250px; }
   /* home search: clearly visible blue outline */
   .desk-header .search-bar {
     background: #fff; border: 1.5px solid #1261B5;
@@ -4808,7 +4809,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     max-width: none !important;
   }
 
-  .screen:not(.screen-categories-root) {
+  .screen:not(.screen-categories-root):not(.screen-orders-root):not(.screen-profile-root) {
     padding: 0 20px 32px !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
@@ -4967,7 +4968,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     margin-left: 240px !important;
     width: calc(100% - 240px) !important;
   }
-  .screen:not(.screen-categories-root) {
+  .screen:not(.screen-categories-root):not(.screen-orders-root):not(.screen-profile-root) {
     max-width: 1180px !important;
     padding: 0 40px 40px !important;
   }
@@ -5407,14 +5408,24 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 }
 
 /* ==========================================================================
-   Categories Page Edge-to-Edge Corner Leaf & Bottom Floral Guarantee
+   Edge-to-Edge Decorative Corner Leaves & Floral Guarantee (Categories, Orders, Profile)
    ========================================================================== */
 .screen.screen-categories-root,
-.screen[data-screen="categories"].screen-categories-root {
+.screen[data-screen="categories"].screen-categories-root,
+.screen.screen-orders-root,
+.screen[data-screen="orders"].screen-orders-root,
+.screen.screen-profile-root,
+.screen[data-screen="profile"].screen-profile-root {
   width: 100% !important;
   max-width: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
+  position: relative !important;
+  overflow-x: hidden !important;
+}
+
+.screen.screen-categories-root,
+.screen[data-screen="categories"].screen-categories-root {
   min-height: 100vh !important;
   display: flex !important;
   flex-direction: column !important;
@@ -5431,18 +5442,59 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   padding: 0 !important;
 }
 
+.orders-inner,
+.profile-inner {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 0 28px 40px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+@media (max-width: 1279px) {
+  .orders-inner,
+  .profile-inner {
+    padding: 0 20px 32px !important;
+  }
+}
+
+@media (max-width: 719px) {
+  .orders-inner,
+  .profile-inner {
+    padding: 0 16px 24px !important;
+  }
+}
+
+/* Corner leaf: pinned flush to top-right corner with 0 gap across Categories, Orders & Profile */
 .cat-tier1-wrap .corner-leaf,
-.screen-categories-root .corner-leaf {
+.screen-categories-root .corner-leaf,
+.screen[data-screen="categories"] .corner-leaf,
+.screen-orders-root .corner-leaf,
+.screen[data-screen="orders"] .corner-leaf,
+.screen-profile-root .corner-leaf,
+.screen[data-screen="profile"] .corner-leaf {
   position: absolute !important;
   top: 0 !important;
   right: 0 !important;
+  width: 140px !important;
+  max-width: 35vw !important;
+  height: auto !important;
   z-index: 0 !important;
   pointer-events: none !important;
+  user-select: none !important;
+  margin: 0 !important;
 }
 
 @media (min-width: 720px) {
   .cat-tier1-wrap .corner-leaf,
-  .screen-categories-root .corner-leaf {
+  .screen-categories-root .corner-leaf,
+  .screen[data-screen="categories"] .corner-leaf,
+  .screen-orders-root .corner-leaf,
+  .screen[data-screen="orders"] .corner-leaf,
+  .screen-profile-root .corner-leaf,
+  .screen[data-screen="profile"] .corner-leaf {
     width: 250px !important;
     max-width: 28vw !important;
     top: 0 !important;
@@ -5462,6 +5514,27 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     margin-bottom: 0 !important;
     vertical-align: bottom !important;
   }
+}
+
+/* Profile Edit Button: clean pill badge next to user's name */
+.profile-edit-btn {
+  background: rgba(18, 97, 181, 0.08) !important;
+  color: var(--primary, #1261B5) !important;
+  border: 1px solid rgba(18, 97, 181, 0.25) !important;
+  border-radius: 20px !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.15s ease !important;
+}
+.profile-edit-btn:hover {
+  background: rgba(18, 97, 181, 0.16) !important;
+  border-color: rgba(18, 97, 181, 0.45) !important;
+  transform: translateY(-1px) !important;
 }
 
 

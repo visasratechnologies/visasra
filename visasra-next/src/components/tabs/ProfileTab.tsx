@@ -72,61 +72,65 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
   };
 
   return (
-    <section className="screen active" data-screen="profile">
-      <img className="corner-leaf" src="/images/decor/leaf-cluster.png" alt="" aria-hidden="true" />
-      <button className="back-row" onClick={onBack} aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 6l-6 6 6 6" />
-        </svg>
-        Back
-      </button>
+    <section className="screen active screen-profile-root" data-screen="profile">
+      <img className="corner-leaf" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
+      <div className="profile-inner">
+        <button className="back-row" onClick={onBack} aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 6l-6 6 6 6" />
+          </svg>
+          Back
+        </button>
 
-      <div className="profile-head" style={{ position: 'relative' }}>
-        <div className="avatar">{initials || 'AI'}</div>
-        <div style={{ flex: 1 }}>
-          <div className="profile-name" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <span>{user.name}</span>
-            <button
-              onClick={() => {
-                setEditName(user.name || '');
-                setEditPhone(user.phone || customerPhone || '');
-                setEditLocation(user.location || '');
-                setIsEditing(true);
-              }}
-              style={{
-                background: 'rgba(18, 97, 181, 0.08)',
-                color: 'var(--primary, #1261B5)',
-                border: '1px solid rgba(18, 97, 181, 0.2)',
-                borderRadius: 20,
-                padding: '4px 12px',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-              Edit Details
-            </button>
-          </div>
-          <div className="profile-loc" style={{ marginTop: 4 }}>
-            📍 {user.location ? user.location : 'Delivery Location: Not set'}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-faint, #666)', marginTop: 2 }}>
-            📞 {user.phone || customerPhone || 'Phone not set'} · ✉️ {user.email}
-          </div>
-          {user.lastLoginAt && (
-            <div style={{ fontSize: '11px', color: 'var(--text-faint, #888)', marginTop: 4 }}>
-              Active Session · Last login: {new Date(user.lastLoginAt).toLocaleDateString()}
+        <div className="profile-head" style={{ position: 'relative' }}>
+          <div className="avatar">{initials || 'AI'}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span>{user.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditName(user.name || '');
+                  setEditPhone(user.phone || customerPhone || '');
+                  setEditLocation(user.location || '');
+                  setIsEditing(true);
+                }}
+                className="profile-edit-btn"
+                style={{
+                  background: 'rgba(18, 97, 181, 0.08)',
+                  color: 'var(--primary, #1261B5)',
+                  border: '1px solid rgba(18, 97, 181, 0.25)',
+                  borderRadius: 20,
+                  padding: '4px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Edit Details
+              </button>
             </div>
-          )}
+            <div className="profile-loc" style={{ marginTop: 4 }}>
+              📍 {user.location ? user.location : 'Delivery Location: Not set'}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-faint, #666)', marginTop: 2 }}>
+              📞 {user.phone || customerPhone || 'Phone not set'} · ✉️ {user.email}
+            </div>
+            {user.lastLoginAt && (
+              <div style={{ fontSize: '11px', color: 'var(--text-faint, #888)', marginTop: 4 }}>
+                Active Session · Last login: {new Date(user.lastLoginAt).toLocaleDateString()}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
       {/* Edit Profile Modal */}
       {isEditing && (
@@ -253,6 +257,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           <div className="rt" style={{ fontWeight: 700 }}>Sign out of Visasra</div>
           <div className="rc" style={{ color: '#DC2626' }}>›</div>
         </div>
+      </div>
       </div>
     </section>
   );
