@@ -162,7 +162,7 @@ export default function EditBasketItemModal({
               </span>
             </div>
             <div style={{ fontSize: 11.5, color: '#64748B', marginBottom: 10 }}>
-              Add photos to guide your concierge
+              Add photos to guide your shopper
             </div>
 
             <div className="multi-photo-grid">

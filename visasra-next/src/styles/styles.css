@@ -2013,20 +2013,49 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 .screens:has(.screen-categories-root),
 .screens:has(.screen[data-screen="categories"].active:has(.cat-leaves-decor)) {
   padding-bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 100% !important;
 }
 .screen-categories-root,
 .screen[data-screen="categories"]:has(.cat-leaves-decor) {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 100% !important;
   padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing: border-box !important;
+}
+.cat-tier1-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 100% !important;
 }
 .cat-leaves-decor {
+  margin-top: auto !important;
   margin-bottom: 0 !important;
+  line-height: 0 !important;
 }
 @media (min-width: 720px) {
   .screens-cat-root,
-  .screens:has(.screen[data-screen="categories"].active) { padding-bottom: 0 !important; }
+  .screens:has(.screen[data-screen="categories"].active) {
+    padding-bottom: 0 !important;
+    min-height: 100vh !important;
+  }
   .screen-categories-root,
-  .screen[data-screen="categories"] { padding-bottom: 0 !important; }
-  .cat-leaves-decor { margin-bottom: 0 !important; }
+  .screen[data-screen="categories"] {
+    padding-bottom: 0 !important;
+    min-height: 100vh !important;
+  }
+  .cat-tier1-wrap {
+    min-height: 100vh !important;
+  }
+  .cat-leaves-decor {
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+  }
 }
 .time-grid { grid-template-columns: 1fr; }
 .slot-ist { display: block; margin-top: 2px; }
@@ -2069,7 +2098,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 @media (min-width: 720px) {
   .cat-leaves-decor {
     max-width: 540px;
-    margin-top: 0;
+    margin-top: auto !important;
     margin-bottom: 0 !important;
     overflow: hidden;
     aspect-ratio: 477 / 235;
@@ -4646,73 +4675,119 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     background: var(--bg) !important;
   }
 
+  /* Compact Tablet Navigation Rail */
   .sidenav {
-    width: 200px !important;
-    padding: 22px 12px 18px !important;
+    width: 76px !important;
+    padding: 18px 6px 16px !important;
     background: #0B1528 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    z-index: 25 !important;
   }
   .sidenav-brand {
-    font-size: 20px !important;
-    padding: 2px 6px 20px !important;
+    font-size: 0 !important;
+    padding: 2px 0 16px !important;
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 0 !important;
+  }
+  .sidenav-brand .brand-text {
+    display: none !important;
   }
   .sidenav-brand-logo {
     width: 34px !important;
+    height: auto !important;
+    margin: 0 auto !important;
   }
   .sidenav .nav-btn {
-    font-size: 13px !important;
-    padding: 10px 10px !important;
-    gap: 10px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 9px 2px !important;
+    gap: 4px !important;
+    width: 100% !important;
+    text-align: center !important;
+    border-radius: 10px !important;
+    border-left: none !important;
+    position: relative !important;
+    letter-spacing: -0.2px !important;
   }
   .sidenav .nav-btn svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+  }
+  .sidenav .nav-btn.active {
+    background: rgba(14, 75, 138, 0.55) !important;
+    color: #38BDF8 !important;
+    border-left: none !important;
+    border-bottom: 2.5px solid #38BDF8 !important;
+  }
+  .sidenav .nav-btn.active svg {
+    stroke: #38BDF8 !important;
+  }
+  .sidenav .nb-badge {
+    position: absolute !important;
+    top: 3px !important;
+    right: 8px !important;
+    min-width: 15px !important;
+    height: 15px !important;
+    font-size: 9px !important;
+    padding: 0 3px !important;
+    line-height: 15px !important;
   }
 
+  /* Spacious Tablet Content Area */
   #app {
-    margin-left: 200px !important;
-    width: calc(100% - 200px) !important;
+    margin-left: 76px !important;
+    width: calc(100% - 76px) !important;
     max-width: none !important;
   }
 
   .screen {
-    padding: 0 24px 36px !important;
+    padding: 0 20px 32px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .desk-header {
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
-    padding: 20px 0 0 !important;
+    gap: 14px !important;
+    padding: 18px 0 0 !important;
   }
   .desk-header .search-bar {
     flex: 1 !important;
-    max-width: 440px !important;
+    max-width: 480px !important;
   }
 
-  /* Hero Banner matching screenshot */
+  /* Tablet Hero Banner */
   .hero-banner-wrap {
-    height: 290px !important;
-    border-radius: 20px !important;
+    height: 270px !important;
+    border-radius: 18px !important;
   }
   .hero-banner-copy {
-    max-width: 55% !important;
-    padding-left: 32px !important;
+    max-width: 60% !important;
+    padding-left: 28px !important;
   }
   .hero .hbc-title {
-    font-size: 30px !important;
-    line-height: 1.15 !important;
+    font-size: 28px !important;
+    line-height: 1.18 !important;
   }
   .hero .hbc-sub {
     font-size: 13.5px !important;
     max-width: 36ch !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
   }
   .hbc-btn {
     font-size: 14px !important;
     padding: 11px 22px !important;
   }
 
-  /* 4-Column Category Grid matching screenshot */
+  /* Category Grids tailored for Tablet */
   .cat-grid {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 12px !important;
@@ -4723,10 +4798,47 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
   .cat-page-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 14px !important;
+    gap: 16px !important;
   }
 
-  /* Bookings on tablet with sidebar: 1 clean full-width column to avoid clipping */
+  /* Tablet Booking Flow: clean single column so form controls & basket items never squeeze */
+  .flow-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 22px !important;
+    width: 100% !important;
+  }
+  .flow-body-side {
+    width: 100% !important;
+    display: block !important;
+  }
+  .flow-body-side .review-card {
+    position: static !important;
+    margin-top: 0 !important;
+    max-width: 100% !important;
+  }
+  .lux-dur-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+  }
+  #slotList {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Tablet Cart Layout: comfortable full-width items + summary */
+  .cart-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+  .cart-summary {
+    position: static !important;
+    width: 100% !important;
+  }
+
+  /* Orders & Bookings on tablet */
   #homeBookings, #ordersList {
     display: grid !important;
     grid-template-columns: 1fr !important;
@@ -4736,18 +4848,18 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
   .wish-grid {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
   }
   #homeBookings .empty-state, #ordersList .empty-state {
     grid-column: 1 / -1 !important;
   }
 
-  /* Product Grid: 3 per row */
+  /* Product Grid: 3 per row on tablet */
   .product-scroll {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 14px !important;
+    gap: 16px !important;
     overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -4757,18 +4869,9 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     border-radius: 16px !important;
   }
   .product-photo {
-    height: 160px !important;
+    height: 170px !important;
   }
 
-  /* Cart Layout */
-  .cart-layout {
-    grid-template-columns: 1fr 280px !important;
-    gap: 18px !important;
-  }
-  .flow-body {
-    grid-template-columns: 1fr 270px !important;
-    gap: 18px !important;
-  }
   .live-layout-2col {
     grid-template-columns: 1fr !important;
     gap: 20px !important;

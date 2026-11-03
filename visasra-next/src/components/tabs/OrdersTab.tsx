@@ -32,7 +32,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         {orders.length === 0 ? (
           <div className="card pad" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>No Active Orders Yet</div>
-            <p style={{ margin: 0, fontSize: 13 }}>Browse categories or book a shopping slot to reserve your personal concierge in India.</p>
+            <p style={{ margin: 0, fontSize: 13 }}>Browse categories or book a shopping slot to reserve your personal shopper in India.</p>
           </div>
         ) : (
           orders.map(o => (
@@ -63,7 +63,7 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                   <div className="status-pill">{o.trackingStage.replace(/_/g, ' ')}</div>
                   {o.orderType === 'online' && (
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#EDE9FE', color: '#6D28D9' }}>
-                      Online Concierge (Admin Procurement)
+                      Online Sourcing (Admin Procurement)
                     </span>
                   )}
                   {o.trackingNumber && (

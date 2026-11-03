@@ -2236,7 +2236,7 @@ export default function CustomerApp() {
           style={{ width: 76, height: 76, marginBottom: 16, filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.25))' }}
         />
         <div style={{ fontFamily: 'var(--font-display, serif)', fontSize: 28, fontWeight: 800, letterSpacing: 0.5, color: '#FFFFFF' }}>Visasra</div>
-        <div style={{ fontSize: 13.5, color: '#93C5FD', marginTop: 8, fontWeight: 500, letterSpacing: 0.3 }}>Connecting to your concierge...</div>
+        <div style={{ fontSize: 13.5, color: '#93C5FD', marginTop: 8, fontWeight: 500, letterSpacing: 0.3 }}>Loading...</div>
       </div>
     );
   }
@@ -2300,7 +2300,7 @@ export default function CustomerApp() {
                 </h2>
                 <p className="auth-sub" style={{ fontSize: 13, marginBottom: 16 }}>
                   {authMethod === 'password'
-                    ? 'Enter your email and password to access your concierge.'
+                    ? 'Enter your email and password to sign in.'
                     : 'Enter your email to receive a verification code.'}
                 </p>
 
@@ -3475,7 +3475,7 @@ export default function CustomerApp() {
                 </div>
               ) : (
                 /* Tier 1: All Categories Grid */
-                <div>
+                <div className="cat-tier1-wrap">
                   <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
                     Back to Home
@@ -3537,7 +3537,7 @@ export default function CustomerApp() {
                 Back to Home
               </button>
 
-              <div className="page-title">Book a Shopping Concierge</div>
+              <div className="page-title">Book a Shopping Slot</div>
               <div className="page-sub">Add sourcing items, provide international delivery details, and reserve your dedicated shopping slot.</div>
 
               <div className="booking-wizard">
@@ -4283,7 +4283,7 @@ export default function CustomerApp() {
                         <div>
                           <span className="lux-dur-badge lux-badge-popular">★ Most Popular</span>
                           <div className="lux-dur-hours">3 Hours</div>
-                          <div className="lux-dur-name">Comprehensive Concierge</div>
+                          <div className="lux-dur-name">Comprehensive Shopping</div>
                           <div className="lux-dur-desc">Multi-store bazaar exploration. Compare fabric weaves, jewelry weights &amp; quality.</div>
                         </div>
                         <div className="lux-dur-perk">⚡ Real-Time In-Store Curation</div>
@@ -4297,7 +4297,7 @@ export default function CustomerApp() {
                         }}
                       >
                         <div>
-                          <span className="lux-dur-badge lux-badge-vip">VIP Concierge</span>
+                          <span className="lux-dur-badge lux-badge-vip">VIP Shopper</span>
                           <div className="lux-dur-hours">5 Hours</div>
                           <div className="lux-dur-name">Full-Day Artisan Tour</div>
                           <div className="lux-dur-desc">Deep curation across multiple city bazaars, custom boutique tailoring, bridal and bulk sourcing.</div>
@@ -4423,7 +4423,7 @@ export default function CustomerApp() {
                                 </div>
                                 <div>
                                   <div className="ssc-title-row">
-                                    <span className="ssc-service-tag">Personal Concierge</span>
+                                    <span className="ssc-service-tag">Personal Shopper</span>
                                     <div className="ssc-title">{cart[0]?.name || 'Artisan Sourcing Run'}</div>
                                   </div>
                                   <div className="ssc-desc">
@@ -4521,9 +4521,9 @@ export default function CustomerApp() {
                                   <div className="abhibus-service-card">
                                     <div className="absc-header">
                                       <div className="absc-header-text">
-                                        <div className="absc-service-name">VISASRA SOURCING · {slotDuration}H CONCIERGE PASS</div>
+                                        <div className="absc-service-name">VISASRA SOURCING · {slotDuration}H SHOPPING PASS</div>
                                         <div className="absc-service-type">
-                                          {slotDuration === 2 ? 'Super Express Sourcing (1–2 Stores)' : slotDuration === 3 ? 'Comprehensive Multi-Bazaar Concierge' : 'VIP Full-Day Artisan & Boutique Tour'}
+                                          {slotDuration === 2 ? 'Super Express Sourcing (1–2 Stores)' : slotDuration === 3 ? 'Comprehensive Multi-Bazaar Shopping' : 'VIP Full-Day Artisan & Boutique Tour'}
                                         </div>
                                       </div>
                                       <div className="absc-thumb-box">

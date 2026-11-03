@@ -50,7 +50,7 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <span className="live-pulsing-badge">
             <span className="live-pulsing-dot" />
-            LIVE IN-STORE CONCIERGE ACTIVE
+            LIVE IN-STORE SHOPPER ACTIVE
           </span>
           {orders.length > 0 && (
             <select
@@ -72,7 +72,7 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <div className="shopper-avatar-ring">
             <span style={{ fontSize: 17, fontWeight: 800, color: '#BAE6FD', letterSpacing: 0.5 }}>
-              {(liveSessionData?.shopper?.name || 'Personal Concierge').split(' ').map((n: string) => n[0]).join('')}
+              {(liveSessionData?.shopper?.name || 'Personal Shopper').split(' ').map((n: string) => n[0]).join('')}
             </span>
           </div>
           <div>
@@ -81,7 +81,7 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                 {liveSessionData?.shopper?.name || 'Personal Shopper'}
               </h2>
               <span className="shopper-rating-badge">
-                ★ {liveSessionData?.shopper?.rating || '4.9'} · Verified Concierge
+                ★ {liveSessionData?.shopper?.rating || '4.9'} · Verified Personal Shopper
               </span>
             </div>
             <div style={{ color: '#BAE6FD', fontSize: 13, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
