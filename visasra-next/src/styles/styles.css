@@ -2008,53 +2008,140 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 .time-slot.dur-5.selected { border-color: #D9570F; background: #FDEBDD; color: #D9570F; }
 .time-grid:has(.time-slot.dur-5), .time-grid:has(.time-slot.dur-3) { grid-template-columns: 1fr; }
 
-/* ===== Categories page: flower rests flush on the bottom bar, fully visible without being cut ===== */
+/* ===== Categories page: full-viewport layout, flush top-right leaf and flush bottom flower ===== */
+#app:has(.screens-cat-root) {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100vh !important;
+}
+
 .screens-cat-root,
 .screens:has(.screen-categories-root),
 .screens:has(.screen[data-screen="categories"].active:has(.cat-leaves-decor)) {
   padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 100% !important;
 }
+
 .screen-categories-root,
-.screen[data-screen="categories"]:has(.cat-leaves-decor) {
+.screen[data-screen="categories"].screen-categories-root {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 100% !important;
-  padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
+  position: relative !important;
+  overflow-x: hidden !important;
 }
+
 .cat-tier1-wrap {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
 }
+
+.cat-tier1-inner {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  padding: 0 28px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 1 !important;
+  flex: 0 0 auto !important;
+}
+
+/* Corner leaf: pinned flush to top-right corner with 0 gap */
+.screen-categories-root .corner-leaf,
+.cat-tier1-wrap .corner-leaf,
+.screen[data-screen="categories"] .corner-leaf {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 140px !important;
+  max-width: 35vw !important;
+  height: auto !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  margin: 0 !important;
+}
+
+/* Bottom floral decor: sits flush at the very bottom */
 .cat-leaves-decor {
+  width: 100% !important;
+  max-width: 440px !important;
   margin-top: auto !important;
-  margin-bottom: 0 !important;
+  margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 0 !important;
   line-height: 0 !important;
+  position: relative !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  flex-shrink: 0 !important;
 }
+
+.cat-leaves-decor img {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: bottom !important;
+}
+
+/* Tablet & Desktop (>= 720px): bottom nav is hidden, flower rests flush on viewport bottom */
 @media (min-width: 720px) {
   .screens-cat-root,
   .screens:has(.screen[data-screen="categories"].active) {
     padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
     min-height: 100vh !important;
   }
   .screen-categories-root,
-  .screen[data-screen="categories"] {
+  .screen[data-screen="categories"].screen-categories-root {
     padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
     min-height: 100vh !important;
   }
   .cat-tier1-wrap {
     min-height: 100vh !important;
   }
+  .screen-categories-root .corner-leaf,
+  .cat-tier1-wrap .corner-leaf,
+  .screen[data-screen="categories"] .corner-leaf {
+    width: 250px !important;
+    max-width: 28vw !important;
+    top: 0 !important;
+    right: 0 !important;
+  }
   .cat-leaves-decor {
+    max-width: 540px !important;
     margin-top: auto !important;
     margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 719px) {
+  .cat-tier1-inner {
+    padding: 0 16px !important;
   }
 }
 .time-grid { grid-template-columns: 1fr; }
@@ -2083,33 +2170,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 #popularScroll .product-photo { height: auto; aspect-ratio: 1 / 1; }
 
 
-/* ===== Categories page: floral decoration meets bottom navigation with zero gap ===== */
-.cat-leaves-decor {
-  overflow: visible;
-  aspect-ratio: auto;
-  line-height: 0;
-  margin-bottom: 0 !important;
-}
-.cat-leaves-decor img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-@media (min-width: 720px) {
-  .cat-leaves-decor {
-    max-width: 540px;
-    margin-top: auto !important;
-    margin-bottom: 0 !important;
-    overflow: hidden;
-    aspect-ratio: 477 / 235;
-  }
-}
-/* Corner leaf: larger, growing out of the right edge of the screen */
-.screen[data-screen="categories"] { overflow-x: clip; }
-.screen[data-screen="categories"] .corner-leaf { width: 150px; top: 4px; right: -34px; }
-@media (min-width: 720px) {
-  .screen[data-screen="categories"] .corner-leaf { width: 240px; top: 0; right: -52px; }
-}
+
 
 /* ===== Mobile bottom nav: colourful icon circles (Home blue, Categories pink, Book Slot yellow, Orders green, Profile orange) =====
    Mobile only (<900px); the desktop side nav is untouched. Kept last so it wins over the earlier nav rules. */
@@ -4747,7 +4808,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     max-width: none !important;
   }
 
-  .screen {
+  .screen:not(.screen-categories-root) {
     padding: 0 20px 32px !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
@@ -4906,7 +4967,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     margin-left: 240px !important;
     width: calc(100% - 240px) !important;
   }
-  .screen {
+  .screen:not(.screen-categories-root) {
     max-width: 1180px !important;
     padding: 0 40px 40px !important;
   }
@@ -5344,6 +5405,65 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
 }
+
+/* ==========================================================================
+   Categories Page Edge-to-Edge Corner Leaf & Bottom Floral Guarantee
+   ========================================================================== */
+.screen.screen-categories-root,
+.screen[data-screen="categories"].screen-categories-root {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.cat-tier1-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.cat-tier1-wrap .corner-leaf,
+.screen-categories-root .corner-leaf {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (min-width: 720px) {
+  .cat-tier1-wrap .corner-leaf,
+  .screen-categories-root .corner-leaf {
+    width: 250px !important;
+    max-width: 28vw !important;
+    top: 0 !important;
+    right: 0 !important;
+  }
+
+  .cat-tier1-wrap .cat-leaves-decor,
+  .screen-categories-root .cat-leaves-decor {
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    line-height: 0 !important;
+  }
+
+  .cat-tier1-wrap .cat-leaves-decor img,
+  .screen-categories-root .cat-leaves-decor img {
+    margin-bottom: 0 !important;
+    vertical-align: bottom !important;
+  }
+}
+
 
 
 
