@@ -811,7 +811,7 @@ html, body { height: 100%; margin: 0; }
     .hero .hbc-sub { font-size: 15px; max-width: 34ch; margin-bottom: 22px; }
     .hbc-btn { font-size: 15px; padding: 13px 26px; }
 
-    .cat-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; }
+    .cat-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
     .cat-grid .cat-tile { aspect-ratio: 4 / 5; }
     .cat-page-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
     .cat-leaves-decor { margin: -34px -48px -40px; max-width: 640px; margin-left: auto; margin-right: auto; }
@@ -4668,8 +4668,8 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
    LAPTOP VIEW ENHANCEMENTS FOR TABLETS & LAPTOPS (720px+)
    ========================================================================== */
 
-/* Tablet & iPad View: 720px to 1024px (iPad Mini 768px, iPad 810px/820px, iPad Pro 834px, Surface 960px) */
-@media (min-width: 720px) and (max-width: 1024px) {
+/* Tablet & iPad View: 720px to 1279px (iPad Mini 768px, iPad 810px/820px, iPad Pro 834px/1024px/1194px, Surface Pro) */
+@media (min-width: 720px) and (max-width: 1279px) {
   body {
     display: block !important;
     background: var(--bg) !important;
@@ -4761,21 +4761,26 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
   .desk-header .search-bar {
     flex: 1 !important;
-    max-width: 480px !important;
+    max-width: 520px !important;
   }
 
-  /* Tablet Hero Banner */
+  /* Tablet Hero Banner (tight, well-proportioned, beautiful framing) */
   .hero-banner-wrap {
-    height: 270px !important;
+    height: 275px !important;
     border-radius: 18px !important;
+    overflow: hidden !important;
   }
   .hero-banner-copy {
-    max-width: 60% !important;
+    max-width: 58% !important;
     padding-left: 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
   }
   .hero .hbc-title {
     font-size: 28px !important;
     line-height: 1.18 !important;
+    margin: 0 0 8px !important;
   }
   .hero .hbc-sub {
     font-size: 13.5px !important;
@@ -4787,14 +4792,18 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     padding: 11px 22px !important;
   }
 
-  /* Category Grids tailored for Tablet */
+  /* Category Grids: 4 columns matching iPad Mini so cards never cramp */
   .cat-grid {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 12px !important;
+    gap: 14px !important;
   }
   .cat-grid .cat-tile {
     aspect-ratio: 4 / 4.8 !important;
     border-radius: 14px !important;
+  }
+  .cat-grid .cat-tile .name {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
   }
   .cat-page-grid {
     grid-template-columns: repeat(3, 1fr) !important;
@@ -4855,7 +4864,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     grid-column: 1 / -1 !important;
   }
 
-  /* Product Grid: 3 per row on tablet */
+  /* Product Grid: 3 per row so items are completely visible with nothing cut off */
   .product-scroll {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
@@ -4866,6 +4875,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
   .product-card {
     width: 100% !important;
+    min-width: 0 !important;
     border-radius: 16px !important;
   }
   .product-photo {
@@ -4886,8 +4896,8 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
 }
 
-/* Wider Laptop/Desktop (1025px+) */
-@media (min-width: 1025px) {
+/* Wider Laptop/Desktop (1280px+) */
+@media (min-width: 1280px) {
   .sidenav {
     width: 240px !important;
     padding: 26px 16px 20px !important;
@@ -4897,12 +4907,15 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     width: calc(100% - 240px) !important;
   }
   .screen {
-    max-width: 1140px !important;
+    max-width: 1180px !important;
     padding: 0 40px 40px !important;
   }
   .cat-grid {
-    grid-template-columns: repeat(6, 1fr) !important;
-    gap: 14px !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px !important;
+  }
+  .cat-grid .cat-tile {
+    aspect-ratio: 4 / 4.6 !important;
   }
   .product-scroll {
     display: grid !important;
@@ -4910,11 +4923,21 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     gap: 16px !important;
     overflow: visible !important;
   }
+  .product-card {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
   .hero-banner-wrap {
-    height: 340px !important;
+    height: 290px !important;
+    border-radius: 20px !important;
+  }
+  .hero-banner-copy {
+    max-width: 55% !important;
+    padding-left: 36px !important;
   }
   .hero .hbc-title {
-    font-size: 38px !important;
+    font-size: 32px !important;
+    line-height: 1.15 !important;
   }
 }
 
