@@ -32,10 +32,10 @@ export default function ContactPage() {
             <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Email Support</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#09254A' }}>
-                <a href="mailto:support@visasra.com" style={{ color: '#09254A', textDecoration: 'none' }}>support@visasra.com</a>
+                <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#09254A', textDecoration: 'none' }}>visasratechnologies@gmail.com</a>
               </div>
               <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
-                Alternate: <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>
+                Direct Customer &amp; Merchant Support
               </p>
             </div>
 

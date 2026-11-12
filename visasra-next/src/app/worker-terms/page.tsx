@@ -205,11 +205,12 @@ export default function WorkerTermsPage() {
             These Worker Terms, Conditions, and Assignment Agreement are governed by and construed in accordance with the substantive laws of India. Any disputes arising out of or in connection with this agreement shall be subject to the exclusive jurisdiction of the competent courts in <b>Hyderabad, Telangana, India</b>.
           </p>
 
-          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 20 }}>
-            <div><b>Operating Entity:</b> Visasra Technologies</div>
-            <div><b>Corporate Office:</b> Hyderabad, Telangana, India</div>
-            <div><b>Partner Operations Desk:</b> <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a></div>
-            <div><b>Partner Helpline / WhatsApp:</b> +91 91703 24144</div>
+          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 20, lineHeight: 1.8 }}>
+            <div><b>Entity:</b> Visasra Technologies</div>
+            <div><b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)</div>
+            <div><b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a></div>
+            <div><b>Phone:</b> +91 91703 24144</div>
+            <div><b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India</div>
           </div>
 
           <div style={{ marginTop: 28, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>
@@ -228,3 +229,4 @@ export default function WorkerTermsPage() {
     </main>
   );
 }
+

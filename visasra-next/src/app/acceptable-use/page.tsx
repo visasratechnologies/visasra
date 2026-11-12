@@ -78,7 +78,7 @@ export default function AcceptableUsePage() {
 
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 32, marginBottom: 12 }}>6. Account Responsibility &amp; Security</h2>
           <p>
-            Users are solely responsible for safeguarding their login credentials (passwords, OTP codes, session tokens) and for all actions conducted through their accounts. If you suspect unauthorized access or a security breach, notify Visasra immediately at <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a>.
+            Users are solely responsible for safeguarding their login credentials (passwords, OTP codes, session tokens) and for all actions conducted through their accounts. If you suspect unauthorized access or a security breach, notify Visasra immediately at <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>.
           </p>
 
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 32, marginBottom: 12 }}>7. Worker, Shopper &amp; Merchant Conduct</h2>
@@ -94,7 +94,7 @@ export default function AcceptableUsePage() {
 
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 32, marginBottom: 12 }}>8. Reporting Violations</h2>
           <p>
-            If you encounter any behavior, transaction, content, or product request that violates this Policy, please report it immediately to our Trust &amp; Safety Desk at <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a>. Please include relevant order numbers, screenshots, and supporting details.
+            If you encounter any behavior, transaction, content, or product request that violates this Policy, please report it immediately to our Trust &amp; Safety Desk at <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>. Please include relevant order numbers, screenshots, and supporting details.
           </p>
 
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 32, marginBottom: 12 }}>9. Enforcement Actions</h2>
@@ -120,11 +120,12 @@ export default function AcceptableUsePage() {
           </p>
 
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 32, marginBottom: 12 }}>12. Contact &amp; Governance</h2>
-          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 12 }}>
-            <div><b>Operating Entity:</b> Visasra Technologies</div>
-            <div><b>Registered Office:</b> Hyderabad, Telangana, India</div>
-            <div><b>Trust &amp; Safety Email:</b> <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a></div>
-            <div><b>Customer Helpline:</b> +91 91703 24144</div>
+          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 12, lineHeight: 1.8 }}>
+            <div><b>Entity:</b> Visasra Technologies</div>
+            <div><b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)</div>
+            <div><b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a></div>
+            <div><b>Phone:</b> +91 91703 24144</div>
+            <div><b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India</div>
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>
@@ -143,3 +144,4 @@ export default function AcceptableUsePage() {
     </main>
   );
 }
+

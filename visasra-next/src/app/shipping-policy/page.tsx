@@ -96,7 +96,7 @@ export default function ShippingPolicyPage() {
               Visasra partners with authorized international carriers such as <b>DHL Express, FedEx, and DTDC</b> to clear customs smoothly. Customers should <b>not</b> be asked to pay customs or import taxes separately upon delivery for standard orders.
             </p>
             <p style={{ margin: 0, fontSize: 13.5, color: '#64748B' }}>
-              If a courier agent contacts you requesting local import duty payment for an order covered by this policy, please do not pay immediately—contact Visasra Support (<a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a>) and our customs coordination desk will verify and resolve the clearance record directly with the carrier.
+              If a courier agent contacts you requesting local import duty payment for an order covered by this policy, please do not pay immediately—contact Visasra Support (<a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>) and our customs coordination desk will verify and resolve the clearance record directly with the carrier.
             </p>
           </div>
 
@@ -159,12 +159,12 @@ export default function ShippingPolicyPage() {
           <p>
             For any queries regarding shipping status, tracking, or customs clearance:
           </p>
-          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 12 }}>
-            <div><b>Operating Entity:</b> Visasra Technologies</div>
-            <div><b>Registered Office:</b> Hyderabad, Telangana, India</div>
-            <div><b>Shipping Support:</b> <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a></div>
-            <div><b>Helpline / WhatsApp:</b> +91 91703 24144</div>
-            <div><b>Support Hours:</b> Monday – Saturday, 9:00 AM – 8:00 PM IST</div>
+          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 12, lineHeight: 1.8 }}>
+            <div><b>Entity:</b> Visasra Technologies</div>
+            <div><b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)</div>
+            <div><b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a></div>
+            <div><b>Phone:</b> +91 91703 24144</div>
+            <div><b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India</div>
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>

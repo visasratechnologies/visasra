@@ -92,17 +92,18 @@ export default function RefundPolicyPage() {
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 28, marginBottom: 12 }}>5. How to Initiate a Return or Refund Claim</h2>
           <ol style={{ paddingLeft: 22, marginBottom: 20 }}>
             <li>Locate the order in your Visasra account under the <b>Orders</b> tab.</li>
-            <li>Tap &ldquo;Need Help&rdquo; or email our support team at <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a>.</li>
+            <li>Tap &ldquo;Need Help&rdquo; or email our support team at <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>.</li>
             <li>Provide your Order ID (e.g. VIS-XXXXX), detailed description of the issue, and clear photographs/videos of the package and item.</li>
           </ol>
 
           <div style={{ marginTop: 36, padding: 24, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-            <h3 style={{ fontSize: 16, color: '#09254A', marginBottom: 8, fontWeight: 700 }}>Contact for Claims &amp; Disputes</h3>
-            <p style={{ margin: 0, fontSize: 14, color: '#475569' }}>
+            <h3 style={{ fontSize: 16, color: '#09254A', marginBottom: 8, fontWeight: 700 }}>Contact Information &amp; Grievance Officer</h3>
+            <p style={{ margin: 0, fontSize: 14, color: '#475569', lineHeight: 1.8 }}>
               <b>Entity:</b> Visasra Technologies<br />
-              <b>Support Email:</b> <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a> / <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a><br />
-              <b>Phone / WhatsApp:</b> +91 91703 24144<br />
-              <b>Customer Support Hours:</b> Mon – Sat, 9:00 AM – 8:00 PM IST
+              <b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)<br />
+              <b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a><br />
+              <b>Phone:</b> +91 91703 24144<br />
+              <b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India
             </p>
           </div>
         </section>

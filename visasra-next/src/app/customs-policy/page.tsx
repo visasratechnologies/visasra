@@ -57,7 +57,7 @@ export default function CustomsPolicyPage() {
             Visasra partners with authorized international logistics and courier providers such as <b>DHL Express, FedEx, and DTDC</b> to manage cross-border customs clearance smoothly.
           </p>
           <p>
-            Customers should not be asked to pay customs or import charges separately at delivery for standard orders covered by this policy. If a logistics partner contacts a customer requesting payment, the customer should contact Visasra Support (<a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a>) before making any payment, unless Visasra has expressly communicated otherwise for that specific order.
+            Customers should not be asked to pay customs or import charges separately at delivery for standard orders covered by this policy. If a logistics partner contacts a customer requesting payment, the customer should contact Visasra Support (<a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>) before making any payment, unless Visasra has expressly communicated otherwise for that specific order.
           </p>
 
           <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 32, marginBottom: 12 }}>3. How Customs Charges Are Determined</h2>
@@ -128,11 +128,12 @@ export default function CustomsPolicyPage() {
           <p>
             If you have questions about customs clearance or receive an inquiry from a courier partner regarding your delivery:
           </p>
-          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 12 }}>
-            <div><b>Operating Entity:</b> Visasra Technologies</div>
-            <div><b>Headquarters:</b> Hyderabad, Telangana, India</div>
-            <div><b>Customs &amp; Shipping Desk:</b> <a href="mailto:support@visasra.com" style={{ color: '#1B5AA6' }}>support@visasra.com</a></div>
-            <div><b>Customer Helpline:</b> +91 91703 24144</div>
+          <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '16px 20px', marginTop: 12, lineHeight: 1.8 }}>
+            <div><b>Entity:</b> Visasra Technologies</div>
+            <div><b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)</div>
+            <div><b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a></div>
+            <div><b>Phone:</b> +91 91703 24144</div>
+            <div><b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India</div>
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>
@@ -151,3 +152,4 @@ export default function CustomsPolicyPage() {
     </main>
   );
 }
+
