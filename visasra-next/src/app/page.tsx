@@ -512,14 +512,14 @@ export default function CustomerApp() {
         .catch(() => {});
     };
 
-    if (isLoggedIn && user.email) {
-      syncWallet();
-    }
+    if (!isLoggedIn || !user.email) return;
+
+    syncWallet();
     window.addEventListener('focus', syncWallet);
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       syncWallet();
-    }, 15000);
+    }, 60000);
     return () => {
       window.removeEventListener('focus', syncWallet);
       clearInterval(interval);
@@ -1185,7 +1185,7 @@ export default function CustomerApp() {
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchLiveSession(liveSessionSlot);
-    }, 7000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, [liveSessionSlot]);
@@ -1201,7 +1201,7 @@ export default function CustomerApp() {
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchTracking(trackOrderSlot);
-    }, 8000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, [trackOrderSlot]);
@@ -1603,12 +1603,16 @@ export default function CustomerApp() {
     const active = isLoggedIn && user?.email ? user : null;
     if (active) {
       fetchAddresses(active);
+      loadData(active);
+    } else {
+      loadData(null);
+      return;
     }
-    loadData(active);
+
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      loadData(isLoggedIn && user?.email ? user : null);
-    }, 12000);
+      loadData(user);
+    }, 60000);
     return () => clearInterval(interval);
   }, [isLoggedIn, user?.email, user?.id]);
 

@@ -10,7 +10,14 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ success: true, categories });
+    return NextResponse.json(
+      { success: true, categories },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to fetch categories';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -475,11 +475,12 @@ export default function WorkerApp() {
   };
 
   useEffect(() => {
+    if (!worker?.id) return;
     fetchJobs();
     const iv = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchJobs();
-    }, 8000);
+    }, 30000);
     return () => clearInterval(iv);
   }, [worker?.id]);
 

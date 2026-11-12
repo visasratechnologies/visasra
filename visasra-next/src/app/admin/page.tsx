@@ -270,31 +270,53 @@ export default function AdminPortal() {
     showToast('Signed out of Operations Hub');
   };
 
-  const fetchData = async () => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
+
+  const fetchData = async (showNotification = false) => {
     try {
+      setIsRefreshing(true);
       const res = await fetch('/api/admin/data');
       const data = await res.json();
       if (data.success) {
         setOrders(data.orders || []);
         setWorkers(data.workers || []);
         setUsers(data.users || []);
+        setLastRefreshedAt(new Date());
+        if (showNotification) showToast('Dashboard refreshed with latest data');
       }
     } catch (err) {
       console.error('Failed to load admin data:', err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
+    let savedAdmin: AdminUser | null = null;
     try {
       const saved = localStorage.getItem('visasra_admin_session_v1');
       if (saved) {
-        setAdminUser(JSON.parse(saved));
+        savedAdmin = JSON.parse(saved);
+        setAdminUser(savedAdmin);
       }
     } catch (e) {
       console.error('Error loading admin session', e);
     }
-    fetchData();
-    const interval = setInterval(fetchData, 6000);
+
+    if (savedAdmin) {
+      fetchData();
+    }
+
+    // Low-frequency polling (60s) only when admin session exists and browser tab is visible
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      const currentSaved = localStorage.getItem('visasra_admin_session_v1');
+      if (currentSaved) {
+        fetchData();
+      }
+    }, 60000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -896,9 +918,47 @@ export default function AdminPortal() {
               <span>All 11 Modules</span>
             </button>
 
-            <div className="usr" onClick={() => setMobileDrawerOpen(true)} style={{ cursor: 'pointer' }} title="Menu & Profile">
-              <span className="av">VA</span>
-              <span>{adminUser?.name || 'Visasra Administrator'} ({adminUser?.role || 'Superadmin'})</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => fetchData(true)}
+                disabled={isRefreshing}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  transition: 'all 0.15s ease',
+                }}
+                title={lastRefreshedAt ? `Last refreshed: ${lastRefreshedAt.toLocaleTimeString()}` : 'Refresh data'}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ transform: isRefreshing ? 'rotate(180deg)' : 'none', transition: 'transform 0.5s ease' }}
+                >
+                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+                <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+              </button>
+
+              <div className="usr" onClick={() => setMobileDrawerOpen(true)} style={{ cursor: 'pointer' }} title="Menu & Profile">
+                <span className="av">VA</span>
+                <span>{adminUser?.name || 'Visasra Administrator'} ({adminUser?.role || 'Superadmin'})</span>
+              </div>
             </div>
           </header>
 
@@ -913,9 +973,9 @@ export default function AdminPortal() {
                     <p>Live shoppers, incoming customer orders, and pending field verifications synced with PostgreSQL.</p>
                   </div>
                   <div className="row">
-                    <button className="btn o" onClick={fetchData}>
-                      <img src="/images/icons/refresh.png" alt="" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 6 }} />
-                      Sync Database
+                    <button className="btn o" onClick={() => fetchData(true)} disabled={isRefreshing}>
+                      <img src="/images/icons/refresh.png" alt="" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 6 }} className={isRefreshing ? 'spin-refresh' : ''} />
+                      {isRefreshing ? 'Syncing...' : 'Sync Database'}
                     </button>
                   </div>
                 </div>
