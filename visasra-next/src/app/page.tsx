@@ -3164,7 +3164,6 @@ export default function CustomerApp() {
                     <a href="/shipping-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Shipping &amp; Delivery</a>
                     <a href="/customs-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Customs &amp; Duty (DDP)</a>
                     <a href="/acceptable-use" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Acceptable Use</a>
-                    <a href="/worker-terms" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Partner Terms &amp; Agreement</a>
                     <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Contact Us</a>
                   </div>
                   <div style={{ fontSize: 12, color: '#94A3B8' }}>

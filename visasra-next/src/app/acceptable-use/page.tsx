@@ -130,8 +130,8 @@ export default function AcceptableUsePage() {
             <Link href="/terms" style={{ color: '#1B5AA6', fontWeight: 600 }}>
               Customer Terms &amp; Conditions →
             </Link>
-            <Link href="/worker-terms" style={{ color: '#1B5AA6', fontWeight: 600 }}>
-              Worker Terms &amp; Agreement →
+            <Link href="/shipping-policy" style={{ color: '#1B5AA6', fontWeight: 600 }}>
+              Shipping &amp; Delivery Policy →
             </Link>
             <Link href="/privacy" style={{ color: '#1B5AA6', fontWeight: 600 }}>
               Privacy Policy →

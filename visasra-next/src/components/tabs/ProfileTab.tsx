@@ -289,10 +289,6 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             <span>Acceptable Use Policy</span>
             <span>›</span>
           </a>
-          <a href="/worker-terms" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Partner Terms &amp; Shopper Agreement</span>
-            <span>›</span>
-          </a>
           <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
             <span>Contact Us &amp; Merchant Details</span>
             <span>›</span>
