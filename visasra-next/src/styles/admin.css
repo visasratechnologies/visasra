@@ -66,13 +66,13 @@ h2 { font-size: 24px; }
   gap: 10px;
   align-items: center;
   color: #fff;
-  font-weight: 800;
-  font-size: 17px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 19px;
+  font-family: var(--font-bodoni, 'Bodoni Moda', 'Libre Bodoni', serif);
+  letter-spacing: .06em;
   padding: 0 6px 14px;
 }
-.brand img { width: 44px; height: auto; }
+.brand img { width: 46px; height: auto; object-fit: contain; }
 .brand small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .2em; color: #8FC0FF; margin-top: 2px; }
 
 .nv {

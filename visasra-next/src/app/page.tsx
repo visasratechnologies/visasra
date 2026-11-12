@@ -2249,9 +2249,9 @@ export default function CustomerApp() {
         <img
           src="/images/logo/visasra-logo.png"
           alt="Visasra"
-          style={{ width: 76, height: 76, marginBottom: 16, filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.25))' }}
+          style={{ width: 140, maxWidth: '75vw', height: 'auto', marginBottom: 16, filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.3))' }}
         />
-        <div style={{ fontFamily: 'var(--font-display, serif)', fontSize: 28, fontWeight: 800, letterSpacing: 0.5, color: '#FFFFFF' }}>Visasra</div>
+        <div style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontSize: 32, fontWeight: 700, letterSpacing: '0.04em', color: '#FFFFFF' }}>Visasra</div>
         <div style={{ fontSize: 13.5, color: '#93C5FD', marginTop: 8, fontWeight: 500, letterSpacing: 0.3 }}>Loading...</div>
       </div>
     );
@@ -2925,7 +2925,7 @@ export default function CustomerApp() {
                 <div className="home-rail">
                   <div className="wallet-card" onClick={() => setActiveTab('wallet')} style={{ cursor: 'pointer' }}>
                     <div>
-                      <div className="label">Visasra Money</div>
+                      <div className="label"><span className="visasra-name">Visasra</span> Money</div>
                       <div className="amount money">₹{user.walletBalance.toLocaleString('en-IN')}</div>
                     </div>
                     <button className="btn btn-secondary btn-sm" onClick={e => { e.stopPropagation(); setActiveTab('wallet'); }}>
@@ -3060,7 +3060,7 @@ export default function CustomerApp() {
               {/* Exact Popular on Visasra Blue Band */}
               <div className="blue-band">
                 <div className="section-title row">
-                  <span>Popular on Visasra</span>
+                  <span>Popular on <span className="visasra-name">Visasra</span></span>
                   <span className="see-all" onClick={() => setActiveTab('categories')}>See all</span>
                 </div>
                 <div className="product-scroll" id="popularScroll">
@@ -3112,7 +3112,7 @@ export default function CustomerApp() {
 
               {/* Enhanced 6-Milestone How Visasra Works */}
               <div className="hw-container-6">
-                <div className="section-title" style={{ marginBottom: 4 }}>How Visasra works</div>
+                <div className="section-title" style={{ marginBottom: 4 }}>How <span className="visasra-name">Visasra</span> works</div>
                 <div className="hw-sub">From your wish to your doorstep, in six structured milestones.</div>
                 <div className="hw-grid-6" id="howItWorks">
                   {HOW_IT_WORKS.map((s, i) => (
@@ -3131,7 +3131,7 @@ export default function CustomerApp() {
 
               {/* Exact Trust Card */}
               <div className="trust-card">
-                <div className="tc-eyebrow">Why people trust Visasra</div>
+                <div className="tc-eyebrow">Why people trust <span className="visasra-name">Visasra</span></div>
                 <div className="tc-title">Shop India, delivered anywhere.</div>
                 <div className="tc-text">We're the trusted hands on the ground in India for people abroad — a real person sources, verifies and ships what you ask for, so you get the real thing without flying home for it.</div>
                 <div className="tc-points">
@@ -3167,7 +3167,7 @@ export default function CustomerApp() {
                     <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Contact Us</a>
                   </div>
                   <div style={{ fontSize: 12, color: '#94A3B8' }}>
-                    © {new Date().getFullYear()} <b>Visasra Technologies</b>. All rights reserved. · Sourcing &amp; Worldwide Delivery · Secured via <b>Razorpay Gateway</b>
+                    © {new Date().getFullYear()} <b><span className="visasra-name">Visasra</span> Technologies</b>. All rights reserved. · Sourcing &amp; Worldwide Delivery · Secured via <b>Razorpay Gateway</b>
                   </div>
                 </footer>
               </div>

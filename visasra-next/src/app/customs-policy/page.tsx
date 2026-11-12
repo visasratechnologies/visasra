@@ -11,18 +11,18 @@ export default function CustomsPolicyPage() {
     <main style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', fontFamily: 'Plus Jakarta Sans, sans-serif', padding: '40px 20px 80px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto', background: '#FFFFFF', borderRadius: 20, padding: '48px 40px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1B5AA6', textDecoration: 'none', fontWeight: 600, fontSize: 14, marginBottom: 24 }}>
-          ← Back to Visasra
+          ← Back to <span className="visasra-name">Visasra</span>
         </Link>
 
         <div style={{ display: 'inline-block', background: '#E8F2FD', color: '#1B5AA6', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
-          Official Policy · Visasra Technologies
+          Official Policy · <span className="visasra-name">Visasra</span> Technologies
         </div>
 
         <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 34, color: '#09254A', marginBottom: 8 }}>
           Customs &amp; Duty Policy
         </h1>
         <p style={{ color: '#64748B', fontSize: 13, marginBottom: 28 }}>
-          Effective Date: November 2026 · Applicable to all cross-border orders on Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)
+          Effective Date: November 2026 · Applicable to all cross-border orders on <span className="visasra-name">Visasra</span> (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)
         </p>
 
         {/* Highlight Card: DDP Model */}

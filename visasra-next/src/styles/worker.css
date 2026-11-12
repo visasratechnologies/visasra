@@ -121,9 +121,9 @@
 }
 .hd-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 .brand { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
-.brand img { width: 38px; height: auto; display: block; }
-.wm { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -.3px; color: #fff; }
-.wm b { color: #8FC2FF; font-weight: 800; }
+.brand img { width: 44px; height: auto; object-fit: contain; display: block; }
+.wm { font-family: var(--font-bodoni, 'Bodoni Moda', 'Libre Bodoni', serif) !important; font-weight: 700; font-size: 22px; letter-spacing: 0.3px; color: #fff; }
+.wm b { color: #8FC2FF; font-weight: 700; }
 .role { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: rgba(255,255,255,.16); padding: 4px 9px; border-radius: 999px; }
 .hd h2 { font-size: 20px; flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 700; margin: 0; }
 .hd-logo { width: 34px; height: auto; flex: none; display: block; }
@@ -268,17 +268,19 @@ dl.kv dd { margin: 0 !important; color: var(--text) !important; font-weight: 500
   box-sizing: border-box;
 }
 .login img.logo {
-  width: 76px;
-  height: 76px;
-  margin: 0 auto 10px;
+  width: 130px;
+  max-width: 65vw;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto 12px;
   display: block;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.3));
 }
 .login .wm {
   font-size: 32px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.5px;
+  font-family: var(--font-bodoni, 'Bodoni Moda', 'Libre Bodoni', serif) !important;
+  font-weight: 700;
+  letter-spacing: 0.4px;
 }
 .login p {
   color: #BFDBFE;
@@ -691,7 +693,7 @@ nextjs-portal:hover, [data-nextjs-toast]:hover {
 }
 
 .kyc-logo-wrap {
-  width: 38px;
+  width: 48px;
   height: 38px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.12);
@@ -702,15 +704,16 @@ nextjs-portal:hover, [data-nextjs-toast]:hover {
 }
 
 .kyc-logo {
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: auto;
   object-fit: contain;
 }
 
 .kyc-brand-title {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
+  font-family: var(--font-bodoni, 'Bodoni Moda', 'Libre Bodoni', serif);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
   color: #FFFFFF;
   line-height: 1.2;
 }

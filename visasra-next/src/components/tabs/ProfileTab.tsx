@@ -295,7 +295,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           </a>
         </div>
         <div style={{ fontSize: 11.5, color: '#94A3B8', marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
-          Operated by <b>Visasra Technologies</b> · Secured with Razorpay
+          Operated by <b><span className="visasra-name">Visasra</span> Technologies</b> · Secured with Razorpay
         </div>
       </div>
       </div>

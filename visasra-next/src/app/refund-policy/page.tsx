@@ -11,14 +11,14 @@ export default function RefundPolicyPage() {
     <main style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', fontFamily: 'Plus Jakarta Sans, sans-serif', padding: '40px 20px 80px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto', background: '#FFFFFF', borderRadius: 20, padding: '48px 40px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1B5AA6', textDecoration: 'none', fontWeight: 600, fontSize: 14, marginBottom: 24 }}>
-          ← Back to Visasra
+          ← Back to <span className="visasra-name">Visasra</span>
         </Link>
 
         <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 34, color: '#09254A', marginBottom: 6 }}>
           Cancellation, Refund &amp; Return Policy
         </h1>
         <p style={{ color: '#64748B', fontSize: 13, marginBottom: 32 }}>
-          Effective Date: November 2026 · <b>Visasra Technologies</b>
+          Effective Date: November 2026 · <b><span className="visasra-name">Visasra</span> Technologies</b>
         </p>
 
         <section style={{ lineHeight: 1.75, fontSize: 15, color: '#334155' }}>

@@ -23,6 +23,7 @@ html, body { height: 100%; margin: 0; }
     --warn-bg: #FFFBEB;
     --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
     --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-bodoni: 'Bodoni Moda', 'Libre Bodoni', 'Bodoni MT', Didot, 'Didot LT STD', 'Hoefler Text', Garamond, 'Times New Roman', serif;
     --radius: 14px;
     --radius-sm: 10px;
     --ink: #FFFFFF;
@@ -42,6 +43,7 @@ html, body { height: 100%; margin: 0; }
     display: flex; justify-content: center; align-items: flex-start; margin: 0;
   }
   h1, h2, h3, .serif { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; }
+  .visasra-name, .brand-text, .visasra-brand { font-family: var(--font-bodoni) !important; letter-spacing: 0.02em; }
   .money { font-family: var(--font-ui); font-weight: 800; }
   button { font-family: inherit; }
   a { color: inherit; }
@@ -53,10 +55,11 @@ html, body { height: 100%; margin: 0; }
   /* ================= Desktop sidebar ================= */
   .sidenav { display: none; }
   .sidenav-brand {
-    font-size: 21px; font-weight: 800; padding: 4px 10px 24px; font-family: var(--font-display);
+    font-size: 21px; font-weight: 800; padding: 4px 10px 24px; font-family: var(--font-bodoni);
     display: flex; align-items: center; gap: 9px;
   }
-  .sidenav-brand-logo { width: 32px; height: auto; display: block; flex-shrink: 0; }
+  .sidenav-brand-logo { width: 44px; height: auto; object-fit: contain; display: block; flex-shrink: 0; }
+  .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; letter-spacing: 0.3px; }
   .sidenav-brand .brand-text span { color: var(--gold); }
   .sidenav-wallet {
     margin-top: auto; border-top: 1px solid var(--border-soft);
@@ -73,8 +76,9 @@ html, body { height: 100%; margin: 0; }
     padding: 14px 16px; background: rgba(234,242,252,0.92); backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-soft);
   }
-  .wordmark { font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: -.3px; flex-shrink: 0; display: flex; align-items: center; gap: 7px; }
-  .wordmark-logo { width: 26px; height: auto; display: block; }
+  .wordmark { font-family: var(--font-bodoni); font-size: 20px; font-weight: 800; letter-spacing: 0.2px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+  .wordmark-logo { width: 36px; height: auto; object-fit: contain; display: block; }
+  .wordmark .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.3px; }
   .wordmark .brand-text span { color: var(--gold); }
   .top-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
   .icon-pill {
@@ -999,10 +1003,11 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
           mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
 }
 .auth-mobile-brand, .auth-brand {
-  display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 800; letter-spacing: -.3px;
+  display: flex; align-items: center; gap: 10px; font-family: var(--font-bodoni); font-weight: 800; letter-spacing: 0.2px;
 }
 .auth-mobile-brand { position: relative; font-size: 30px; margin-bottom: 22px; }
-.auth-logo { width: 46px; height: auto; display: block; }
+.auth-logo { width: 58px; height: auto; object-fit: contain; display: block; }
+.auth-mobile-brand .brand-text, .auth-brand .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.4px; }
 .auth-mobile-brand .brand-text span, .auth-brand .brand-text span { color: var(--gold); }
 .auth-card {
   position: relative; width: 100%; max-width: 400px; background: #fff; border: 1px solid #C5DAF1;
@@ -1735,8 +1740,8 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
   nav.sidenav > * { position: relative; z-index: 1; }
   nav.sidenav .sidenav-brand { padding: 2px 6px 24px; gap: 9px; color: #fff; cursor: pointer; }
-  nav.sidenav .sidenav-brand-logo { width: 38px; }
-  nav.sidenav .sidenav-brand .brand-text { font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -.3px; text-transform: none; color: #fff; }
+  nav.sidenav .sidenav-brand-logo { width: 44px; height: auto; object-fit: contain; }
+  nav.sidenav .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; font-weight: 700; letter-spacing: 0.3px; text-transform: none; color: #fff; }
   nav.sidenav .sidenav-brand .brand-text span { color: #38BDF8; }
   nav.sidenav .nav-btn {
     color: rgba(255, 255, 255, .75); font-size: 13.5px; font-weight: 600; padding: 12px 14px; border-radius: 10px; gap: 13px;
@@ -1926,8 +1931,9 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     border-radius: 0 0 24px 24px;
     box-shadow: 0 8px 20px rgba(15, 53, 103, .18);
   }
-  .topbar .wordmark { color: #fff; font-size: 23px; gap: 9px; }
-  .topbar .wordmark-logo { width: 42px; }
+  .topbar .wordmark { color: #fff; font-size: 23px; gap: 9px; font-family: var(--font-bodoni); }
+  .topbar .wordmark-logo { width: 44px; height: auto; object-fit: contain; }
+  .topbar .wordmark .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.3px; }
   .topbar .wordmark .brand-text span { color: #8FC2FF; }
   .topbar .top-btn { --ic: #123A69; --ibg: #D4E5FB; color: rgba(255, 255, 255, .78); }
   .topbar .top-btn.active { color: #fff; }

@@ -27,7 +27,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
         </svg>
         Back
       </button>
-      <div className="page-title">Visasra Money</div>
+      <div className="page-title"><span className="visasra-name">Visasra</span> Money</div>
       <div className="page-sub">Your personal shopping wallet balance and complete transaction history.</div>
 
       <div className="wallet-card" style={{ marginTop: 14 }}>

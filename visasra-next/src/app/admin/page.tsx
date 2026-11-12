@@ -643,8 +643,8 @@ export default function AdminPortal() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0B192E', padding: 20 }}>
         <div style={{ maxWidth: 440, width: '100%', background: '#112240', border: '1.5px solid #1E3A8A', borderRadius: 20, padding: 32, boxShadow: '0 25px 60px rgba(0,0,0,0.6)' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <img src="/images/logo/visasra-logo.png" alt="Visasra" style={{ width: 48, height: 48, objectFit: 'contain', margin: '0 auto 12px' }} />
-            <h1 style={{ margin: 0, fontSize: 24, fontFamily: 'var(--font-display)', color: '#FFFFFF', letterSpacing: -0.5 }}>Visasra Operations Hub</h1>
+            <img src="/images/logo/visasra-logo.png" alt="Visasra" style={{ width: 110, height: 'auto', objectFit: 'contain', margin: '0 auto 14px', display: 'block' }} />
+            <h1 style={{ margin: 0, fontSize: 24, fontFamily: 'var(--font-display)', color: '#FFFFFF', letterSpacing: -0.5 }}><span style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontWeight: 700 }}>Visasra</span> Operations Hub</h1>
             <p style={{ margin: '6px 0 0', fontSize: 13, color: '#94A3B8' }}>India Ground Concierge Verification &amp; Clearance Portal</p>
           </div>
 
@@ -786,7 +786,7 @@ export default function AdminPortal() {
           <div className="brand">
             <img src="/images/logo/visasra-logo.png" alt="Visasra" />
             <div>
-              Visasra
+              <span style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontSize: 20, fontWeight: 700, letterSpacing: '0.04em' }}>Visasra</span>
               <small>Operations Hub</small>
             </div>
           </div>

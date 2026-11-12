@@ -15,7 +15,7 @@ export default function WorkerTermsPage() {
         </Link>
 
         <div style={{ display: 'inline-block', background: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
-          Official Partner Policy · Visasra Technologies
+          Official Partner Policy · <span className="visasra-name">Visasra</span> Technologies
         </div>
 
         <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 34, color: '#09254A', marginBottom: 8 }}>
