@@ -2294,10 +2294,36 @@ export default function CustomerApp() {
         <img
           src="/images/logo/visasra-logo.png"
           alt="Visasra"
-          style={{ width: 180, maxWidth: '75vw', height: 'auto', marginBottom: 18, filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.3))' }}
+          style={{
+            width: 320,
+            maxWidth: '82vw',
+            height: 'auto',
+            marginBottom: 20,
+            filter: 'drop-shadow(0 6px 30px rgba(0,0,0,0.4))',
+            imageRendering: '-webkit-optimize-contrast' as any,
+          }}
         />
-        <div style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontSize: 34, fontWeight: 700, letterSpacing: '0.04em', color: '#FFFFFF' }}>Visasra</div>
-        <div style={{ fontSize: 13, color: '#93C5FD', marginTop: 10, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>Loading...</div>
+        <div style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontSize: 36, fontWeight: 700, letterSpacing: '0.04em', color: '#FFFFFF' }}>Visasra</div>
+        <div
+          style={{
+            fontSize: 13.5,
+            color: '#BFDBFE',
+            marginTop: 14,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            opacity: 0.95,
+          }}
+        >
+          <span>You choose</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span>We shop</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span>We ship</span>
+        </div>
       </div>
     );
   }
