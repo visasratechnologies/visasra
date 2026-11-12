@@ -163,8 +163,6 @@ export default function ShippingPolicyPage() {
             <div><b>Entity:</b> Visasra Technologies</div>
             <div><b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)</div>
             <div><b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a></div>
-            <div><b>Phone:</b> +91 91703 24144</div>
-            <div><b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India</div>
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>

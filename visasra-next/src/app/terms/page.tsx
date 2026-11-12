@@ -134,13 +134,11 @@ export default function TermsPage() {
           </p>
 
           <div style={{ marginTop: 36, padding: 24, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-            <h3 style={{ fontSize: 16, color: '#09254A', marginBottom: 8, fontWeight: 700 }}>Contact Information &amp; Grievance Officer</h3>
+            <h3 style={{ fontSize: 16, color: '#09254A', marginBottom: 8, fontWeight: 700 }}>Contact Information</h3>
             <p style={{ margin: 0, fontSize: 14, color: '#475569', lineHeight: 1.8 }}>
               <b>Entity:</b> Visasra Technologies<br />
               <b>Platform:</b> Visasra (<a href="https://www.visasra.com" style={{ color: '#1B5AA6' }}>www.visasra.com</a>)<br />
-              <b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a><br />
-              <b>Phone:</b> +91 91703 24144<br />
-              <b>Grievance Officer:</b> Hareharan Nagula, Visasra Technologies, Hyderabad, India
+              <b>Support Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>
             </p>
           </div>
         </section>

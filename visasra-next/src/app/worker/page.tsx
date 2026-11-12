@@ -1319,7 +1319,7 @@ export default function WorkerApp() {
               <form onSubmit={handleEmailPasswordLogin} style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <input
                   type="text"
-                  placeholder="Mobile Number or Email ID (e.g. 9170324144)"
+                  placeholder="Mobile Number or Email ID"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   autoComplete="username"
@@ -2240,15 +2240,10 @@ export default function WorkerApp() {
                     <span>Connect directly with the Visasra Partner Onboarding Desk.</span>
                   </div>
                   <a
-                    href={`https://wa.me/917032414481?text=${encodeURIComponent(`Hello Visasra Team, I have submitted my partner application for verification. Phone: ${worker?.phone || ''}, Name: ${worker?.name || ''}. Please check my status.`)}`}
-                    target="_blank"
-                    rel="noreferrer"
+                    href={`mailto:visasratechnologies@gmail.com?subject=${encodeURIComponent(`Partner Application Status Inquiry - ${worker?.name || 'Partner'}`)}`}
                     className="kyc-support-btn"
                   >
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.63c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.74-.66-1.24-1.48-1.39-1.73-.14-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.45.06-.68.32-.23.25-.89.87-.89 2.12s.91 2.46 1.04 2.63c.13.17 1.79 2.73 4.33 3.83.6.26 1.08.42 1.45.54.61.19 1.16.17 1.6.1 0.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.17-.48-.3" />
-                    </svg>
-                    Chat with Desk
+                    Email Support Desk
                   </a>
                 </div>
 
@@ -2333,15 +2328,13 @@ export default function WorkerApp() {
               <div className="kyc-support-box">
                 <div className="kyc-support-text">
                   <b>Need help understanding the feedback?</b>
-                  <span>Contact our onboarding support team on WhatsApp.</span>
+                  <span>Contact our onboarding support team via email.</span>
                 </div>
                 <a
-                  href={`https://wa.me/917032414481?text=${encodeURIComponent(`Hello Visasra Team, my application needs document correction (Phone: ${worker?.phone || ''}). Please guide me on what to resubmit.`)}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={`mailto:visasratechnologies@gmail.com?subject=${encodeURIComponent(`Partner Application Resubmission Help - ${worker?.name || 'Partner'}`)}`}
                   className="kyc-support-btn"
                 >
-                  Chat with Support
+                  Email Support Team
                 </a>
               </div>
 

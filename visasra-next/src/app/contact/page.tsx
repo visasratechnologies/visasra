@@ -35,32 +35,27 @@ export default function ContactPage() {
                 <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#09254A', textDecoration: 'none' }}>visasratechnologies@gmail.com</a>
               </div>
               <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
-                Direct Customer &amp; Merchant Support
+                Mon – Sat, 9:00 AM – 8:00 PM IST
               </p>
             </div>
 
             <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Phone &amp; WhatsApp</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#09254A' }}>+91 91703 24144</div>
-              <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>Mon – Sat, 9:00 AM – 8:00 PM IST</p>
-            </div>
-
-            <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Headquarters &amp; Hub</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#09254A' }}>Visasra Sourcing Hub</div>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Online Platform</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#09254A' }}>
+                <a href="https://www.visasra.com" style={{ color: '#1B5AA6', textDecoration: 'none' }}>www.visasra.com</a>
+              </div>
               <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
-                Hyderabad, Telangana, 500033, India
+                Global Concierge &amp; Personal Shopping
               </p>
             </div>
           </div>
 
-          <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 28, marginBottom: 12 }}>Customer Grievance Officer</h2>
+          <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 28, marginBottom: 12 }}>Grievance Desk</h2>
           <p>
-            In accordance with Information Technology Act 2000 and the Consumer Protection (E-Commerce) Rules, 2020:
+            In accordance with the Information Technology Act 2000 and applicable Consumer Protection rules:
             <br />
-            <b>Name:</b> Hareharan Nagula<br />
-            <b>Designation:</b> Grievance Officer, Visasra Technologies<br />
-            <b>Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a><br />
+            <b>Entity:</b> Visasra Technologies<br />
+            <b>Grievance Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a><br />
             <b>Response Timeline:</b> Acknowledgement within 48 hours; resolution within 14 business days.
           </p>
         </section>
