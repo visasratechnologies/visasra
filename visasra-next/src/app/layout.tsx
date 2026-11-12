@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   },
   description: "Your trusted hands on the ground in India. A verified personal shopper sources, verifies with GST store bills, and ships authentic Indian products to your door globally.",
   icons: {
-    icon: '/images/logo/visasra-logo.png',
+    icon: [
+      { url: '/favicon.ico?v=2', sizes: 'any' },
+      { url: '/icon.png?v=2', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: '/apple-touch-icon.png?v=2',
   },
   openGraph: {
     title: 'Visasra — Authentic Indian Sourcing & Worldwide Delivery',

@@ -334,8 +334,24 @@ const COUNTRY_CONFIGS: CountryConfig[] = [
 ];
 
 export default function CustomerApp() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authChecking, setAuthChecking] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('visasra_customer_session_v1');
+      return !!saved;
+    } catch {
+      return false;
+    }
+  });
+  const [authChecking, setAuthChecking] = useState(false);
+  const [showInitialSplash, setShowInitialSplash] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !sessionStorage.getItem('visasra_splash_shown');
+    } catch {
+      return false;
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [authMethod, setAuthMethod] = useState<'password' | 'email_otp'>('password');
@@ -386,12 +402,19 @@ export default function CustomerApp() {
   const [forgotOtpSent, setForgotOtpSent] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'bookslot' | 'orders' | 'cart' | 'profile' | 'wallet' | 'addresses' | 'live-shopping'>('home');
-  const [user, setUser] = useState<User>({
-    id: '',
-    name: '',
-    email: '',
-    phone: '',
-    walletBalance: 0,
+  const [user, setUser] = useState<User>(() => {
+    if (typeof window === 'undefined') {
+      return { id: '', name: '', email: '', phone: '', walletBalance: 0 };
+    }
+    try {
+      const saved = localStorage.getItem('visasra_customer_session_v1');
+      if (saved) {
+        const u = JSON.parse(saved);
+        if (u.email === 'customer@visasra.com') u.walletBalance = 0;
+        return u;
+      }
+    } catch {}
+    return { id: '', name: '', email: '', phone: '', walletBalance: 0 };
   });
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -467,6 +490,28 @@ export default function CustomerApp() {
       console.error('Session/Cart load error', e);
     } finally {
       setAuthChecking(false);
+    }
+  }, []);
+
+  // One-time initial branded splash screen (2.5 seconds), bypassed immediately on page refresh
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const alreadyShown = sessionStorage.getItem('visasra_splash_shown');
+      if (!alreadyShown) {
+        setShowInitialSplash(true);
+        const timer = setTimeout(() => {
+          setShowInitialSplash(false);
+          try {
+            sessionStorage.setItem('visasra_splash_shown', 'true');
+          } catch {}
+        }, 2500); // 2.5s initial splash
+        return () => clearTimeout(timer);
+      } else {
+        setShowInitialSplash(false);
+      }
+    } catch {
+      setShowInitialSplash(false);
     }
   }, []);
 
@@ -2228,8 +2273,8 @@ export default function CustomerApp() {
     }
   };
 
-  // Smooth initial session check - prevents login screen flicker
-  if (authChecking) {
+  // One-time initial session splash screen (2 to 3s on initial site open, skipped completely on refresh)
+  if (showInitialSplash) {
     return (
       <div
         style={{
@@ -2249,10 +2294,10 @@ export default function CustomerApp() {
         <img
           src="/images/logo/visasra-logo.png"
           alt="Visasra"
-          style={{ width: 140, maxWidth: '75vw', height: 'auto', marginBottom: 16, filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.3))' }}
+          style={{ width: 180, maxWidth: '75vw', height: 'auto', marginBottom: 18, filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.3))' }}
         />
-        <div style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontSize: 32, fontWeight: 700, letterSpacing: '0.04em', color: '#FFFFFF' }}>Visasra</div>
-        <div style={{ fontSize: 13.5, color: '#93C5FD', marginTop: 8, fontWeight: 500, letterSpacing: 0.3 }}>Loading...</div>
+        <div style={{ fontFamily: "var(--font-bodoni, 'Bodoni Moda', serif)", fontSize: 34, fontWeight: 700, letterSpacing: '0.04em', color: '#FFFFFF' }}>Visasra</div>
+        <div style={{ fontSize: 13, color: '#93C5FD', marginTop: 10, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>Loading...</div>
       </div>
     );
   }
@@ -2265,7 +2310,7 @@ export default function CustomerApp() {
         <div className="auth-side">
           <div className="auth-brand">
             <img src="/images/logo/visasra-logo.png" alt="" className="auth-logo" />
-            <span className="brand-text">Vis<span>asra</span></span>
+            <span className="brand-text">Visasra</span>
           </div>
           <div className="auth-side-copy">
             <h1>Shop India,<br />delivered anywhere.</h1>
@@ -2283,7 +2328,7 @@ export default function CustomerApp() {
           <img className="auth-corner-leaves" src="/images/decor/leaves-corner.png" alt="" aria-hidden="true" />
           <div className="auth-mobile-brand">
             <img src="/images/logo/visasra-logo.png" alt="" className="auth-logo" />
-            <span className="brand-text">Vis<span>asra</span></span>
+            <span className="brand-text">Visasra</span>
           </div>
 
           <div className="auth-card" style={{ maxWidth: 440 }}>
@@ -2804,7 +2849,7 @@ export default function CustomerApp() {
       <nav className="sidenav" id="sidenav">
         <div className="sidenav-brand" onClick={() => setActiveTab('home')}>
           <img src="/images/logo/visasra-logo.png" alt="" className="sidenav-brand-logo" />
-          <span className="brand-text">Vis<span>asra</span></span>
+          <span className="brand-text">Visasra</span>
         </div>
 
         <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
@@ -2860,7 +2905,7 @@ export default function CustomerApp() {
         <div className="topbar">
           <div className="wordmark" onClick={() => setActiveTab('home')}>
             <img src="/images/logo/visasra-logo.png" alt="" className="wordmark-logo" />
-            <span className="brand-text">Vis<span>asra</span></span>
+            <span className="brand-text">Visasra</span>
           </div>
           <div className="top-actions">
             <button className="top-btn" onClick={() => setActiveTab('wallet')} aria-label="Wallet">

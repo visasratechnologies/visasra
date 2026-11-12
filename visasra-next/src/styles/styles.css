@@ -59,8 +59,7 @@ html, body { height: 100%; margin: 0; }
     display: flex; align-items: center; gap: 9px;
   }
   .sidenav-brand-logo { width: 44px; height: auto; object-fit: contain; display: block; flex-shrink: 0; }
-  .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; letter-spacing: 0.3px; }
-  .sidenav-brand .brand-text span { color: var(--gold); }
+  .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; letter-spacing: 0.3px; color: #FFFFFF; }
   .sidenav-wallet {
     margin-top: auto; border-top: 1px solid var(--border-soft);
     padding: 16px 10px 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer;
@@ -78,8 +77,7 @@ html, body { height: 100%; margin: 0; }
   }
   .wordmark { font-family: var(--font-bodoni); font-size: 20px; font-weight: 800; letter-spacing: 0.2px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
   .wordmark-logo { width: 36px; height: auto; object-fit: contain; display: block; }
-  .wordmark .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.3px; }
-  .wordmark .brand-text span { color: var(--gold); }
+  .wordmark .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.3px; color: var(--navy); }
   .top-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
   .icon-pill {
     position: relative; width: 36px; height: 36px; border-radius: 50%;
@@ -1005,10 +1003,9 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
 .auth-mobile-brand, .auth-brand {
   display: flex; align-items: center; gap: 10px; font-family: var(--font-bodoni); font-weight: 800; letter-spacing: 0.2px;
 }
-.auth-mobile-brand { position: relative; font-size: 30px; margin-bottom: 22px; }
+.auth-mobile-brand { position: relative; font-size: 30px; margin-bottom: 22px; color: var(--navy); }
 .auth-logo { width: 58px; height: auto; object-fit: contain; display: block; }
 .auth-mobile-brand .brand-text, .auth-brand .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.4px; }
-.auth-mobile-brand .brand-text span, .auth-brand .brand-text span { color: var(--gold); }
 .auth-card {
   position: relative; width: 100%; max-width: 400px; background: #fff; border: 1px solid #C5DAF1;
   border-radius: 20px; padding: 22px 20px 20px; box-shadow: var(--shadow-lg);
@@ -1047,7 +1044,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     background: linear-gradient(155deg, #0E3568 0%, #092B55 60%, #06203F 100%);
   }
   .auth-brand { font-size: 30px; color: #fff; }
-  .auth-brand .brand-text span { color: #8FC2FF; }
+  .auth-brand .brand-text { color: #fff; }
   .auth-side-copy { position: relative; z-index: 1; max-width: 460px; margin-bottom: 40px; }
   .auth-side-copy h1 { font-size: 46px; line-height: 1.1; margin: 0 0 16px; color: #fff; }
   .auth-side-copy p { font-size: 16px; line-height: 1.6; color: rgba(255,255,255,.8); margin: 0 0 22px; }
@@ -1742,7 +1739,6 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   nav.sidenav .sidenav-brand { padding: 2px 6px 24px; gap: 9px; color: #fff; cursor: pointer; }
   nav.sidenav .sidenav-brand-logo { width: 44px; height: auto; object-fit: contain; }
   nav.sidenav .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; font-weight: 700; letter-spacing: 0.3px; text-transform: none; color: #fff; }
-  nav.sidenav .sidenav-brand .brand-text span { color: #38BDF8; }
   nav.sidenav .nav-btn {
     color: rgba(255, 255, 255, .75); font-size: 13.5px; font-weight: 600; padding: 12px 14px; border-radius: 10px; gap: 13px;
     transition: all .16s ease;
@@ -1933,8 +1929,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   }
   .topbar .wordmark { color: #fff; font-size: 23px; gap: 9px; font-family: var(--font-bodoni); }
   .topbar .wordmark-logo { width: 44px; height: auto; object-fit: contain; }
-  .topbar .wordmark .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.3px; }
-  .topbar .wordmark .brand-text span { color: #8FC2FF; }
+  .topbar .wordmark .brand-text { font-family: var(--font-bodoni) !important; letter-spacing: 0.3px; color: #fff; }
   .topbar .top-btn { --ic: #123A69; --ibg: #D4E5FB; color: rgba(255, 255, 255, .78); }
   .topbar .top-btn.active { color: #fff; }
   .topbar .top-btn.active svg { background: #fff; color: #123A69; box-shadow: 0 6px 12px -4px rgba(0, 0, 0, .35); }

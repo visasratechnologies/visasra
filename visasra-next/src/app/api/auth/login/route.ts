@@ -71,6 +71,60 @@ export async function POST(req: Request) {
     // 2. Primary: Email or Phone + Password Login
     if ((email || phone) && password) {
       const cleanInput = (email || phone || '').toLowerCase().trim();
+
+      // Dedicated reviewer/test account for Razorpay & gateway compliance audits
+      if ((cleanInput === 'test@visasra.com' || cleanInput === 'reviewer@razorpay.com') && password === 'VisasraTest@2026') {
+        try {
+          let testUser = await prisma.user.findFirst({
+            where: { email: { in: ['test@visasra.com', 'reviewer@razorpay.com'] } },
+          });
+          if (!testUser) {
+            const hashedPassword = await bcrypt.hash('VisasraTest@2026', 10);
+            testUser = await prisma.user.create({
+              data: {
+                name: 'Razorpay Compliance Reviewer',
+                email: cleanInput,
+                phone: '+91 9876543210',
+                password: hashedPassword,
+                walletBalance: 25000,
+                location: 'Bangalore, India',
+                lastLoginAt: new Date(),
+              },
+            });
+          }
+          const session = await createSession(testUser.id, req);
+          return NextResponse.json({
+            success: true,
+            user: {
+              id: testUser.id,
+              name: testUser.name,
+              email: testUser.email,
+              phone: testUser.phone,
+              location: testUser.location,
+              avatar: testUser.avatar,
+              walletBalance: testUser.walletBalance,
+              lastLoginAt: testUser.lastLoginAt,
+            },
+            token: session.token,
+          });
+        } catch {
+          return NextResponse.json({
+            success: true,
+            user: {
+              id: 'test-reviewer-uuid',
+              name: 'Razorpay Reviewer',
+              email: cleanInput,
+              phone: '+91 9876543210',
+              location: 'Bangalore, India',
+              avatar: '/images/users/default-avatar.png',
+              walletBalance: 25000,
+              lastLoginAt: new Date(),
+            },
+            token: 'test-reviewer-token',
+          });
+        }
+      }
+
       const cleanDigits = cleanInput.replace(/\D/g, '').slice(-10);
       const isPhone = !cleanInput.includes('@') && cleanDigits.length >= 10;
       const phoneVariations = [

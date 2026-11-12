@@ -1218,7 +1218,7 @@ export default function WorkerApp() {
               {screen === 'home' ? (
                 <div className="brand">
                   <img src="/logo.png" alt="" />
-                  <span className="wm">Vis<b>asra</b></span>
+                  <span className="wm">Visasra</span>
                 </div>
               ) : (
                 <h2 className="serif">
@@ -1278,7 +1278,7 @@ export default function WorkerApp() {
         {(screen === 'login' || screen === 'otp' || screen === 'forgot') && (
           <div className="screen login active">
             <img className="logo" src="/logo.png" alt="Visasra" />
-            <div className="wm">Vis<b>asra</b></div>
+            <div className="wm">Visasra</div>
             <p>Shopper Partner Portal<br />Shop, pack &amp; deliver authentic Indian goods</p>
 
 
