@@ -266,7 +266,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
           <a href="/terms" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Terms &amp; Conditions</span>
+            <span>Terms &amp; Wallet Policy</span>
             <span>›</span>
           </a>
           <a href="/privacy" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
@@ -279,6 +279,18 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           </a>
           <a href="/shipping-policy" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
             <span>Shipping &amp; Delivery Policy</span>
+            <span>›</span>
+          </a>
+          <a href="/customs-policy" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Customs &amp; Duty Policy (DDP)</span>
+            <span>›</span>
+          </a>
+          <a href="/acceptable-use" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Acceptable Use Policy</span>
+            <span>›</span>
+          </a>
+          <a href="/worker-terms" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Partner Terms &amp; Shopper Agreement</span>
             <span>›</span>
           </a>
           <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>

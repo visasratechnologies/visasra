@@ -1567,6 +1567,18 @@ export default function WorkerApp() {
                 )}
               </div>
             )}
+
+            {/* Legal Notice */}
+            <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              By signing in or registering, you agree to Visasra&apos;s{' '}
+              <a href="/worker-terms" target="_blank" rel="noreferrer" style={{ color: '#93C5FD', textDecoration: 'underline' }}>
+                Worker Terms &amp; Agreement
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#93C5FD', textDecoration: 'underline' }}>
+                Privacy Policy
+              </a>.
+            </div>
           </div>
         )}
 
@@ -1963,7 +1975,7 @@ export default function WorkerApp() {
                   checked={appConsent}
                   onChange={(e) => setAppConsent(e.target.checked)}
                 />
-                <span>I confirm that all provided documents, address details, and identification numbers belong to me. I authorize Visasra Admin to verify these details for partner onboarding.</span>
+                <span>I confirm that all provided documents, address details, and identification numbers belong to me. I agree to the <a href="/worker-terms" target="_blank" rel="noreferrer" style={{ color: '#1B5AA6', textDecoration: 'underline' }}>Visasra Worker Terms &amp; Agreement</a> and authorize Visasra Admin to verify these details for partner onboarding.</span>
               </label>
             </div>
 
@@ -3054,6 +3066,18 @@ export default function WorkerApp() {
                 </button>
               </div>
             )}
+
+            {/* Legal Notice */}
+            <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              By signing in or registering, you agree to Visasra&apos;s{' '}
+              <a href="/worker-terms" target="_blank" rel="noreferrer" style={{ color: '#93C5FD', textDecoration: 'underline' }}>
+                Worker Terms &amp; Agreement
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#93C5FD', textDecoration: 'underline' }}>
+                Privacy Policy
+              </a>.
+            </div>
           </div>
         )}
 

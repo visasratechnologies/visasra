@@ -9,6 +9,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/privacy',
     '/refund-policy',
     '/shipping-policy',
+    '/customs-policy',
+    '/acceptable-use',
+    '/worker-terms',
     '/contact',
   ];
 
@@ -19,3 +22,4 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: route === '' ? 1.0 : 0.8,
   }));
 }
+

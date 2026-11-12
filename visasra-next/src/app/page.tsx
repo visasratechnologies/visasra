@@ -3158,10 +3158,13 @@ export default function CustomerApp() {
                 {/* Platform & Merchant Compliance Footer (Razorpay / RBI Mandatory Links) */}
                 <footer style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid #E2E8F0', fontSize: 13, color: '#64748B', textAlign: 'center' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '14px 22px', marginBottom: 12, fontWeight: 600 }}>
-                    <a href="/terms" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Terms &amp; Conditions</a>
+                    <a href="/terms" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Terms &amp; Wallet Policy</a>
                     <a href="/privacy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Privacy Policy</a>
                     <a href="/refund-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Cancellation &amp; Refund</a>
                     <a href="/shipping-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Shipping &amp; Delivery</a>
+                    <a href="/customs-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Customs &amp; Duty (DDP)</a>
+                    <a href="/acceptable-use" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Acceptable Use</a>
+                    <a href="/worker-terms" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Partner Terms &amp; Agreement</a>
                     <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Contact Us</a>
                   </div>
                   <div style={{ fontSize: 12, color: '#94A3B8' }}>

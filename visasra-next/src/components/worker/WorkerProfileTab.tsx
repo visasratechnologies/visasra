@@ -218,6 +218,27 @@ export const WorkerProfileTab: React.FC<WorkerProfileTabProps> = ({
           />
         </div>
 
+        {/* Partner Legal & Policies */}
+        <div className="card" style={{ marginTop: 12, padding: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#123A69', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Partner Guidelines &amp; Policies
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+            <a href="/worker-terms" target="_blank" rel="noreferrer" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+              <span>Worker Terms, Penalties &amp; Agreement</span>
+              <span>›</span>
+            </a>
+            <a href="/acceptable-use" target="_blank" rel="noreferrer" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+              <span>Acceptable Use Policy</span>
+              <span>›</span>
+            </a>
+            <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+              <span>Privacy Policy</span>
+              <span>›</span>
+            </a>
+          </div>
+        </div>
+
         {/* Sign out */}
         <button
           className="btn red"
