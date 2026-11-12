@@ -1420,6 +1420,16 @@ export default function CustomerApp() {
       if (catData.categories) {
         setCategories(catData.categories);
 
+        // Pre-warm category image decode cache so back-navigation renders instantly
+        if (typeof window !== 'undefined') {
+          catData.categories.forEach((c: Category) => {
+            if (c.image) {
+              const img = new Image();
+              img.src = c.image;
+            }
+          });
+        }
+
         // Canonical Popular Items from D:\visasra-suite24 (app.js POPULAR_ITEMS)
         const CANONICAL_POPULAR = [
           { cat: 'cookware', name: 'Cooker' },
@@ -3152,7 +3162,62 @@ export default function CustomerApp() {
               className={`screen active ${!selectedCategoryForView ? 'screen-categories-root' : ''}`}
               data-screen="categories"
             >
-              {selectedCategoryForView && selectedProductForTypes ? (
+              {/* Tier 1: All Categories Grid (Persistent DOM for zero image reload/flicker) */}
+              <div className={`cat-tier1-wrap ${selectedCategoryForView ? 'is-hidden' : ''}`}>
+                <img className="corner-leaf" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
+                <div className="cat-tier1-inner">
+                  <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+                    Back to Home
+                  </button>
+                  <div className="desk-header">
+                    {renderSearchBar(false)}
+                  </div>
+                  <div className="page-title">Categories</div>
+                  <div className="page-sub">Browse authentic Indian categories, explore subcategories &amp; varieties, or tell us what you need.</div>
+
+                  <div className="cat-page-grid" id="catPageGrid">
+                    {categories.map(c => (
+                      <div
+                        key={c.id}
+                        className="cat-tile"
+                        onClick={() => {
+                          setSelectedCategoryForView(c);
+                          setSelectedProductForTypes(null);
+                        }}
+                      >
+                        <img
+                          src={c.image || '/images/placeholders/placeholder-category.svg'}
+                          alt={c.name}
+                          className="cat-tile-bg-img"
+                          loading="eager"
+                          decoding="async"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.src.includes('placeholder-category.svg')) {
+                              target.src = '/images/placeholders/placeholder-category.svg';
+                            }
+                          }}
+                        />
+                        <div className="cat-tile-count">
+                          {(c.products || []).length} products
+                        </div>
+                        <div className="cat-tile-body">
+                          <div className="name">{c.name}</div>
+                          <div className="desc" style={{ display: 'block' }}>
+                            Browse {(c.products || []).length} items &amp; varieties →
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="cat-leaves-decor" aria-hidden="true">
+                  <img src="/images/decor/category-leaves.png" alt="" />
+                </div>
+              </div>
+
+              {selectedCategoryForView && selectedProductForTypes && (
                 /* Tier 3: Sub-Category / Product Varieties Detail (e.g. Cookware > Pans > Frying Pan, Appam Pan, etc.) */
                 <div>
                   <button
@@ -3296,7 +3361,9 @@ export default function CustomerApp() {
                     </div>
                   </div>
                 </div>
-              ) : selectedCategoryForView ? (
+              )}
+
+              {selectedCategoryForView && !selectedProductForTypes && (
                 /* Tier 2: Category Products / Sub-Categories Drill-Down */
                 <div>
                   <button
@@ -3475,60 +3542,6 @@ export default function CustomerApp() {
                         Request Custom Item →
                       </button>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                /* Tier 1: All Categories Grid */
-                <div className="cat-tier1-wrap">
-                  <img className="corner-leaf" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
-                  <div className="cat-tier1-inner">
-                    <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                      Back to Home
-                    </button>
-                    <div className="desk-header">
-                      {renderSearchBar(false)}
-                    </div>
-                    <div className="page-title">Categories</div>
-                    <div className="page-sub">Browse authentic Indian categories, explore subcategories &amp; varieties, or tell us what you need.</div>
-
-                    <div className="cat-page-grid" id="catPageGrid">
-                      {categories.map(c => (
-                        <div
-                          key={c.id}
-                          className="cat-tile"
-                          onClick={() => {
-                            setSelectedCategoryForView(c);
-                            setSelectedProductForTypes(null);
-                          }}
-                        >
-                          <img
-                            src={c.image || '/images/placeholders/placeholder-category.svg'}
-                            alt={c.name}
-                            className="cat-tile-bg-img"
-                            loading="lazy"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              if (!target.src.includes('placeholder-category.svg')) {
-                                target.src = '/images/placeholders/placeholder-category.svg';
-                              }
-                            }}
-                          />
-                          <div className="cat-tile-count">
-                            {(c.products || []).length} products
-                          </div>
-                          <div className="cat-tile-body">
-                            <div className="name">{c.name}</div>
-                            <div className="desc" style={{ display: 'block' }}>
-                              Browse {(c.products || []).length} items &amp; varieties →
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="cat-leaves-decor" aria-hidden="true">
-                    <img src="/images/decor/category-leaves.png" alt="" />
                   </div>
                 </div>
               )}

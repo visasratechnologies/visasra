@@ -2055,6 +2055,10 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   position: relative !important;
 }
 
+.cat-tier1-wrap.is-hidden {
+  display: none !important;
+}
+
 .cat-tier1-inner {
   width: 100% !important;
   max-width: 1180px !important;
@@ -5440,6 +5444,10 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   position: relative !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+.cat-tier1-wrap.is-hidden {
+  display: none !important;
 }
 
 .orders-inner,
