@@ -2123,7 +2123,7 @@ export default function CustomerApp() {
             email: user.email,
             contact: contactPhone,
           },
-          onSuccess: async (paymentId: string, orderId?: string) => {
+          onSuccess: async (paymentId: string, orderId?: string, signature?: string) => {
             showToast(`Payment successful! Depositing ₹${shortfall.toLocaleString('en-IN')} to Visasra Money...`);
             const topupRes = await fetch('/api/wallet', {
               method: 'POST',
@@ -2134,6 +2134,7 @@ export default function CustomerApp() {
                 amount: shortfall,
                 razorpayPaymentId: paymentId,
                 razorpayOrderId: orderId,
+                razorpaySignature: signature,
                 note: `Escrow Deposit & Slot Booking (${selectedDate}) · Razorpay: ${paymentId}`,
               }),
             });
@@ -2181,7 +2182,7 @@ export default function CustomerApp() {
           email: user.email,
           contact: customerPhone || user.phone,
         },
-        onSuccess: async (paymentId: string, orderId?: string) => {
+        onSuccess: async (paymentId: string, orderId?: string, signature?: string) => {
           // Instant optimistic feedback: reflect balance immediately
           const optimisticBal = user.walletBalance + amt;
           setUser(prev => ({ ...prev, walletBalance: optimisticBal }));
@@ -2197,6 +2198,7 @@ export default function CustomerApp() {
                 amount: amt,
                 razorpayPaymentId: paymentId,
                 razorpayOrderId: orderId,
+                razorpaySignature: signature,
                 note: `Wallet Top-up via Razorpay (${paymentId})`,
               }),
             });
@@ -3152,6 +3154,20 @@ export default function CustomerApp() {
                     <div><b>Shipped to your door</b><span>Packed and tracked all the way to you.</span></div>
                   </div>
                 </div>
+
+                {/* Platform & Merchant Compliance Footer (Razorpay / RBI Mandatory Links) */}
+                <footer style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid #E2E8F0', fontSize: 13, color: '#64748B', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '14px 22px', marginBottom: 12, fontWeight: 600 }}>
+                    <a href="/terms" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Terms &amp; Conditions</a>
+                    <a href="/privacy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Privacy Policy</a>
+                    <a href="/refund-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Cancellation &amp; Refund</a>
+                    <a href="/shipping-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Shipping &amp; Delivery</a>
+                    <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Contact Us</a>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#94A3B8' }}>
+                    © {new Date().getFullYear()} <b>Visasra Technologies</b>. All rights reserved. · Sourcing &amp; Worldwide Delivery · Secured via <b>Razorpay Gateway</b>
+                  </div>
+                </footer>
               </div>
             </section>
           )}

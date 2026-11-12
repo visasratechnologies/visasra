@@ -61,10 +61,10 @@ model Worker {
   phone                String        @unique
   email                String?       @unique
   password             String?
-  rating               Float         @default(4.8)
-  ordersDone           Int           @default(320)
+  rating               Float         @default(0)
+  ordersDone           Int           @default(0)
   photo                String?
-  status               String        @default("active") // 'active' | 'offline' | 'busy'
+  status               String        @default("offline") // 'active' | 'offline' | 'busy'
   kycStatus            String        @default("none") // 'none' | 'pending' | 'verified' | 'rejected'
   aadhaarNumber        String?
   aadhaarFront         String?
@@ -77,9 +77,9 @@ model Worker {
   permanentAddress     String?
   altPhone             String?
   selfie               String?
-  currentLat           Float?        @default(13.0600)
-  currentLng           Float?        @default(80.2500)
-  walletBalance        Float         @default(4200)
+  currentLat           Float?
+  currentLng           Float?
+  walletBalance        Float         @default(0)
   payoutUpi            String?
   bankAccountNumber    String?
   bankIfscCode         String?

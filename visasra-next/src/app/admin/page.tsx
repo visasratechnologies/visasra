@@ -273,10 +273,35 @@ export default function AdminPortal() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
 
+  const getAdminEmail = () => {
+    if (adminUser?.email) return adminUser.email;
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('visasra_admin_session_v1') : null;
+      if (saved) return JSON.parse(saved).email;
+    } catch {}
+    return '';
+  };
+
+  const adminActionFetch = async (payload: Record<string, unknown>) => {
+    const email = getAdminEmail();
+    return fetch('/api/admin/action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-email': email,
+      },
+      body: JSON.stringify(payload),
+    });
+  };
+
   const fetchData = async (showNotification = false) => {
+    const email = getAdminEmail();
+    if (!email) return;
     try {
       setIsRefreshing(true);
-      const res = await fetch('/api/admin/data');
+      const res = await fetch('/api/admin/data', {
+        headers: { 'x-admin-email': email },
+      });
       const data = await res.json();
       if (data.success) {
         setOrders(data.orders || []);
@@ -323,11 +348,7 @@ export default function AdminPortal() {
   // Admin Actions
   const handleAssignWorker = async (slotKey: string, workerId: string) => {
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'assign', slotKey, workerId }),
-      });
+      const res = await adminActionFetch({ action: 'assign', slotKey, workerId });
       const data = await res.json();
       if (data.success) {
         showToast('Shopper assigned to slot');
@@ -344,11 +365,7 @@ export default function AdminPortal() {
 
   const handleUnassignWorker = async (slotKey: string) => {
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'unassign', slotKey }),
-      });
+      const res = await adminActionFetch({ action: 'unassign', slotKey });
       const data = await res.json();
       if (data.success) {
         showToast('Shopper unassigned');
@@ -363,11 +380,7 @@ export default function AdminPortal() {
   const handleVerifyHandover = async (slotKey: string) => {
     if (!confirm('Confirm that all items and shop receipts are verified at the QC counter? This will complete the order and credit ₹350 to the shopper.')) return;
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify_handover', slotKey }),
-      });
+      const res = await adminActionFetch({ action: 'verify_handover', slotKey });
       const data = await res.json();
       if (data.success) {
         showToast(data.message);
@@ -390,16 +403,12 @@ export default function AdminPortal() {
 
   const handleMarkShipped = async (orderId: string) => {
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_shipped',
-          orderId,
-          carrier: dispatchCarrier,
-          trackingNumber: dispatchAwb,
-          trackingUrl: dispatchUrl,
-        }),
+      const res = await adminActionFetch({
+        action: 'mark_shipped',
+        orderId,
+        carrier: dispatchCarrier,
+        trackingNumber: dispatchAwb,
+        trackingUrl: dispatchUrl,
       });
       const data = await res.json();
       if (data.success) {
@@ -425,11 +434,7 @@ export default function AdminPortal() {
   const handleMarkDelivered = async (orderId: string) => {
     if (!confirm('Mark this package as delivered to customer doorstep?')) return;
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'mark_delivered', orderId }),
-      });
+      const res = await adminActionFetch({ action: 'mark_delivered', orderId });
       const data = await res.json();
       if (data.success) {
         showToast(data.message);
@@ -452,11 +457,7 @@ export default function AdminPortal() {
   const handleRefundOrder = async (orderId: string, amount: number) => {
     if (!confirm(`Confirm refunding ₹${amount} to customer wallet?`)) return;
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'refund', orderId, amount }),
-      });
+      const res = await adminActionFetch({ action: 'refund', orderId, amount });
       const data = await res.json();
       if (data.success) {
         showToast(data.message);
@@ -470,11 +471,7 @@ export default function AdminPortal() {
 
   const handleKycDecision = async (workerId: string, decision: 'approve' | 'reject', reason?: string) => {
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'kyc', workerId, decision, reason }),
-      });
+      const res = await adminActionFetch({ action: 'kyc', workerId, decision, reason });
       const data = await res.json();
       if (data.success) {
         showToast(data.message);
@@ -488,11 +485,7 @@ export default function AdminPortal() {
 
   const handleApproveShopPayment = async (itemId: string) => {
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'approve_shop_payment', itemId }),
-      });
+      const res = await adminActionFetch({ action: 'approve_shop_payment', itemId });
       const data = await res.json();
       if (data.success) {
         showToast('Payment cleared and confirmed in PostgreSQL');
@@ -507,11 +500,7 @@ export default function AdminPortal() {
     const utr = prompt('Enter Bank UTR / UPI Reference Number:', 'UPI' + Date.now().toString().slice(-8));
     if (!utr) return;
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'settle_payout', workerId, amount, utr }),
-      });
+      const res = await adminActionFetch({ action: 'settle_payout', workerId, amount, utr });
       const data = await res.json();
       if (data.success) {
         showToast(data.message);
@@ -527,17 +516,13 @@ export default function AdminPortal() {
     e.preventDefault();
     if (!procureModalItem) return;
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_online_ordered',
-          itemId: procureModalItem.item.id,
-          onlineOrderNumber: procureOrderNum.trim(),
-          onlineTrackingNumber: procureTracking.trim(),
-          onlinePurchaseNotes: procureNotes.trim(),
-          purchasePrice: Number(procurePrice) || undefined,
-        }),
+      const res = await adminActionFetch({
+        action: 'mark_online_ordered',
+        itemId: procureModalItem.item.id,
+        onlineOrderNumber: procureOrderNum.trim(),
+        onlineTrackingNumber: procureTracking.trim(),
+        onlinePurchaseNotes: procureNotes.trim(),
+        purchasePrice: Number(procurePrice) || undefined,
       });
       const data = await res.json();
       if (data.success) {
@@ -559,13 +544,9 @@ export default function AdminPortal() {
   const handleMarkOnlineReceived = async (itemId: string) => {
     if (!confirm('Confirm that this package has physically arrived and been verified at the Visasra Fulfillment Hub?')) return;
     try {
-      const res = await fetch('/api/admin/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_online_received',
-          itemId,
-        }),
+      const res = await adminActionFetch({
+        action: 'mark_online_received',
+        itemId,
       });
       const data = await res.json();
       if (data.success) {

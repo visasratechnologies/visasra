@@ -1,0 +1,70 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Contact Us | Visasra',
+  description: 'Official contact details, customer support, and merchant information for Visasra Technologies.',
+};
+
+export default function ContactPage() {
+  return (
+    <main style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', fontFamily: 'Plus Jakarta Sans, sans-serif', padding: '40px 20px 80px' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', background: '#FFFFFF', borderRadius: 20, padding: '48px 40px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1B5AA6', textDecoration: 'none', fontWeight: 600, fontSize: 14, marginBottom: 24 }}>
+          ← Back to Visasra
+        </Link>
+
+        <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 34, color: '#09254A', marginBottom: 8 }}>
+          Contact Us
+        </h1>
+        <p style={{ color: '#64748B', fontSize: 13, marginBottom: 32 }}>
+          We are here to assist with concierge slot bookings, order dispatch, and custom sourcing.
+        </p>
+
+        <section style={{ lineHeight: 1.7, fontSize: 15, color: '#334155' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 32 }}>
+            <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Legal Entity Name</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#09254A' }}>Visasra Technologies</div>
+              <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>Registered Merchant &amp; Technology Operator</p>
+            </div>
+
+            <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Email Support</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#09254A' }}>
+                <a href="mailto:support@visasra.com" style={{ color: '#09254A', textDecoration: 'none' }}>support@visasra.com</a>
+              </div>
+              <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
+                Alternate: <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>
+              </p>
+            </div>
+
+            <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Phone &amp; WhatsApp</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#09254A' }}>+91 91703 24144</div>
+              <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>Mon – Sat, 9:00 AM – 8:00 PM IST</p>
+            </div>
+
+            <div style={{ padding: 24, borderRadius: 14, background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', color: '#1B5AA6', marginBottom: 6 }}>Headquarters &amp; Hub</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#09254A' }}>Visasra Sourcing Hub</div>
+              <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
+                Hyderabad, Telangana, 500033, India
+              </p>
+            </div>
+          </div>
+
+          <h2 style={{ fontSize: 20, color: '#09254A', marginTop: 28, marginBottom: 12 }}>Customer Grievance Officer</h2>
+          <p>
+            In accordance with Information Technology Act 2000 and the Consumer Protection (E-Commerce) Rules, 2020:
+            <br />
+            <b>Name:</b> Hareharan Nagula<br />
+            <b>Designation:</b> Grievance Officer, Visasra Technologies<br />
+            <b>Email:</b> <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a><br />
+            <b>Response Timeline:</b> Acknowledgement within 48 hours; resolution within 14 business days.
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}

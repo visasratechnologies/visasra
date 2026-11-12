@@ -12,8 +12,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const keySecret =
-      process.env.RAZORPAY_KEY_SECRET || 'O1e5VVNluY2HmvZUtsO4301p';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) {
+      return NextResponse.json(
+        { success: false, error: 'Razorpay secret key not configured' },
+        { status: 500 }
+      );
+    }
 
     const expectedSignature = crypto
       .createHmac('sha256', keySecret)

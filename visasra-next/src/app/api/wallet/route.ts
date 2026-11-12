@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 
 export async function GET(req: Request) {
   try {
@@ -45,11 +46,34 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { userId, email, amount, note, razorpayPaymentId, razorpayOrderId } = await req.json();
+    const { userId, email, amount, note, razorpayPaymentId, razorpayOrderId, razorpaySignature } = await req.json();
     const topupAmount = Number(amount);
 
     if (isNaN(topupAmount) || topupAmount <= 0) {
       return NextResponse.json({ error: 'Invalid top-up amount' }, { status: 400 });
+    }
+
+    // Cryptographic Security Check: Verify Razorpay HMAC signature if claiming Razorpay settlement
+    if (razorpayPaymentId || razorpayOrderId) {
+      if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+        return NextResponse.json({ error: 'Payment signature required for verified top-up' }, { status: 400 });
+      }
+
+      const secret = process.env.RAZORPAY_KEY_SECRET;
+      if (secret) {
+        const expectedSignature = crypto
+          .createHmac('sha256', secret)
+          .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+          .digest('hex');
+
+        if (expectedSignature !== razorpaySignature) {
+          console.warn('[Wallet Security Alert] Invalid Razorpay signature detected:', {
+            orderId: razorpayOrderId,
+            paymentId: razorpayPaymentId,
+          });
+          return NextResponse.json({ error: 'Invalid payment signature. Transaction rejected.' }, { status: 400 });
+        }
+      }
     }
 
     let targetUserId = userId;

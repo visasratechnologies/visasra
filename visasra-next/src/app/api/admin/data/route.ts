@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const adminEmail = req.headers.get('x-admin-email');
+    if (!adminEmail) {
+      return NextResponse.json({ error: 'Unauthorized: Admin credentials required' }, { status: 401 });
+    }
+
+    const admin = await prisma.admin.findUnique({
+      where: { email: adminEmail.toLowerCase().trim() },
+    });
+
+    if (!admin) {
+      return NextResponse.json({ error: 'Forbidden: Admin access denied' }, { status: 403 });
+    }
     const [orders, workers, users] = await Promise.all([
       prisma.order.findMany({
         include: {

@@ -258,6 +258,38 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
           <div className="rc" style={{ color: '#DC2626' }}>›</div>
         </div>
       </div>
+
+      {/* Compliance & Policy Links (Razorpay Verification) */}
+      <div style={{ marginTop: 24, padding: '18px 20px', background: 'var(--surface, #fff)', borderRadius: 16, border: '1px solid var(--border, #E2E8F0)' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dim, #64748B)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+          Policies &amp; Merchant Info
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
+          <a href="/terms" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Terms &amp; Conditions</span>
+            <span>›</span>
+          </a>
+          <a href="/privacy" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Privacy Policy</span>
+            <span>›</span>
+          </a>
+          <a href="/refund-policy" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Cancellation &amp; Refund Policy</span>
+            <span>›</span>
+          </a>
+          <a href="/shipping-policy" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Shipping &amp; Delivery Policy</span>
+            <span>›</span>
+          </a>
+          <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Contact Us &amp; Merchant Details</span>
+            <span>›</span>
+          </a>
+        </div>
+        <div style={{ fontSize: 11.5, color: '#94A3B8', marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
+          Operated by <b>Visasra Technologies</b> · Secured with Razorpay
+        </div>
+      </div>
       </div>
     </section>
   );

@@ -14,10 +14,8 @@ export async function POST(req: Request) {
 
     const keyId =
       process.env.RAZORPAY_KEY_ID ||
-      process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-      'rzp_live_T2fS0wvX1zbtHt';
-    const keySecret =
-      process.env.RAZORPAY_KEY_SECRET || 'O1e5VVNluY2HmvZUtsO4301p';
+      process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!keyId || !keySecret) {
       return NextResponse.json(
