@@ -193,7 +193,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               <div className="profile-wallet-actions">
                 <div className="profile-wallet-trust">
                   <span>🛡️</span>
-                  <span>100% Escrow Protected · Instant refund on unfulfilled items</span>
+                  <span>100% Protected · Instant refund on unfulfilled items</span>
                 </div>
               </div>
             </div>

@@ -94,7 +94,7 @@ export const openRazorpayPayment = async (options: RazorpayCheckoutOptions): Pro
           amount: options.amount,
           currency: 'INR',
           notes: {
-            description: options.description || 'Visasra Money Escrow / Deposit',
+            description: options.description || 'Visasra Money Sourcing Deposit',
             email: options.prefill?.email || '',
             ...options.notes,
           },

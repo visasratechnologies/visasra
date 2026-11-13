@@ -287,10 +287,6 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                 <span>Official GST Store Bills</span>
                 <span style={{ color: '#16A34A', fontWeight: 600 }}>Included (Verified)</span>
               </div>
-              <div className="live-tally-row">
-                <span>International QC &amp; Vault</span>
-                <span style={{ color: 'var(--text-dim)' }}>Complimentary</span>
-              </div>
               <div className="live-tally-divider" />
               <div className="live-tally-total">
                 <span>Total Payable at Checkout</span>
@@ -317,7 +313,7 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, fontSize: 11.5, color: 'var(--text-dim)' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-              100% Escrow Protected · Authentic Store Bills
+              100% Protected · Authentic Store Bills
             </div>
           </div>
         </div>

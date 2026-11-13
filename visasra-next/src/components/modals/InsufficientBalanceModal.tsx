@@ -116,7 +116,7 @@ export const InsufficientBalanceModal: React.FC<InsufficientBalanceModalProps> =
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 12, fontSize: 11.5, color: '#64748B' }}>
-            🔒 Bank-grade 256-bit SSL Escrow · Unused balance is 100% refundable instantly
+            🔒 Bank-grade 256-bit SSL Security · Unused balance is 100% refundable instantly
           </div>
         </div>
       </div>

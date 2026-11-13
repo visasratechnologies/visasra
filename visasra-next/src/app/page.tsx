@@ -2056,7 +2056,7 @@ export default function CustomerApp() {
     setIsBooking(true);
     const currentSlotFee = slotDuration === 2 ? 250 : slotDuration === 5 ? 600 : 400;
     const merchandiseBudget = cart.reduce((sum, item) => sum + (item.priceMax || item.priceMin || 1000) * (item.qty || 1), 0);
-    // Total deposit required = product budget held safely in escrow + slot fee for dedicated shopper
+    // Total deposit required = product budget held safely + slot fee for dedicated shopper
     const requiredDeposit = merchandiseBudget + currentSlotFee;
     const shortfall = Math.max(0, requiredDeposit - (user.walletBalance || 0));
 
@@ -2162,7 +2162,7 @@ export default function CustomerApp() {
       try {
         await openRazorpayPayment({
           amount: shortfall,
-          description: `Visasra Escrow Deposit & Slot Booking (${selectedDate})`,
+          description: `Visasra Sourcing Deposit & Slot Booking (${selectedDate})`,
           prefill: {
             name: activeAddress?.name || user.name,
             email: user.email,
@@ -2180,7 +2180,7 @@ export default function CustomerApp() {
                 razorpayPaymentId: paymentId,
                 razorpayOrderId: orderId,
                 razorpaySignature: signature,
-                note: `Escrow Deposit & Slot Booking (${selectedDate}) · Razorpay: ${paymentId}`,
+                note: `Sourcing Deposit & Slot Booking (${selectedDate}) · Razorpay: ${paymentId}`,
               }),
             });
             const topupData = await topupRes.json();
@@ -4590,10 +4590,10 @@ export default function CustomerApp() {
                                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                   <path d="M9 12l2 2 4-4" />
                                 </svg>
-                                <span>100% Escrow Protected</span>
+                                <span>100% Protected</span>
                               </div>
                               <div className="ssc-view-trigger">
-                                <span>View Sourcing &amp; Escrow Plan</span>
+                                <span>View Sourcing &amp; Payment Plan</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 13, height: 13 }}>
                                   <polyline points="9 18 15 12 9 6" />
                                 </svg>
@@ -4622,7 +4622,7 @@ export default function CustomerApp() {
 
                                 <div className="abhibus-sheet">
                                   <div className="abhibus-sheet-header">
-                                    <h2 className="abhibus-title">Sourcing &amp; Escrow Details</h2>
+                                    <h2 className="abhibus-title">Sourcing &amp; Payment Details</h2>
                                   </div>
 
                                   {/* Service Card (AbhiBus TGSRTC Header Card with Bus Photo) */}
@@ -4806,7 +4806,7 @@ export default function CustomerApp() {
                             </div>
                           )}
 
-                          {/* Clean, Responsive Visasra Escrow & Wallet Box */}
+                          {/* Clean, Responsive Visasra Sourcing & Wallet Box */}
                           <div className={`visasra-money-pay-box ${walletShortfall > 0 ? 'needs-deposit' : 'sufficient'}`}>
                             <div className="vmp-header">
                               <div className="vmp-wallet-info">
@@ -4816,7 +4816,7 @@ export default function CustomerApp() {
                                     <path d="M16 12h2" />
                                     <path d="M2 10h20" />
                                   </svg>
-                                  <span>Visasra Escrow Wallet</span>
+                                  <span>Visasra Sourcing Wallet</span>
                                 </div>
                                 <div className="vmp-wallet-balance">
                                   ₹{user.walletBalance.toLocaleString('en-IN')}
@@ -4833,7 +4833,7 @@ export default function CustomerApp() {
                                 <b>₹{currentSlotFee}</b>
                               </div>
                               <div className="vmp-row">
-                                <span>Merchandise Budget in Escrow:</span>
+                                <span>Merchandise Budget (Held Securely):</span>
                                 <b>₹{merchandiseBudget.toLocaleString('en-IN')}</b>
                               </div>
                               <div className="vmp-row vmp-total-row">
@@ -4849,7 +4849,7 @@ export default function CustomerApp() {
                                   <span>Deposit ₹{walletShortfall.toLocaleString('en-IN')} via Razorpay to confirm slot</span>
                                 </div>
                                 <div className="vmp-alert-note-body">
-                                  ₹{currentSlotFee} slot fee is deducted now for your personal shopper. ₹{merchandiseBudget.toLocaleString('en-IN')} merchandise budget is held safely in escrow until you approve live samples.
+                                  ₹{currentSlotFee} slot fee is deducted now for your personal shopper. ₹{merchandiseBudget.toLocaleString('en-IN')} merchandise budget is held safely in your account until you approve live samples.
                                 </div>
                               </div>
                             ) : (
