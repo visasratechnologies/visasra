@@ -995,10 +995,8 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   padding: calc(28px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)); overflow: hidden;
 }
 .auth-corner-leaves {
-  position: absolute; top: 6px; right: -8px; width: 112px; height: auto; pointer-events: none; user-select: none;
-  filter: drop-shadow(0 8px 14px rgba(70,110,190,.22));
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
-          mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
+  position: absolute; top: 0; right: 0; width: 130px; max-width: 35vw; height: auto; pointer-events: none; user-select: none;
+  z-index: 0; filter: drop-shadow(0 6px 14px rgba(70,110,190,.18));
 }
 .auth-mobile-brand, .auth-brand {
   display: flex; align-items: center; gap: 10px; font-family: var(--font-bodoni); font-weight: 800; letter-spacing: 0.2px;
@@ -1055,13 +1053,24 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
     background: #3B82D6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/11px no-repeat;
   }
   .auth-side-leaves {
-    position: absolute; right: 0; top: 0; width: 300px; height: auto; opacity: .95; pointer-events: none;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
-            mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+    display: none !important;
   }
-  .auth-main { flex: 1; padding: 40px; }
-  .auth-mobile-brand, .auth-corner-leaves { display: none; }
-  .auth-card { padding: 30px 30px 26px; max-width: 420px; }
+  .auth-main { flex: 1; padding: 40px; position: relative; overflow: hidden; }
+  .auth-mobile-brand { display: none; }
+  .auth-corner-leaves {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 260px;
+    max-width: 28vw;
+    height: auto;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    filter: drop-shadow(0 10px 20px rgba(70,110,190,.20));
+  }
+  .auth-card { padding: 30px 30px 26px; max-width: 420px; position: relative; z-index: 1; }
 }
 
 /* ================= Logo-colour gradient borders =================

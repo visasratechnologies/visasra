@@ -2347,11 +2347,10 @@ export default function CustomerApp() {
               <li>Direct express courier to anywhere globally</li>
             </ul>
           </div>
-          <img className="auth-side-leaves" src="/images/decor/leaves-corner.png" alt="" aria-hidden="true" />
         </div>
 
         <div className="auth-main">
-          <img className="auth-corner-leaves" src="/images/decor/leaves-corner.png" alt="" aria-hidden="true" />
+          <img className="auth-corner-leaves" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
           <div className="auth-mobile-brand">
             <img src="/images/logo/visasra-logo.png" alt="" className="auth-logo" />
             <span className="brand-text">Visasra</span>
