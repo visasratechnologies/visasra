@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+  experimental: {
+    agentUpgrade: 'security',
+  } as any,
   images: {
     remotePatterns: [
       {
