@@ -179,25 +179,36 @@ export function HomeTab({
                     </div>
                     <div className="booking-total">₹{o.totalAmount}</div>
                   </div>
-                  <div className="status-pill">{o.trackingStage.replace('_', ' ')}</div>
+                  <div style={{ marginTop: 8 }}>
+                    <span className="order-status-badge">
+                      <span className="osb-dot" />
+                      {o.trackingStage.replace(/_/g, ' ')}
+                    </span>
+                  </div>
                   <div className="booking-actions-row" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                     <button
                       type="button"
-                      className="btn btn-sm btn-primary live-track-btn"
-                      style={{ flex: '1 1 120px', minWidth: 110, justifyContent: 'center' }}
+                      className="order-btn-live"
                       onClick={() => onLiveSession(o.slotKey)}
                     >
-                      Live Shopping
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M4.93 4.93a10 10 0 0 1 14.14 0" />
+                        <path d="M7.76 7.76a6 6 0 0 1 8.48 0" />
+                      </svg>
+                      <span>Live Shopping</span>
                     </button>
                     <button
                       type="button"
-                      className="track-btn"
-                      style={{ flex: '1 1 120px', minWidth: 110, margin: 0, justifyContent: 'center' }}
+                      className="order-btn-track"
                       onClick={() => onTrackOrder(o.slotKey)}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>
-                      <span>Track order</span>
-                      <svg className="tb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="6" cy="18" r="2.5" />
+                        <circle cx="18" cy="6" r="2.5" />
+                        <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
+                      </svg>
+                      <span>Track Order</span>
                     </button>
                   </div>
                 </div>

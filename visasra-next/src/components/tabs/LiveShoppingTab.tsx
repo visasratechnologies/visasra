@@ -176,7 +176,24 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                                     Suggestion #{optIdx + 1}
                                   </span>
                                   <span className={`live-tag-${opt.status}`}>
-                                    {opt.status === 'approved' ? '✓ Approved & Reserved' : opt.status === 'rejected' ? '✕ Alternative Requested' : '⏳ Awaiting Your Approval'}
+                                    {opt.status === 'approved' && (
+                                      <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                                        <span>Approved & Reserved</span>
+                                      </>
+                                    )}
+                                    {opt.status === 'rejected' && (
+                                      <>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                        <span>Alternative Requested</span>
+                                      </>
+                                    )}
+                                    {opt.status === 'pending' && (
+                                      <>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
+                                        <span>Awaiting Approval</span>
+                                      </>
+                                    )}
                                   </span>
                                 </div>
                                 <div className="live-sugg-price" style={{ flexWrap: 'wrap' }}>
@@ -193,23 +210,36 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                               <div className="live-sugg-actions" style={{ display: 'flex', gap: 12, marginTop: 14 }}>
                                 <button
                                   type="button"
-                                  className="btn-live-approve"
-                                  style={user.walletBalance < opt.price * (item.qty || 1) ? {
-                                    background: 'linear-gradient(135deg, #D97706, #B45309)',
-                                    boxShadow: '0 6px 16px rgba(180, 83, 9, 0.35)',
-                                  } : {}}
+                                  className={`btn-live-approve ${user.walletBalance < opt.price * (item.qty || 1) ? 'needs-topup' : ''}`}
                                   onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
                                 >
-                                  {user.walletBalance < opt.price * (item.qty || 1)
-                                    ? `⚡ Top-Up ₹${(opt.price * (item.qty || 1) - user.walletBalance).toLocaleString('en-IN')} & Approve`
-                                    : `✓ Approve Option (₹${opt.price.toLocaleString('en-IN')})`}
+                                  {user.walletBalance < opt.price * (item.qty || 1) ? (
+                                    <>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="2" y="5" width="20" height="14" rx="3" />
+                                        <line x1="2" y1="10" x2="22" y2="10" />
+                                      </svg>
+                                      <span>Top-Up ₹{(opt.price * (item.qty || 1) - user.walletBalance).toLocaleString('en-IN')} & Approve</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                      <span>Approve Option · ₹{opt.price.toLocaleString('en-IN')}</span>
+                                    </>
+                                  )}
                                 </button>
                                 <button
                                   type="button"
                                   className="btn-live-reject"
                                   onClick={() => onRejectOption(item.itemId, opt.id)}
                                 >
-                                  ✕ Request Alternative
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                    <path d="M3 3v5h5" />
+                                  </svg>
+                                  <span>Request Alternative</span>
                                 </button>
                               </div>
                             )}
@@ -229,8 +259,8 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                             {opt.status === 'rejected' && (
                               <div className="live-rejected-banner">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
-                                  <span>Alternative requested. Shopper is inspecting other designs.</span>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                                  <span>Alternative requested · Shopper is checking other designs in-store</span>
                                 </div>
                                 <button type="button" className="btn-live-undo" onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}>
                                   Re-evaluate

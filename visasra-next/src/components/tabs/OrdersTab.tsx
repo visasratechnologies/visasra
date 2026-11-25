@@ -94,96 +94,70 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <div className="status-pill">{o.trackingStage.replace(/_/g, ' ')}</div>
+                  <span className="order-status-badge">
+                    <span className="osb-dot" />
+                    {o.trackingStage.replace(/_/g, ' ')}
+                  </span>
                   {o.orderType === 'online' && (
-                    <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#EDE9FE', color: '#6D28D9' }}>
-                      Online Sourcing (Admin Procurement)
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#F3E8FF', color: '#6B21A8', border: '1px solid #E9D5FF' }}>
+                      Online Concierge
                     </span>
                   )}
                   {o.trackingNumber && (
-                    <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
                       ✈️ {o.carrier || 'Express'}: {o.trackingNumber}
                     </span>
                   )}
                 </div>
 
                 {o.orderType !== 'online' && (o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping') && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    background: '#ECFDF5',
-                    border: '1.2px solid #10B981',
-                    borderRadius: 8,
-                    padding: '6px 10px',
-                    marginTop: 10,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: '#065F46'
-                  }}>
-                    <span className="live-pulsing-dot" style={{ width: 7, height: 7 }} />
-                    <span>🟢 Personal Shopper Active in Market Right Now</span>
+                  <div className="order-live-market-pill">
+                    <span className="radar-live-dot">
+                      <span className="radar-live-ping" />
+                      <span className="radar-live-core" />
+                    </span>
+                    <span className="order-live-market-text">Personal Shopper Active in Market</span>
                   </div>
                 )}
 
-                <div className="booking-actions-row" style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+                <div className="booking-actions-row">
                   {o.orderType !== 'online' && (
                     <button
                       type="button"
-                      className="btn btn-sm btn-primary live-track-btn"
-                      style={{
-                        flex: '1 1 130px',
-                        minWidth: 110,
-                        justifyContent: 'center',
-                        ...((o.trackingStage === 'shopping' || o.status === 'shopping') ? {
-                          background: 'linear-gradient(135deg, #059669, #047857)',
-                          boxShadow: '0 4px 12px rgba(5, 150, 105, 0.35)',
-                          border: 'none',
-                        } : {})
-                      }}
+                      className={`order-btn-live ${(o.trackingStage === 'shopping' || o.status === 'shopping') ? 'active-pulse' : ''}`}
                       onClick={() => onJoinLiveShopping(o.slotKey)}
                     >
-                      {(o.trackingStage === 'shopping' || o.status === 'shopping') ? '● Join Live Shopping' : 'Live Shopping'}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M4.93 4.93a10 10 0 0 1 14.14 0" />
+                        <path d="M7.76 7.76a6 6 0 0 1 8.48 0" />
+                      </svg>
+                      <span>Join Live Shopping</span>
                     </button>
                   )}
                   <button
                     type="button"
-                    className="track-btn"
-                    style={{
-                      flex: '1 1 130px',
-                      minWidth: 110,
-                      margin: 0,
-                      justifyContent: 'center',
-                      ...(o.orderType === 'online' ? { background: 'var(--navy)', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8 } : {})
-                    }}
+                    className="order-btn-track"
                     onClick={() => onTrackOrder(o.slotKey)}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="6" cy="18" r="2.5" />
                       <circle cx="18" cy="6" r="2.5" />
                       <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
                     </svg>
-                    <span>{o.orderType === 'online' ? 'Track Procurement' : 'Track order'}</span>
+                    <span>{o.orderType === 'online' ? 'Track Procurement' : 'Track Order'}</span>
                   </button>
 
                   {o.liveSession?.worker && onRateShopper && (
                     <button
                       type="button"
-                      className="btn btn-sm"
-                      style={{
-                        flex: '1 1 110px',
-                        minWidth: 100,
-                        background: '#FEF3C7',
-                        color: '#92400E',
-                        border: '1px solid #FCD34D',
-                        fontWeight: 700,
-                        borderRadius: 8,
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                      }}
+                      className="order-btn-rate"
                       onClick={() => onRateShopper(o)}
                     >
-                      ⭐ Rate Shopper
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                      <span>Rate Shopper</span>
                     </button>
                   )}
                 </div>

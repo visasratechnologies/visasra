@@ -103,7 +103,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
             </div>
             <div className="profile-hero-name-block">
               <h2 className="profile-hero-name">{user.name || 'Visasra Customer'}</h2>
-              <span className="profile-verified-badge">✓ Verified Customer</span>
+              <span className="profile-verified-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.2 14.2l-3.5-3.5 1.41-1.41 2.09 2.08 5.69-5.69 1.41 1.41-7.1 7.11z"/>
+                </svg>
+                Verified Customer
+              </span>
             </div>
             <button
               type="button"

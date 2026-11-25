@@ -1198,8 +1198,19 @@ export default function CustomerApp() {
   };
 
   const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 2600);
+    if (!msg) return;
+    let clean = msg;
+    // Humanize raw backend technical errors into polished, helpful messages
+    if (/unauthorized|session token required|token required/i.test(msg)) {
+      clean = 'Please sign in to complete your request';
+      setIsLoggedIn(false);
+    } else if (/failed to fetch|networkerror/i.test(msg)) {
+      clean = 'Connection interrupted. Please try again.';
+    } else if (/internal server error|failed to place order/i.test(msg)) {
+      clean = 'Unable to complete request right now. Please try again.';
+    }
+    setToastMsg(clean);
+    setTimeout(() => setToastMsg(''), 3000);
   };
 
   // Load Catalog Categories & Products from PostgreSQL once on mount
@@ -2073,18 +2084,29 @@ export default function CustomerApp() {
         {/* Toast Notification */}
         <div
           id="toast"
-          className={`toast ${toastMsg ? 'show on' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+          className={`toast ${toastMsg ? 'show on' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning|please sign in/i.test(toastMsg)
             ? 'toast-error'
             : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
               ? 'toast-success'
               : ''
             }`}
         >
-          {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
-            <span style={{ fontSize: 16 }}>⚠️</span>
-          )}
-          {toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) && (
-            <span style={{ fontSize: 16 }}>✓</span>
+          {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning|please sign in/i.test(toastMsg) ? (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          ) : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) ? (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
           )}
           <span>{toastMsg}</span>
         </div>
@@ -3890,18 +3912,29 @@ export default function CustomerApp() {
       {/* Toast Notification */}
       <div
         id="toast"
-        className={`toast ${toastMsg ? 'show on' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+        className={`toast ${toastMsg ? 'show on' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning|please sign in/i.test(toastMsg)
           ? 'toast-error'
           : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
             ? 'toast-success'
             : ''
           }`}
       >
-        {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
-          <span style={{ fontSize: 16 }}>⚠️</span>
-        )}
-        {toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) && (
-          <span style={{ fontSize: 16 }}>✓</span>
+        {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning|please sign in/i.test(toastMsg) ? (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        ) : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) ? (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
         )}
         <span>{toastMsg}</span>
       </div>
