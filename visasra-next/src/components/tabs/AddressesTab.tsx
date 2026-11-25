@@ -8,6 +8,7 @@ interface AddressesTabProps {
   onSaveAddress: (address: Omit<Address, 'id'>) => Promise<void>;
   defaultName?: string;
   defaultPhone?: string;
+  showToast?: (msg: string) => void;
 }
 
 export const AddressesTab: React.FC<AddressesTabProps> = ({
@@ -17,9 +18,11 @@ export const AddressesTab: React.FC<AddressesTabProps> = ({
   onSaveAddress,
   defaultName = '',
   defaultPhone = '',
+  showToast,
 }) => {
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [addressForm, setAddressForm] = useState<Omit<Address, 'id'>>({
     name: defaultName,
     phone: defaultPhone,
@@ -34,9 +37,14 @@ export const AddressesTab: React.FC<AddressesTabProps> = ({
 
   const handleSave = async () => {
     if (!addressForm.line1.trim() || !addressForm.city.trim() || !addressForm.zip.trim()) {
-      alert('Please fill out street address, city, and zip code');
+      const errMsg = 'Please fill out street address, city, and zip code';
+      setFormError(errMsg);
+      if (showToast) {
+        showToast(errMsg);
+      }
       return;
     }
+    setFormError('');
     setSaving(true);
     try {
       await onSaveAddress(addressForm);
@@ -113,6 +121,12 @@ export const AddressesTab: React.FC<AddressesTabProps> = ({
               <div className="af-title">Add New Address</div>
               <button type="button" className="af-del" onClick={() => setIsAddingAddress(false)}>Close</button>
             </div>
+
+            {formError && (
+              <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 12, fontWeight: 500 }}>
+                {formError}
+              </div>
+            )}
 
             <div className="af-sec">Contact Details</div>
             <div className="af-grid">

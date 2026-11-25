@@ -132,7 +132,7 @@ export default function ShippingPolicyPage() {
           </p>
           <ol style={{ paddingLeft: 22, marginBottom: 16 }}>
             <li style={{ marginBottom: 6 }}>Notify Visasra Support within <b>48 hours of delivery</b> (or expected delivery date for lost items).</li>
-            <li style={{ marginBottom: 6 }}>Provide clear photographs and video of the outer box, shipping label, internal packaging, and damaged items.</li>
+            <li style={{ marginBottom: 6 }}>Provide clear photographs of the outer box, shipping label, internal packaging, and damaged items.</li>
             <li style={{ marginBottom: 6 }}>Visasra will initiate an investigation with the courier partner and insurance provider. Validated claims will be resolved via <b>replacement, 100% Visasra Wallet credit, or original payment refund within 5 to 7 business days</b>.</li>
           </ol>
 

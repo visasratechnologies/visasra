@@ -6,6 +6,9 @@ import dynamic from 'next/dynamic';
 import { openRazorpayPayment } from '@/lib/razorpay';
 import '@/styles/styles.css';
 import '@/styles/live.css';
+import { AuthScreen } from '@/components/auth/AuthScreen';
+import { HomeTab } from '@/components/tabs/HomeTab';
+import { CartTab } from '@/components/tabs/CartTab';
 import { WalletTab } from '@/components/tabs/WalletTab';
 import { ProfileTab } from '@/components/tabs/ProfileTab';
 import { OrdersTab } from '@/components/tabs/OrdersTab';
@@ -16,6 +19,11 @@ import { InsufficientBalanceModal } from '@/components/modals/InsufficientBalanc
 import CustomizeProductModal from '@/components/modals/CustomizeProductModal';
 import EditBasketItemModal from '@/components/modals/EditBasketItemModal';
 import OrderTrackingModal from '@/components/modals/OrderTrackingModal';
+import { TripDetailsModal } from '@/components/modals/TripDetailsModal';
+import { RateShopperModal } from '@/components/modals/RateShopperModal';
+import { compressImageClient } from '@/lib/imageCompression';
+import { chime } from '@/lib/chime';
+import { resolveItemImage } from '@/lib/placeholders';
 
 const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false });
 
@@ -231,204 +239,36 @@ interface Order {
   };
 }
 
-const HOW_IT_WORKS = [
-  {
-    t: 'Add Items From Anywhere',
-    d: 'Choose from our curated categories, describe custom requests from your mind, or paste online store links.',
-    badgeClass: 'hw-step-1',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
-    ),
-  },
-  {
-    t: 'Add Photos & Budget Specs',
-    d: 'Attach reference photos, live images, specify preferred fabric/size, and set your target price range.',
-    badgeClass: 'hw-step-2',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-      </svg>
-    ),
-  },
-  {
-    t: 'Reserve Shopping Slot & Delivery',
-    d: 'Choose your preferred shopping duration, date & live window. Your personal shopper is assigned exclusively for you.',
-    badgeClass: 'hw-step-3',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" />
-      </svg>
-    ),
-  },
-  {
-    t: 'Dedicated Shopper Assigned',
-    d: 'A verified local personal shopper heads out to the authentic physical stores and artisan markets for you.',
-    badgeClass: 'hw-step-4',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    t: 'Live Photo & Video Approval',
-    d: 'Review live photos, artisan craftsmanship, and exact store bills in real-time. Approve before purchase.',
-    badgeClass: 'hw-step-5',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-      </svg>
-    ),
-  },
-  {
-    t: 'Secure International Delivery',
-    d: 'Consolidated packaging, customs clearance, and express doorstep courier tracking anywhere in the world.',
-    badgeClass: 'hw-step-6',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="7" width="14" height="10" rx="1.5" /><path d="M16 10h3l3 3v4h-6z" /><circle cx="7" cy="19" r="1.6" /><circle cx="18" cy="19" r="1.6" />
-      </svg>
-    ),
-  },
-];
 
 
-export interface CountryConfig {
-  iso: string;
-  country: string;
-  code: string;
-  flag: string;
-  minDigits: number;
-  maxDigits: number;
-  placeholder: string;
-  formatHint: string;
-  example: string;
-}
-
-const COUNTRY_CONFIGS: CountryConfig[] = [
-  // Primary Indian Diaspora & Global Trade Hubs
-  { iso: 'IN', country: 'India', code: '+91', flag: '🇮🇳', minDigits: 10, maxDigits: 10, placeholder: '98765 43210', formatHint: '10 digits', example: '98765 43210' },
-  { iso: 'US', country: 'United States', code: '+1', flag: '🇺🇸', minDigits: 10, maxDigits: 10, placeholder: '415 555 0199', formatHint: '10 digits', example: '415 555 0199' },
-  { iso: 'AU', country: 'Australia', code: '+61', flag: '🇦🇺', minDigits: 9, maxDigits: 9, placeholder: '412 345 678', formatHint: '9 digits', example: '412 345 678' },
-  { iso: 'GB', country: 'United Kingdom', code: '+44', flag: '🇬🇧', minDigits: 10, maxDigits: 10, placeholder: '7123 456789', formatHint: '10 digits', example: '7123 456789' },
-  { iso: 'CA', country: 'Canada', code: '+1', flag: '🇨🇦', minDigits: 10, maxDigits: 10, placeholder: '416 555 0199', formatHint: '10 digits', example: '416 555 0199' },
-  { iso: 'AE', country: 'UAE', code: '+971', flag: '🇦🇪', minDigits: 9, maxDigits: 9, placeholder: '50 123 4567', formatHint: '9 digits', example: '50 123 4567' },
-  { iso: 'SG', country: 'Singapore', code: '+65', flag: '🇸🇬', minDigits: 8, maxDigits: 8, placeholder: '8123 4567', formatHint: '8 digits', example: '8123 4567' },
-  { iso: 'SA', country: 'Saudi Arabia', code: '+966', flag: '🇸🇦', minDigits: 9, maxDigits: 9, placeholder: '50 123 4567', formatHint: '9 digits', example: '50 123 4567' },
-  { iso: 'QA', country: 'Qatar', code: '+974', flag: '🇶🇦', minDigits: 8, maxDigits: 8, placeholder: '3312 3456', formatHint: '8 digits', example: '3312 3456' },
-  { iso: 'NZ', country: 'New Zealand', code: '+64', flag: '🇳🇿', minDigits: 9, maxDigits: 10, placeholder: '21 123 4567', formatHint: '9-10 digits', example: '21 123 4567' },
-  { iso: 'MY', country: 'Malaysia', code: '+60', flag: '🇲🇾', minDigits: 9, maxDigits: 10, placeholder: '12 345 6789', formatHint: '9-10 digits', example: '12 345 6789' },
-  { iso: 'DE', country: 'Germany', code: '+49', flag: '🇩🇪', minDigits: 10, maxDigits: 11, placeholder: '151 23456789', formatHint: '10-11 digits', example: '151 23456789' },
-  { iso: 'FR', country: 'France', code: '+33', flag: '🇫🇷', minDigits: 9, maxDigits: 9, placeholder: '6 12 34 56 78', formatHint: '9 digits', example: '6 12 34 56 78' },
-  { iso: 'IE', country: 'Ireland', code: '+353', flag: '🇮🇪', minDigits: 9, maxDigits: 9, placeholder: '85 123 4567', formatHint: '9 digits', example: '85 123 4567' },
-  { iso: 'NL', country: 'Netherlands', code: '+31', flag: '🇳🇱', minDigits: 9, maxDigits: 9, placeholder: '6 12345678', formatHint: '9 digits', example: '6 12345678' },
-  { iso: 'CH', country: 'Switzerland', code: '+41', flag: '🇨🇭', minDigits: 9, maxDigits: 9, placeholder: '78 123 45 67', formatHint: '9 digits', example: '78 123 45 67' },
-  { iso: 'KW', country: 'Kuwait', code: '+965', flag: '🇰🇼', minDigits: 8, maxDigits: 8, placeholder: '9123 4567', formatHint: '8 digits', example: '9123 4567' },
-  { iso: 'BH', country: 'Bahrain', code: '+973', flag: '🇧🇭', minDigits: 8, maxDigits: 8, placeholder: '3912 3456', formatHint: '8 digits', example: '3912 3456' },
-  { iso: 'OM', country: 'Oman', code: '+968', flag: '🇴🇲', minDigits: 8, maxDigits: 8, placeholder: '9123 4567', formatHint: '8 digits', example: '9123 4567' },
-  { iso: 'HK', country: 'Hong Kong', code: '+852', flag: '🇭🇰', minDigits: 8, maxDigits: 8, placeholder: '9123 4567', formatHint: '8 digits', example: '9123 4567' },
-  { iso: 'JP', country: 'Japan', code: '+81', flag: '🇯🇵', minDigits: 10, maxDigits: 10, placeholder: '90 1234 5678', formatHint: '10 digits', example: '90 1234 5678' },
-  { iso: 'ZA', country: 'South Africa', code: '+27', flag: '🇿🇦', minDigits: 9, maxDigits: 9, placeholder: '71 234 5678', formatHint: '9 digits', example: '71 234 5678' },
-];
 
 export default function CustomerApp() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const saved = localStorage.getItem('visasra_customer_session_v1');
-      return !!saved;
-    } catch {
-      return false;
-    }
-  });
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [authChecking, setAuthChecking] = useState(false);
-  const [showInitialSplash, setShowInitialSplash] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
+  const [showInitialSplash, setShowInitialSplash] = useState<boolean>(true);
+
+  const getCustomerToken = () => {
     try {
-      return !sessionStorage.getItem('visasra_splash_shown');
+      return typeof window !== 'undefined' ? localStorage.getItem('visasra_token') : null;
     } catch {
-      return false;
+      return null;
     }
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
-  const [authMethod, setAuthMethod] = useState<'password' | 'email_otp'>('password');
-
-  // Sign In State (Email or Mobile Number)
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authOtp, setAuthOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-
-  // Sign Up State with Country Code & Email OTP Verification
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupCountryIso, setSignupCountryIso] = useState('IN');
-  const [signupPhone, setSignupPhone] = useState('');
-  const [signupLocation, setSignupLocation] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupStep, setSignupStep] = useState<'details' | 'verify_email'>('details');
-  const [signupOtp, setSignupOtp] = useState('');
-
-  const activeSignupCountry = COUNTRY_CONFIGS.find((c) => c.iso === signupCountryIso) || COUNTRY_CONFIGS[0];
-
-  const detectCountryFromLocation = (loc: string): string | null => {
-    const q = loc.toLowerCase().trim();
-    if (!q) return null;
-    if (q.includes('india') || q.includes('mumbai') || q.includes('delhi') || q.includes('bangalore') || q.includes('chennai') || q.includes('hyderabad') || q.includes('kolkata') || q.includes('pune') || q.includes('kerala')) return 'IN';
-    if (q.includes('uk') || q.includes('united kingdom') || q.includes('london') || q.includes('manchester') || q.includes('birmingham') || q.includes('england') || q.includes('scotland')) return 'GB';
-    if (q.includes('australia') || q.includes('sydney') || q.includes('melbourne') || q.includes('brisbane') || q.includes('perth')) return 'AU';
-    if (q.includes('usa') || q.includes('united states') || q.includes('america') || q.includes('california') || q.includes('new york') || q.includes('texas')) return 'US';
-    if (q.includes('canada') || q.includes('toronto') || q.includes('vancouver') || q.includes('montreal')) return 'CA';
-    if (q.includes('uae') || q.includes('dubai') || q.includes('abu dhabi') || q.includes('sharjah') || q.includes('emirates')) return 'AE';
-    if (q.includes('singapore')) return 'SG';
-    if (q.includes('saudi') || q.includes('riyadh') || q.includes('jeddah')) return 'SA';
-    if (q.includes('qatar') || q.includes('doha')) return 'QA';
-    if (q.includes('germany') || q.includes('berlin') || q.includes('munich')) return 'DE';
-    if (q.includes('france') || q.includes('paris')) return 'FR';
-    if (q.includes('new zealand') || q.includes('auckland')) return 'NZ';
-    if (q.includes('malaysia') || q.includes('kuala')) return 'MY';
-    if (q.includes('ireland') || q.includes('dublin')) return 'IE';
-    return null;
   };
 
-  // Forgot Password State (Email based OTP & Reset)
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotOtp, setForgotOtp] = useState('');
-  const [forgotNewPassword, setForgotNewPassword] = useState('');
-  const [forgotOtpSent, setForgotOtpSent] = useState(false);
+  const getAuthHeaders = (): Record<string, string> => {
+    const t = getCustomerToken();
+    const headers: Record<string, string> = {};
+    if (t) headers['Authorization'] = `Bearer ${t}`;
+    if (user?.id) headers['x-user-id'] = user.id;
+    if (user?.email) headers['x-user-email'] = user.email;
+    return headers;
+  };
+
 
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'bookslot' | 'orders' | 'cart' | 'profile' | 'wallet' | 'addresses' | 'live-shopping'>('home');
-  const [user, setUser] = useState<User>(() => {
-    if (typeof window === 'undefined') {
-      return { id: '', name: '', email: '', phone: '', walletBalance: 0 };
-    }
-    try {
-      const saved = localStorage.getItem('visasra_customer_session_v1');
-      if (saved) {
-        const u = JSON.parse(saved);
-        if (u.email === 'customer@visasra.com') u.walletBalance = 0;
-        return u;
-      }
-    } catch {}
-    return { id: '', name: '', email: '', phone: '', walletBalance: 0 };
-  });
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const savedCart = localStorage.getItem('visasra_customer_cart_v1');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-          return parsedCart;
-        }
-      }
-    } catch {}
-    return [];
-  });
+  const [user, setUser] = useState<User>({ id: '', name: '', email: '', phone: '', walletBalance: 0 });
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const isCartInitializedRef = useRef(false);
 
@@ -436,28 +276,35 @@ export default function CustomerApp() {
   const persistCartLocally = (newCart: CartItem[]) => {
     try {
       localStorage.setItem('visasra_customer_cart_v1', JSON.stringify(newCart));
-    } catch {}
+    } catch { }
   };
 
-  // Load saved session, active tab & local cart on mount & sync fresh live wallet from Postgres
+  // Load saved session, active tab, cart & splash on mount (runs strictly client-side post-hydration)
   useEffect(() => {
+    let splashTimer: NodeJS.Timeout | null = null;
     try {
-      // 1. Restore local cart immediately if not loaded by initial state
+      // 1. Branded splash banner (Image 4): runs for 3.5s on every page load while backend data reloads
+      setShowInitialSplash(true);
+      splashTimer = setTimeout(() => {
+        setShowInitialSplash(false);
+      }, 3500);
+
+      // 2. Restore local cart
       const savedCart = localStorage.getItem('visasra_customer_cart_v1');
       if (savedCart) {
         const parsedCart = JSON.parse(savedCart);
         if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-          setCart(prev => prev.length > 0 ? prev : parsedCart);
+          setCart(parsedCart);
         }
       }
 
-      // 2. Restore active tab if previously set
+      // 3. Restore active tab if previously set
       const savedTab = localStorage.getItem('visasra_customer_active_tab');
       if (savedTab && ['home', 'categories', 'bookslot', 'orders', 'cart', 'profile', 'wallet', 'addresses', 'live-shopping'].includes(savedTab)) {
         setActiveTab(savedTab as any);
       }
 
-      // 3. Restore user session
+      // 4. Restore user session
       const saved = localStorage.getItem('visasra_customer_session_v1');
       if (saved) {
         const u = JSON.parse(saved);
@@ -471,71 +318,55 @@ export default function CustomerApp() {
         setIsLoggedIn(true);
 
         // Fetch authoritative wallet balance from DB
-        if (u.email) {
-          fetch(`/api/wallet?email=${encodeURIComponent(u.email)}`)
-            .then(r => r.json())
-            .then(d => {
-              if (d && typeof d.balance === 'number') {
-                setUser(prev => {
-                  const updated = { ...prev, walletBalance: d.balance };
-                  try { localStorage.setItem('visasra_customer_session_v1', JSON.stringify(updated)); } catch {}
-                  return updated;
-                });
-              }
-            })
-            .catch(() => {});
-        }
+        fetch('/api/wallet', { headers: getAuthHeaders() })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d && typeof d.balance === 'number') {
+              setUser((prev) => {
+                const updated = { ...prev, walletBalance: d.balance };
+                try {
+                  localStorage.setItem('visasra_customer_session_v1', JSON.stringify(updated));
+                } catch { }
+                return updated;
+              });
+            }
+          })
+          .catch(() => { });
       }
     } catch (e) {
       console.error('Session/Cart load error', e);
     } finally {
       setAuthChecking(false);
+      setMounted(true);
     }
-  }, []);
 
-  // One-time initial branded splash screen (2.5 seconds), bypassed immediately on page refresh
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const alreadyShown = sessionStorage.getItem('visasra_splash_shown');
-      if (!alreadyShown) {
-        setShowInitialSplash(true);
-        const timer = setTimeout(() => {
-          setShowInitialSplash(false);
-          try {
-            sessionStorage.setItem('visasra_splash_shown', 'true');
-          } catch {}
-        }, 2500); // 2.5s initial splash
-        return () => clearTimeout(timer);
-      } else {
-        setShowInitialSplash(false);
-      }
-    } catch {
-      setShowInitialSplash(false);
-    }
+    return () => {
+      if (splashTimer) clearTimeout(splashTimer);
+    };
   }, []);
 
   // Live Auto-Save cart to localStorage (protected against initial mount wipe)
   useEffect(() => {
+    if (!mounted) return;
     if (!isCartInitializedRef.current) {
       isCartInitializedRef.current = true;
       return;
     }
     persistCartLocally(cart);
-  }, [cart]);
+  }, [cart, mounted]);
 
   // Live Auto-Save active tab to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('visasra_customer_active_tab', activeTab);
-    } catch {}
+    } catch { }
   }, [activeTab]);
 
   // Live Auto-Sync Wallet Balance from PostgreSQL
   useEffect(() => {
     const syncWallet = () => {
-      if (!isLoggedIn || !user.email) return;
-      fetch(`/api/wallet?email=${encodeURIComponent(user.email)}`)
+      if (!isLoggedIn) return;
+      fetch('/api/wallet', { headers: getAuthHeaders() })
         .then((r) => r.json())
         .then((d) => {
           if (d && typeof d.balance === 'number') {
@@ -544,7 +375,7 @@ export default function CustomerApp() {
                 const updated = { ...prev, walletBalance: d.balance };
                 try {
                   localStorage.setItem('visasra_customer_session_v1', JSON.stringify(updated));
-                } catch {}
+                } catch { }
                 return updated;
               }
               return prev;
@@ -554,7 +385,7 @@ export default function CustomerApp() {
             setWalletTransactions(d.transactions);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     if (!isLoggedIn || !user.email) return;
@@ -571,249 +402,21 @@ export default function CustomerApp() {
     };
   }, [isLoggedIn, user.email]);
 
-  // Sign In Handler (Email/Password or Email OTP)
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthLoading(true);
+  const handleAuthSuccess = (authUser: User, token?: string, fullPhone?: string) => {
+    setUser(authUser);
+    if (fullPhone) {
+      setCustomerPhone(fullPhone);
+    }
+    setIsLoggedIn(true);
+    setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
     try {
-      if (authMethod === 'email_otp') {
-        if (!otpSent) {
-          // Request OTP to Email
-          const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'send_email_otp', email: authEmail }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            setOtpSent(true);
-            showToast(data.message || `Verification code sent to ${authEmail}. Please check your email.`);
-          } else {
-            showToast(data.error || 'Failed to send OTP to email');
-          }
-          setAuthLoading(false);
-          return;
-        }
-
-        // Verify OTP
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authEmail, otp: authOtp }),
-        });
-        const data = await res.json();
-        if (res.ok && data.user) {
-          setUser(data.user);
-          setIsLoggedIn(true);
-          setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
-          localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
-          if (data.token) localStorage.setItem('visasra_token', data.token);
-          showToast(`Welcome back, ${data.user.name || 'Customer'}!`);
-          loadData(data.user);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          showToast(data.error || 'Invalid OTP code');
-        }
-      } else {
-        // Sign In with Email & Password
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authEmail, password: authPassword }),
-        });
-        const data = await res.json();
-        if (res.ok && data.user) {
-          setUser(data.user);
-          setIsLoggedIn(true);
-          setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
-          localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
-          if (data.token) localStorage.setItem('visasra_token', data.token);
-          showToast(`Welcome back, ${data.user.name || 'Customer'}!`);
-          loadData(data.user);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          showToast(data.error || 'Invalid email or password');
-        }
-      }
-    } catch {
-      showToast('Login network error');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  // Sign Up Step 1: Request Verification Code to Email
-  const handleSignUpRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!signupName.trim()) {
-      showToast('Please enter your name');
-      return;
-    }
-    if (!signupEmail.trim() || !signupEmail.includes('@')) {
-      showToast('Please enter a valid Gmail / Email address');
-      return;
-    }
-    const rawDigits = signupPhone.replace(/\D/g, '');
-    if (!rawDigits) {
-      showToast('Please enter your mobile number');
-      return;
-    }
-    if (rawDigits.length < activeSignupCountry.minDigits || rawDigits.length > activeSignupCountry.maxDigits) {
-      const neededMsg =
-        activeSignupCountry.minDigits === activeSignupCountry.maxDigits
-          ? `exactly ${activeSignupCountry.minDigits} digits (e.g. ${activeSignupCountry.example})`
-          : `between ${activeSignupCountry.minDigits} and ${activeSignupCountry.maxDigits} digits`;
-      showToast(`Please enter a valid ${activeSignupCountry.country} mobile number with ${neededMsg}. You entered ${rawDigits.length} digits.`);
-      return;
-    }
-    if (!signupLocation.trim()) {
-      showToast('Please enter your delivery location or city');
-      return;
-    }
-    if (!signupPassword || signupPassword.length < 6) {
-      showToast('Password must be at least 6 characters');
-      return;
-    }
-
-    setAuthLoading(true);
-    try {
-      const fullPhone = `${activeSignupCountry.code} ${rawDigits}`;
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'send_otp',
-          name: signupName,
-          email: signupEmail,
-          phone: fullPhone,
-          location: signupLocation,
-          password: signupPassword,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSignupStep('verify_email');
-        showToast(data.message || `Verification code sent to ${signupEmail}. Please check your email.`);
-      } else {
-        showToast(data.error || 'Failed to send verification code');
-      }
-    } catch {
-      showToast('Network error during registration');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  // Sign Up Step 2: Verify Email OTP and Create Account & Log In
-  const handleVerifySignupOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!signupOtp.trim()) {
-      showToast('Please enter the verification code sent to your email');
-      return;
-    }
-
-    setAuthLoading(true);
-    try {
-      const fullPhone = `${activeSignupCountry.code} ${signupPhone.replace(/\D/g, '')}`;
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'verify_and_create',
-          name: signupName,
-          email: signupEmail,
-          phone: fullPhone,
-          location: signupLocation,
-          password: signupPassword,
-          otp: signupOtp,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.user) {
-        setUser(data.user);
-        if (fullPhone) {
-          setCustomerPhone(fullPhone);
-        }
-        setIsLoggedIn(true);
-        setActiveTab(prev => (prev === 'cart' || prev === 'bookslot' ? prev : 'home'));
-        localStorage.setItem('visasra_customer_session_v1', JSON.stringify(data.user));
-        if (data.token) localStorage.setItem('visasra_token', data.token);
-        showToast(`Email verified! Welcome to Visasra, ${signupName}!`);
-        loadData(data.user);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        showToast(data.error || 'Invalid verification code');
-      }
-    } catch {
-      showToast('Network error verifying code');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  // Forgot Password Handler
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotEmail.trim() || !forgotEmail.includes('@')) {
-      showToast('Please enter your registered Gmail / Email address');
-      return;
-    }
-
-    setAuthLoading(true);
-    try {
-      if (!forgotOtpSent) {
-        const res = await fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'request_otp', email: forgotEmail }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setForgotOtpSent(true);
-          showToast(data.message || `Reset code sent to ${forgotEmail}. Please check your email.`);
-        } else {
-          showToast(data.error || 'Failed to send reset code');
-        }
-      } else {
-        if (!forgotOtp.trim()) {
-          showToast('Please enter the verification code sent to your email');
-          setAuthLoading(false);
-          return;
-        }
-        if (!forgotNewPassword || forgotNewPassword.length < 6) {
-          showToast('New password must be at least 6 characters');
-          setAuthLoading(false);
-          return;
-        }
-
-        const res = await fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'reset_password',
-            email: forgotEmail,
-            otp: forgotOtp,
-            newPassword: forgotNewPassword,
-          }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          showToast('Password updated successfully! You can now sign in.');
-          setAuthEmail(forgotEmail);
-          setAuthPassword(forgotNewPassword);
-          setAuthMode('signin');
-          setAuthMethod('password');
-          setForgotOtpSent(false);
-          setForgotNewPassword('');
-          setForgotOtp('');
-        } else {
-          showToast(data.error || 'Password reset failed');
-        }
-      }
-    } catch {
-      showToast('Network error processing password reset');
-    } finally {
-      setAuthLoading(false);
+      localStorage.setItem('visasra_customer_session_v1', JSON.stringify(authUser));
+      if (token) localStorage.setItem('visasra_token', token);
+    } catch { }
+    showToast(`Welcome back, ${authUser.name || 'Customer'}!`);
+    loadData(authUser);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -832,7 +435,6 @@ export default function CustomerApp() {
     setOrders([]);
     setCart([]);
     setActiveTab('home');
-    setOtpSent(false);
     showToast('Signed out of Visasra');
   };
 
@@ -1020,8 +622,10 @@ export default function CustomerApp() {
   const handleFileUpload = async (file: File): Promise<string | null> => {
     try {
       setUploadingImage(true);
+      // Client-side off-screen canvas downscaling to 1280px WebP (reduces 6MB camera raw to ~140KB)
+      const compressedFile = await compressImageClient(file, { maxDimension: 1280, quality: 0.82 });
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', compressedFile);
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: fd,
@@ -1086,9 +690,9 @@ export default function CustomerApp() {
           />
           <div className="iud-content">
             <svg className="iud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <div className="iud-title">
               {uploadingImage ? 'Uploading photo...' : 'Click to Upload Photo or Drag & Drop'}
@@ -1227,12 +831,58 @@ export default function CustomerApp() {
     setLiveSessionLoading(true);
     fetchLiveSession(liveSessionSlot).finally(() => setLiveSessionLoading(false));
 
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      fetchLiveSession(liveSessionSlot);
-    }, 20000);
+    // Connect to Real-time SSE Event Bus (eliminates 20s polling load)
+    let es: EventSource | null = null;
+    let fallbackInterval: NodeJS.Timeout | null = null;
 
-    return () => clearInterval(interval);
+    try {
+      es = new EventSource(`/api/live/${encodeURIComponent(liveSessionSlot)}/events`);
+
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed.type === 'option_created') {
+            fetchLiveSession(liveSessionSlot);
+            chime.playLiveOptionChime();
+          } else if (parsed.type === 'qr_cleared') {
+            fetchLiveSession(liveSessionSlot);
+            chime.playPaymentClearedChime();
+          } else if (['stage_changed', 'location_updated', 'option_decision', 'session_refresh'].includes(parsed.type)) {
+            fetchLiveSession(liveSessionSlot);
+          }
+        } catch {
+          // Keep-alive or non-JSON message
+        }
+      };
+
+      es.onerror = () => {
+        // SSE disconnected / reconnecting; fall back to passive 60s backup sync
+        if (!fallbackInterval) {
+          fallbackInterval = setInterval(() => {
+            if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+            fetchLiveSession(liveSessionSlot);
+          }, 60000);
+        }
+      };
+
+      es.onopen = () => {
+        if (fallbackInterval) {
+          clearInterval(fallbackInterval);
+          fallbackInterval = null;
+        }
+      };
+    } catch {
+      // EventSource not supported in environment: passive fallback
+      fallbackInterval = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+        fetchLiveSession(liveSessionSlot);
+      }, 45000);
+    }
+
+    return () => {
+      if (es) es.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
   }, [liveSessionSlot]);
 
   useEffect(() => {
@@ -1243,17 +893,62 @@ export default function CustomerApp() {
     setTrackingLoading(true);
     fetchTracking(trackOrderSlot).finally(() => setTrackingLoading(false));
 
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-      fetchTracking(trackOrderSlot);
-    }, 20000);
+    // Real-time SSE listener for tracking modal
+    let es: EventSource | null = null;
+    let trackingFallback: NodeJS.Timeout | null = null;
 
-    return () => clearInterval(interval);
+    try {
+      es = new EventSource(`/api/live/${encodeURIComponent(trackOrderSlot)}/events`);
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          if (['stage_changed', 'location_updated', 'session_refresh'].includes(parsed.type)) {
+            fetchTracking(trackOrderSlot);
+          }
+        } catch {
+          // ignore heartbeat
+        }
+      };
+      es.onerror = () => {
+        if (!trackingFallback) {
+          trackingFallback = setInterval(() => {
+            if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+            fetchTracking(trackOrderSlot);
+          }, 60000);
+        }
+      };
+      es.onopen = () => {
+        if (trackingFallback) {
+          clearInterval(trackingFallback);
+          trackingFallback = null;
+        }
+      };
+    } catch {
+      trackingFallback = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+        fetchTracking(trackOrderSlot);
+      }, 45000);
+    }
+
+    return () => {
+      if (es) es.close();
+      if (trackingFallback) clearInterval(trackingFallback);
+    };
   }, [trackOrderSlot]);
 
-  // Lock body scroll when tracking modal is open
+  // Lock body scroll cleanly whenever any modal is active (prevents mobile background scroll trap)
+  const isAnyModalOpen = Boolean(
+    trackOrderSlot ||
+    customizingProduct ||
+    editingCartItem ||
+    orderPlacedSuccess ||
+    ratingModalOrder ||
+    showTripDetailsModal ||
+    insufficientBalanceModal
+  );
+
   useEffect(() => {
-    if (trackOrderSlot) {
+    if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -1261,7 +956,7 @@ export default function CustomerApp() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [trackOrderSlot]);
+  }, [isAnyModalOpen]);
 
   // Scroll to top whenever tab changes
   useEffect(() => {
@@ -1323,7 +1018,7 @@ export default function CustomerApp() {
           email: user.email,
           contact: customerPhone || user.phone,
         },
-        onSuccess: async (paymentId: string, orderId?: string) => {
+        onSuccess: async (paymentId: string, orderId?: string, signature?: string) => {
           showToast(`Depositing ₹${depositAmt.toLocaleString('en-IN')} to Visasra Money...`);
           const res = await fetch('/api/wallet', {
             method: 'POST',
@@ -1334,6 +1029,7 @@ export default function CustomerApp() {
               amount: depositAmt,
               razorpayPaymentId: paymentId,
               razorpayOrderId: orderId,
+              razorpaySignature: signature,
               note: `Deposit for item: ${itemName} (${paymentId})`,
             }),
           });
@@ -1343,7 +1039,7 @@ export default function CustomerApp() {
             setUser(prev => ({ ...prev, walletBalance: newBal }));
             try {
               localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: newBal }));
-            } catch {}
+            } catch { }
             setInsufficientBalanceModal(null);
             showToast(`₹${depositAmt.toLocaleString('en-IN')} added! Approving ${itemName}...`);
             await executeApproveOption(itemId, optionId);
@@ -1371,13 +1067,53 @@ export default function CustomerApp() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to request alternative');
-      showToast('Requested alternative options from shopper');
+      if (data.refundedAmount && data.refundedAmount > 0) {
+        showToast(`Decision undone! ₹${Number(data.refundedAmount).toLocaleString('en-IN')} refunded to your Visasra Money`);
+      } else {
+        showToast('Requested alternative options from shopper');
+      }
       fetchLiveSession(liveSessionSlot);
+      loadData();
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error rejecting option');
     }
   };
 
+
+  const handleSelectProductVariety = (
+    variety: { name: string; mid?: number; high?: number },
+    typePhoto: string,
+    minVal: number,
+    maxVal: number
+  ) => {
+    if (!selectedCategoryForView || !selectedProductForTypes) return;
+    const prodPhoto = getProductImg(selectedCategoryForView.slug, selectedProductForTypes.name);
+    const subPhotos: string[] = [];
+    if (typePhoto && !typePhoto.startsWith('/images/categories/')) {
+      subPhotos.push(typePhoto);
+    }
+    if (prodPhoto && !prodPhoto.startsWith('/images/categories/')) {
+      subPhotos.push(prodPhoto);
+    }
+
+    setCustomizingProduct({
+      id: `${selectedProductForTypes.id}-${productSlug(variety.name)}`,
+      name: `${selectedProductForTypes.name} – ${variety.name}`,
+      price: minVal,
+      estMin: minVal,
+      estMax: maxVal,
+      image: typePhoto,
+      images: subPhotos,
+      description: `Specific ${variety.name} variety of ${selectedProductForTypes.name} sourced directly from verified Indian merchants.`,
+      categoryName: selectedCategoryForView.name,
+      tag: 'Specific Variety',
+    });
+    setCustomizingQty(1);
+    setCustomizingNotes('');
+    setCustomizingImg(typePhoto);
+    setCustomizingImgs(subPhotos);
+    setActiveProductPhotoIdx(0);
+  };
 
   const handleSaveNewAddress = async (formData?: Omit<Address, 'id'>) => {
     const src = formData || addressForm;
@@ -1391,10 +1127,8 @@ export default function CustomerApp() {
     try {
       const res = await fetch('/api/user/addresses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
           name: nameToUse,
           phone: phoneToUse,
           line1: src.line1.trim(),
@@ -1425,7 +1159,7 @@ export default function CustomerApp() {
         showToast('New delivery address saved to database!');
         return;
       }
-    } catch {}
+    } catch { }
 
     const newAddr: Address = {
       id: 'addr-' + Date.now(),
@@ -1443,8 +1177,11 @@ export default function CustomerApp() {
       return;
     }
     try {
-      await fetch(`/api/user/addresses?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-    } catch {}
+      await fetch(`/api/user/addresses?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+    } catch { }
     setSavedAddresses(savedAddresses.filter(a => a.id !== id));
     if (selectedAddressId === id) {
       setSelectedAddressId(savedAddresses.find(a => a.id !== id)!.id);
@@ -1523,9 +1260,9 @@ export default function CustomerApp() {
 
   // Fetch authoritative saved delivery addresses from PostgreSQL
   const fetchAddresses = async (activeUser: User) => {
-    if (!activeUser?.email) return;
+    if (!activeUser) return;
     try {
-      const r = await fetch(`/api/user/addresses?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`);
+      const r = await fetch('/api/user/addresses', { headers: getAuthHeaders() });
       const d = await r.json();
       if (d.success && Array.isArray(d.addresses) && d.addresses.length > 0) {
         interface DbAddr {
@@ -1560,14 +1297,14 @@ export default function CustomerApp() {
         setSavedAddresses([]);
         setSelectedAddressId('');
       }
-    } catch {}
+    } catch { }
   };
 
   // Synchronize Cart with PostgreSQL Database
   const syncCartWithDatabase = async (activeUser: User) => {
-    if (!activeUser?.email) return;
+    if (!activeUser) return;
     try {
-      const res = await fetch(`/api/cart?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`);
+      const res = await fetch('/api/cart', { headers: getAuthHeaders() });
       const data = await res.json();
       const dbItems: CartItem[] = Array.isArray(data.items) ? data.items : [];
 
@@ -1579,7 +1316,7 @@ export default function CustomerApp() {
           const parsed = JSON.parse(localSaved);
           if (Array.isArray(parsed)) localItems = parsed;
         }
-      } catch {}
+      } catch { }
 
       // Combine in-memory cart and localStorage items
       const combinedLocal = [...cart];
@@ -1592,14 +1329,12 @@ export default function CustomerApp() {
       if (combinedLocal.length > 0) {
         const toMerge = combinedLocal.filter(l => !dbItems.some(d => (d.productId && d.productId === l.productId) || (d.id === l.id) || d.name.toLowerCase() === l.name.toLowerCase()));
         if (toMerge.length > 0) {
-          const mergeRes = await fetch(`/api/cart?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`, {
+          const mergeRes = await fetch('/api/cart', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify({
               action: 'merge',
               items: toMerge,
-              userId: activeUser.id,
-              email: activeUser.email,
             }),
           });
           const mergeData = await mergeRes.json();
@@ -1627,10 +1362,11 @@ export default function CustomerApp() {
       persistCartLocally(updated);
       return updated;
     });
-    if (isLoggedIn && user.email) {
-      fetch(`/api/cart?id=${encodeURIComponent(itemId)}&userId=${encodeURIComponent(user.id || '')}&email=${encodeURIComponent(user.email)}`, {
+    if (isLoggedIn) {
+      fetch(`/api/cart?id=${encodeURIComponent(itemId)}`, {
         method: 'DELETE',
-      }).catch(() => {});
+        headers: getAuthHeaders(),
+      }).catch(() => { });
     }
     showToast('Item removed from basket');
   };
@@ -1638,9 +1374,10 @@ export default function CustomerApp() {
   // Load Data from PostgreSQL
   const loadData = async (targetUser?: User | null) => {
     try {
-      const activeUser = targetUser !== undefined ? targetUser : (isLoggedIn && user?.email ? user : null);
-      if (activeUser && activeUser.email) {
-        const ordRes = await fetch(`/api/orders?email=${encodeURIComponent(activeUser.email)}&userId=${encodeURIComponent(activeUser.id || '')}`);
+      const activeUser = targetUser !== undefined ? targetUser : (isLoggedIn ? user : null);
+      if (activeUser) {
+        const q = activeUser.email ? `?email=${encodeURIComponent(activeUser.email)}` : '';
+        const ordRes = await fetch(`/api/orders${q}`, { headers: getAuthHeaders() });
         const ordData = await ordRes.json();
         if (ordData.orders) {
           setOrders(ordData.orders);
@@ -1655,7 +1392,7 @@ export default function CustomerApp() {
   };
 
   useEffect(() => {
-    const active = isLoggedIn && user?.email ? user : null;
+    const active = isLoggedIn && (user?.id || user?.email) ? user : null;
     if (active) {
       fetchAddresses(active);
       loadData(active);
@@ -1676,16 +1413,16 @@ export default function CustomerApp() {
     ? categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : [];
   const filteredSearchProducts = searchQuery.trim()
-    ? popularProducts.concat(categories.flatMap(c => c.products || [])).filter((p, idx, arr) => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) && arr.findIndex(x => x.id === p.id) === idx
-      ).slice(0, 5)
+    ? popularProducts.concat(categories.flatMap(c => c.products || [])).filter((p, idx, arr) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) && arr.findIndex(x => x.id === p.id) === idx
+    ).slice(0, 5)
     : [];
 
   const renderSearchBar = (isMobile = false) => (
     <div className="search-bar-wrap">
       <div className="search-bar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <input
           type="text"
@@ -1837,7 +1574,7 @@ export default function CustomerApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: itemToSync, userId: user.id, email: user.email }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     showToast(`Added ${product.name} to sourcing basket`);
@@ -1870,7 +1607,7 @@ export default function CustomerApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
     showToast(`Added ${prod.name} to basket`);
     setTimeout(() => {
@@ -1921,7 +1658,7 @@ export default function CustomerApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
     showToast(`Added "${customTitle}" to sourcing basket`);
     setCustomTitle('');
@@ -1969,7 +1706,7 @@ export default function CustomerApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
     showToast(`Added online product to sourcing basket`);
     setOnlineUrl('');
@@ -2000,9 +1737,9 @@ export default function CustomerApp() {
     const fallbackImg = editingCartItem.sourceType === 'online'
       ? '/images/placeholders/placeholder-online.svg'
       : editingCartItem.sourceType === 'mind'
-      ? '/images/placeholders/placeholder-custom.svg'
-      : '/images/placeholders/placeholder-item.svg';
-    const primaryImg = editImgs[0] || (editingCartItem.image && !editingCartItem.image.includes('pooja-spiritual.jpg') ? editingCartItem.image : '') || fallbackImg;
+        ? '/images/placeholders/placeholder-custom.svg'
+        : '/images/placeholders/placeholder-item.svg';
+    const primaryImg = editImgs[0] || resolveItemImage(editingCartItem.image, editingCartItem.sourceType) || fallbackImg;
 
     const updated = {
       name: editTitle.trim() || editingCartItem.name,
@@ -2022,7 +1759,7 @@ export default function CustomerApp() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: editingCartItem.id, ...updated, userId: user.id, email: user.email }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     showToast(`Updated "${editTitle || editingCartItem.name}"`);
@@ -2101,7 +1838,7 @@ export default function CustomerApp() {
           setUser(prev => ({ ...prev, walletBalance: finalBal }));
           try {
             localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: finalBal }));
-          } catch {}
+          } catch { }
 
           // 1. Instant optimistic reflection: prepend order into orders state (0ms delay)
           if (data.order) {
@@ -2115,7 +1852,7 @@ export default function CustomerApp() {
           if (isLoggedIn && user.email) {
             fetch(`/api/cart?clearAll=true&userId=${encodeURIComponent(user.id || '')}&email=${encodeURIComponent(user.email)}`, {
               method: 'DELETE',
-            }).catch(() => {});
+            }).catch(() => { });
           }
           setItemRequirement('');
           setDeliveryNotes('');
@@ -2253,7 +1990,7 @@ export default function CustomerApp() {
               setUser(prev => ({ ...prev, walletBalance: newBal }));
               try {
                 localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: newBal }));
-              } catch {}
+              } catch { }
               showToast(`✓ ₹${amt.toLocaleString('en-IN')} added to Visasra Money!`);
             }
           } catch {
@@ -2273,16 +2010,18 @@ export default function CustomerApp() {
     }
   };
 
-  // One-time initial session splash screen (2 to 3s on initial site open, skipped completely on refresh)
-  if (showInitialSplash) {
+  // Branded splash screen (Image 4): displays for 3.5s on every page load while backend data reloads
+  // Ensures 100% identical SSR & client initial render with zero login flicker
+  if (!mounted || showInitialSplash) {
     return (
       <div
+        id="initialSplash"
         style={{
           position: 'fixed',
           inset: 0,
           width: '100vw',
           height: '100vh',
-          zIndex: 999999,
+          zIndex: 9999999,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -2328,541 +2067,30 @@ export default function CustomerApp() {
     );
   }
 
-  // If Logged Out: Show Customer Authentication Screen with Demo OTP
+  // If Logged Out: Show Customer Authentication Screen
   if (!isLoggedIn) {
     return (
       <>
-        <div id="authScreen" aria-label="Sign in to Visasra">
-        <div className="auth-side">
-          <div className="auth-brand">
-            <img src="/images/logo/visasra-logo.png" alt="" className="auth-logo" />
-            <span className="brand-text">Visasra</span>
-          </div>
-          <div className="auth-side-copy">
-            <h1>Shop India,<br />delivered anywhere.</h1>
-            <p>Your trusted hands on the ground in India. Verified authentic items sourced live and shipped directly to your door.</p>
-            <ul className="auth-points">
-              <li>Live store inspections &amp; real-time video</li>
-              <li>Official GST store receipts verified</li>
-              <li>Direct express courier to anywhere globally</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="auth-main">
-          <img className="auth-corner-leaves" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
-          <div className="auth-mobile-brand">
-            <img src="/images/logo/visasra-logo.png" alt="" className="auth-logo" />
-            <span className="brand-text">Visasra</span>
-          </div>
-
-          <div className="auth-card" style={{ maxWidth: 440 }}>
-            {/* Top Toggle: Sign In vs Create Account */}
-            <div className="auth-segmented-switch">
-              <button
-                type="button"
-                className={`auth-segmented-btn ${authMode === 'signin' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthMode('signin');
-                  setOtpSent(false);
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                className={`auth-segmented-btn ${authMode === 'signup' ? 'active' : ''}`}
-                onClick={() => setAuthMode('signup')}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {/* ================= 1. SIGN IN ================= */}
-            {authMode === 'signin' && (
-              <>
-                <h2 className="auth-title" style={{ fontSize: 22, marginBottom: 4 }}>
-                  {authMethod === 'password' ? 'Sign In' : 'Sign In with OTP'}
-                </h2>
-                <p className="auth-sub" style={{ fontSize: 13, marginBottom: 16 }}>
-                  {authMethod === 'password'
-                    ? 'Enter your email and password to sign in.'
-                    : 'Enter your email to receive a verification code.'}
-                </p>
-
-                <form onSubmit={handleAuthSubmit}>
-                  <div className="field">
-                    <label>Email ID or Mobile Number</label>
-                    <input
-                      type="text"
-                      required
-                      value={authEmail}
-                      onChange={(e) => setAuthEmail(e.target.value)}
-                      placeholder="e.g. priya.sharma@example.com or 9876543210"
-                    />
-                  </div>
-
-                  {authMethod === 'password' ? (
-                    <>
-                      <div className="field" style={{ marginTop: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label>Password</label>
-                          <button
-                            type="button"
-                            className="auth-forgot-link"
-                            onClick={() => {
-                              setForgotEmail(authEmail);
-                              setAuthMode('forgot');
-                              setForgotOtpSent(false);
-                            }}
-                          >
-                            Forgot password?
-                          </button>
-                        </div>
-                        <div className="auth-pass" style={{ position: 'relative' }}>
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            required
-                            autoComplete="current-password"
-                            value={authPassword}
-                            onChange={(e) => setAuthPassword(e.target.value)}
-                            placeholder="••••••••"
-                            style={{ paddingRight: 42 }}
-                          />
-                          <button
-                            type="button"
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                              position: 'absolute',
-                              right: 10,
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#64748B',
-                              padding: 4,
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                          >
-                            {showPassword ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="btn btn-primary auth-submit"
-                        style={{ marginTop: 16, width: '100%', padding: '12px' }}
-                        disabled={authLoading}
-                      >
-                        {authLoading ? 'Signing In...' : 'Sign In'}
-                      </button>
-
-                      <div style={{ textAlign: 'center', marginTop: 12 }}>
-                        <button
-                          type="button"
-                          className="auth-switch-link"
-                          style={{ fontSize: 12, textDecoration: 'none' }}
-                          onClick={() => {
-                            setAuthMethod('email_otp');
-                            setOtpSent(false);
-                          }}
-                        >
-                          Sign in with Email OTP instead
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {otpSent && (
-                        <div className="field" style={{ marginTop: 12 }}>
-                          <label>Verification Code</label>
-                          <input
-                            type="text"
-                            maxLength={6}
-                            required
-                            value={authOtp}
-                            onChange={(e) => setAuthOtp(e.target.value)}
-                            placeholder="••••••"
-                            style={{ letterSpacing: 4, fontWeight: 700, fontSize: 15, textAlign: 'center' }}
-                          />
-                        </div>
-                      )}
-
-                      <button
-                        type="submit"
-                        className="btn btn-primary auth-submit"
-                        style={{ marginTop: 16, width: '100%', padding: '12px' }}
-                        disabled={authLoading}
-                      >
-                        {authLoading ? 'Processing...' : otpSent ? 'Verify & Sign In' : 'Send Code to Email'}
-                      </button>
-
-                      <div style={{ textAlign: 'center', marginTop: 12 }}>
-                        <button
-                          type="button"
-                          className="auth-switch-link"
-                          style={{ fontSize: 12, textDecoration: 'none' }}
-                          onClick={() => {
-                            setAuthMethod('password');
-                            setOtpSent(false);
-                          }}
-                        >
-                          Sign in with Password instead
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </form>
-              </>
-            )}
-
-            {/* ================= 2. CREATE ACCOUNT ================= */}
-            {authMode === 'signup' && (
-              <>
-                {signupStep === 'details' ? (
-                  <>
-                    <h2 className="auth-title" style={{ fontSize: 22, marginBottom: 4 }}>
-                      Create Account
-                    </h2>
-                    <p className="auth-sub" style={{ fontSize: 13, marginBottom: 16 }}>
-                      Enter your details to create your customer account.
-                    </p>
-
-                    <form onSubmit={handleSignUpRequestOtp}>
-                      <div className="field">
-                        <label>Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={signupName}
-                          onChange={(e) => setSignupName(e.target.value)}
-                          placeholder="Ananya Iyer"
-                        />
-                      </div>
-
-                      <div className="field" style={{ marginTop: 10 }}>
-                        <label>Gmail / Email</label>
-                        <input
-                          type="email"
-                          required
-                          value={signupEmail}
-                          onChange={(e) => setSignupEmail(e.target.value)}
-                          placeholder="ananya.iyer@gmail.com"
-                        />
-                      </div>
-
-                      <div className="field" style={{ marginTop: 10 }}>
-                        <label>Mobile Number</label>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <select
-                            value={signupCountryIso}
-                            onChange={(e) => {
-                              const newIso = e.target.value;
-                              setSignupCountryIso(newIso);
-                              const newCountry = COUNTRY_CONFIGS.find((c) => c.iso === newIso);
-                              if (newCountry) {
-                                setSignupPhone((prev) => prev.slice(0, newCountry.maxDigits));
-                                if (!signupLocation || signupLocation.trim().length <= 3) {
-                                  setSignupLocation(newCountry.country);
-                                }
-                              }
-                            }}
-                            style={{
-                              width: '160px',
-                              padding: '10px 10px',
-                              borderRadius: '12px',
-                              border: '1.5px solid var(--border)',
-                              background: '#fff',
-                              fontSize: '13px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              color: '#0B192E',
-                            }}
-                          >
-                            {COUNTRY_CONFIGS.map((c) => (
-                              <option key={c.iso} value={c.iso}>
-                                {c.country} ({c.code})
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="tel"
-                            required
-                            value={signupPhone}
-                            onChange={(e) => {
-                              const digits = e.target.value.replace(/\D/g, '').slice(0, activeSignupCountry.maxDigits);
-                              setSignupPhone(digits);
-                            }}
-                            placeholder={activeSignupCountry.placeholder}
-                            maxLength={activeSignupCountry.maxDigits}
-                            style={{ flex: 1 }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="field" style={{ marginTop: 10 }}>
-                        <label>Location</label>
-                        <input
-                          type="text"
-                          required
-                          value={signupLocation}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setSignupLocation(val);
-                            const detectedIso = detectCountryFromLocation(val);
-                            if (detectedIso && detectedIso !== signupCountryIso) {
-                              setSignupCountryIso(detectedIso);
-                              const c = COUNTRY_CONFIGS.find((cfg) => cfg.iso === detectedIso);
-                              if (c) {
-                                setSignupPhone((prev) => prev.slice(0, c.maxDigits));
-                              }
-                            }
-                          }}
-                          placeholder="City, Country"
-                        />
-                      </div>
-
-                      <div className="field" style={{ marginTop: 10 }}>
-                        <label>Password</label>
-                        <div className="auth-pass" style={{ position: 'relative' }}>
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            required
-                            minLength={6}
-                            autoComplete="new-password"
-                            value={signupPassword}
-                            onChange={(e) => setSignupPassword(e.target.value)}
-                            placeholder="••••••••"
-                            style={{ paddingRight: 42 }}
-                          />
-                          <button
-                            type="button"
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                              position: 'absolute',
-                              right: 10,
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#64748B',
-                              padding: 4,
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                          >
-                            {showPassword ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="btn btn-primary auth-submit"
-                        style={{ marginTop: 16, width: '100%', padding: '12px' }}
-                        disabled={authLoading}
-                      >
-                        {authLoading ? 'Sending Verification Code...' : 'Continue & Verify Email →'}
-                      </button>
-                    </form>
-
-                    <div className="auth-switch" style={{ marginTop: 14 }}>
-                      <span>Already have an account? </span>
-                      <button
-                        type="button"
-                        className="auth-switch-link"
-                        onClick={() => setAuthMode('signin')}
-                      >
-                        Sign In
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 20 }}>
-                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EFF6FF', border: '1.5px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontSize: 20 }}>
-                        ✉️
-                      </div>
-                      <h2 className="auth-title" style={{ fontSize: 20, marginBottom: 4 }}>
-                        Enter Verification Code
-                      </h2>
-                      <p className="auth-sub" style={{ fontSize: 13, color: '#475569', marginBottom: 0 }}>
-                        We sent a 6-digit code to <b style={{ color: '#0F172A' }}>{signupEmail}</b>. Enter it below to sign in:
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleVerifySignupOtp}>
-                      <div className="field">
-                        <label style={{ textAlign: 'center', display: 'block', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
-                          6-Digit Code
-                        </label>
-                        <input
-                          type="text"
-                          maxLength={6}
-                          required
-                          autoFocus
-                          value={signupOtp}
-                          onChange={(e) => setSignupOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="••••••"
-                          style={{
-                            letterSpacing: 10,
-                            fontWeight: 800,
-                            fontSize: 22,
-                            textAlign: 'center',
-                            height: 50,
-                            background: '#FFFFFF',
-                            borderColor: signupOtp.length === 6 ? '#16A34A' : '#CBD5E1',
-                          }}
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="btn btn-primary auth-submit"
-                        style={{ marginTop: 16, width: '100%', padding: '13px', fontSize: 14, fontWeight: 700 }}
-                        disabled={authLoading}
-                      >
-                        {authLoading ? 'Verifying...' : '✓ Verify Code & Sign In'}
-                      </button>
-                    </form>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 14, borderTop: '1px solid #E2E8F0', fontSize: 12.5 }}>
-                      <button
-                        type="button"
-                        className="auth-switch-link"
-                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#64748B', fontWeight: 600 }}
-                        onClick={() => setSignupStep('details')}
-                      >
-                        ← Edit email / phone
-                      </button>
-                      <button
-                        type="button"
-                        className="auth-switch-link"
-                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#0F172A', fontWeight: 700 }}
-                        onClick={(e) => handleSignUpRequestOtp(e)}
-                      >
-                        Resend code ↻
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* ================= 3. FORGOT PASSWORD ================= */}
-            {authMode === 'forgot' && (
-              <>
-                <h2 className="auth-title" style={{ fontSize: 22, marginBottom: 4 }}>
-                  Reset Password
-                </h2>
-                <p className="auth-sub" style={{ fontSize: 13, marginBottom: 16 }}>
-                  Enter your email address to receive a reset code.
-                </p>
-
-                <form onSubmit={handleForgotPassword}>
-                  <div className="field">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      required
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="name@gmail.com"
-                    />
-                  </div>
-
-                  {forgotOtpSent && (
-                    <>
-                      <div className="field" style={{ marginTop: 12 }}>
-                        <label>Verification Code</label>
-                        <input
-                          type="text"
-                          maxLength={6}
-                          required
-                          value={forgotOtp}
-                          onChange={(e) => setForgotOtp(e.target.value)}
-                          placeholder="123456"
-                          style={{ letterSpacing: 4, fontWeight: 700, fontSize: 15, textAlign: 'center' }}
-                        />
-                      </div>
-
-                      <div className="field" style={{ marginTop: 12 }}>
-                        <label>New Password</label>
-                        <div className="auth-pass">
-                          <input
-                            type="password"
-                            required
-                            minLength={6}
-                            value={forgotNewPassword}
-                            onChange={(e) => setForgotNewPassword(e.target.value)}
-                            placeholder="••••••••"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary auth-submit"
-                    style={{ marginTop: 16, width: '100%', padding: '12px' }}
-                    disabled={authLoading}
-                  >
-                    {authLoading ? 'Verifying...' : forgotOtpSent ? 'Set New Password' : 'Send Reset Code'}
-                  </button>
-                </form>
-
-                <div className="auth-switch" style={{ marginTop: 14 }}>
-                  <button
-                    type="button"
-                    className="auth-switch-link"
-                    onClick={() => {
-                      setAuthMode('signin');
-                      setForgotOtpSent(false);
-                    }}
-                  >
-                    &larr; Back to Sign In
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* Toast Notification */}
-      <div
-        id="toast"
-        className={`toast ${toastMsg ? 'show on' : ''} ${
-          toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+        <AuthScreen onAuthSuccess={handleAuthSuccess} showToast={showToast} />
+        {/* Toast Notification */}
+        <div
+          id="toast"
+          className={`toast ${toastMsg ? 'show on' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
             ? 'toast-error'
             : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
-            ? 'toast-success'
-            : ''
-        }`}
-      >
-        {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
-          <span style={{ fontSize: 16 }}>⚠️</span>
-        )}
-        {toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) && (
-          <span style={{ fontSize: 16 }}>✓</span>
-        )}
-        <span>{toastMsg}</span>
-      </div>
-    </>
+              ? 'toast-success'
+              : ''
+            }`}
+        >
+          {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
+            <span style={{ fontSize: 16 }}>⚠️</span>
+          )}
+          {toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg) && (
+            <span style={{ fontSize: 16 }}>✓</span>
+          )}
+          <span>{toastMsg}</span>
+        </div>
+      </>
     );
   }
 
@@ -2878,19 +2106,25 @@ export default function CustomerApp() {
         </div>
 
         <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11L12 4l8 7"/><path d="M6 10v9h5v-5h2v5h5v-9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11L12 4l8 7" /><path d="M6 10v9h5v-5h2v5h5v-9" /></svg>
           Home
         </button>
         <button className={`nav-btn ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2" /><rect x="13" y="4" width="7" height="7" rx="1.2" /><rect x="4" y="13" width="7" height="7" rx="1.2" /><rect x="13" y="13" width="7" height="7" rx="1.2" /></svg>
           Categories
         </button>
         <button className={`nav-btn ${activeTab === 'bookslot' ? 'active' : ''}`} onClick={() => setActiveTab('bookslot')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/><path d="M12 13v5M9.5 15.5h5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3" /><path d="M4 10h16M9 3v4M15 3v4" /><path d="M12 13v5M9.5 15.5h5" /></svg>
           Book Slot
         </button>
-        <button className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+        <button
+          className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('orders');
+            loadData(user);
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
           Orders
           {orders.length > 0 && <span className="nb-badge">{orders.length}</span>}
         </button>
@@ -2903,17 +2137,17 @@ export default function CustomerApp() {
             setActiveTab('live-shopping');
           }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
           Live Shopping
           <span className="nb-badge" style={{ background: '#22C55E', color: '#fff', fontSize: 10, padding: '2px 5px' }}>LIVE</span>
         </button>
         <button className={`nav-btn ${activeTab === 'cart' ? 'active' : ''}`} onClick={() => setActiveTab('cart')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M6 8h12l-1 12H7L6 8z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2" /><path d="M6 8h12l-1 12H7L6 8z" /></svg>
           Cart
           {cart.length > 0 && <span className="nb-badge">{cart.length}</span>}
         </button>
         <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
           Profile
         </button>
       </nav>
@@ -2934,15 +2168,15 @@ export default function CustomerApp() {
           </div>
           <div className="top-actions">
             <button className="top-btn" onClick={() => setActiveTab('wallet')} aria-label="Wallet">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.2"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 10h18" /><circle cx="16.5" cy="14.5" r="1.2" /></svg>
               Wallet
             </button>
             <button className="top-btn" onClick={() => setMobileSearchOpen(!mobileSearchOpen)} aria-label="Search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
               Search
             </button>
             <button className="top-btn" onClick={() => setActiveTab('cart')} aria-label="Cart">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M6 8h12l-1 12H7L6 8z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2" /><path d="M6 8h12l-1 12H7L6 8z" /></svg>
               {cart.length > 0 && <span className="nb-badge">{cart.length}</span>}
               Cart
             </button>
@@ -2958,290 +2192,26 @@ export default function CustomerApp() {
         <div className={`screens ${activeTab === 'categories' && !selectedCategoryForView ? 'screens-cat-root' : ''}`}>
           {/* ================= SCREEN 1: HOME ================= */}
           {activeTab === 'home' && (
-            <section className="screen active" data-screen="home">
-
-              {/* Desktop Header */}
-              <div className="desk-header">
-                {renderSearchBar(false)}
-                <div className="top-actions">
-                  <button className="icon-pill" onClick={() => setActiveTab('wallet')} title="Wallet">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.2"/></svg>
-                  </button>
-                  <button className="icon-pill" onClick={() => setActiveTab('cart')} title="Cart">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M6 8h12l-1 12H7L6 8z"/></svg>
-                    {cart.length > 0 && <span className="icon-badge">{cart.length}</span>}
-                  </button>
-                </div>
-              </div>
-
-              {/* Exact Hero Banner Wrap */}
-              <div className="hero" id="homeBanner">
-                <div className="hero-banner-wrap">
-                  <img className="hero-banner" src="/images/banner/home-banner.jpg" alt="Charminar, Hyderabad at sunset" />
-                  <div className="hero-banner-copy">
-                    <div className="hbc-eyebrow">Authentic Indian products</div>
-                    <h1 className="hbc-title">Bringing India to the World</h1>
-                    <p className="hbc-sub">Shop from local stores in India with trusted shoppers.</p>
-                    <button className="hbc-btn" onClick={() => setActiveTab('categories')}>
-                      Shop Now
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Exact Home Grid (Wallet Rail + Your Bookings) */}
-              <div className="home-grid">
-                <div className="home-rail">
-                  <div className="wallet-card" onClick={() => setActiveTab('wallet')} style={{ cursor: 'pointer' }}>
-                    <div>
-                      <div className="label"><span className="visasra-name">Visasra</span> Money</div>
-                      <div className="amount money">₹{user.walletBalance.toLocaleString('en-IN')}</div>
-                    </div>
-                    <button className="btn btn-secondary btn-sm" onClick={e => { e.stopPropagation(); setActiveTab('wallet'); }}>
-                      Add money
-                    </button>
-                  </div>
-                  <p className="wallet-caption">Keep this loaded so a booking never stalls on payment.</p>
-                </div>
-
-                <div className="home-main">
-                  <div className="section-title row">
-                    <span>Your bookings</span>
-                    <span className="see-all" onClick={() => setActiveTab('orders')}>See all</span>
-                  </div>
-
-                  <div id="homeBookings">
-                    {orders.slice(0, 2).map(o => (
-                      <div key={o.id} className="booking-card">
-                        <div className="booking-strip"><span style={{ background: 'var(--gold)' }} /></div>
-                        <div className="booking-main">
-                          <div className="booking-top">
-                            <div className="booking-top-left">
-                              <img
-                                src={o.items[0]?.image || '/images/placeholders/placeholder-item.svg'}
-                                alt=""
-                                style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                                }}
-                              />
-                              <div>
-                                <div className="booking-id">{o.orderNumber}</div>
-                                <div className="booking-slot">{o.slotLabel || o.slotKey}</div>
-                                <div className="booking-items">{o.items.map(i => i.name).join(', ')}</div>
-                                <div className="booking-meta">{o.items.length} product(s)</div>
-                              </div>
-                            </div>
-                            <div className="booking-total">₹{o.totalAmount}</div>
-                          </div>
-                          <div className="status-pill">{o.trackingStage.replace('_', ' ')}</div>
-                          <div className="booking-actions-row" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-primary live-track-btn"
-                              style={{ flex: '1 1 120px', minWidth: 110, justifyContent: 'center' }}
-                              onClick={() => {
-                                setLiveSessionSlot(o.slotKey);
-                                setActiveTab('live-shopping');
-                              }}
-                            >
-                              Live Shopping
-                            </button>
-                            <button
-                              type="button"
-                              className="track-btn"
-                              style={{ flex: '1 1 120px', minWidth: 110, margin: 0, justifyContent: 'center' }}
-                              onClick={() => setTrackOrderSlot(o.slotKey)}
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>
-                              <span>Track order</span>
-                              <svg className="tb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {orders.length === 0 && (
-                      <div className="booking-card" style={{ padding: '24px', textAlign: 'center' }}>
-                        <b>No bookings yet</b>
-                        <div style={{ color: 'var(--text-dim)', margin: '4px 0 14px' }}>Book a slot and tell us what you need — we'll take it from there.</div>
-                        <button className="btn btn-primary" onClick={() => setActiveTab('bookslot')}>Book a shopping slot</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Exact Shop By Category */}
-              <div className="section-title row">
-                <span>Shop by category</span>
-                <span className="see-all" onClick={() => setActiveTab('categories')}>See all</span>
-              </div>
-              <div className="cat-grid" id="catGrid">
-                {(() => {
-                  const HOME_FEATURED_SLUGS = ['jewellery-accessories', 'womens-fashion', 'pooja-spiritual', 'cookware', 'home-decors'];
-                  const featuredList: Category[] = [];
-                  HOME_FEATURED_SLUGS.forEach(slug => {
-                    const match = categories.find(c => c.slug === slug);
-                    if (match) featuredList.push(match);
-                  });
-                  categories.forEach(c => {
-                    if (!featuredList.some(f => f.id === c.id)) featuredList.push(c);
-                  });
-                  return featuredList.slice(0, 5);
-                })().map(c => (
-                  <div
-                    key={c.id}
-                    className="cat-tile home-cat"
-                    onClick={() => {
-                      setSelectedCategoryForView(c);
-                      setActiveTab('categories');
-                    }}
-                  >
-                    <img
-                      src={c.image || '/images/placeholders/placeholder-category.svg'}
-                      alt={c.name}
-                      className="cat-tile-bg-img"
-                      loading="eager"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        if (!target.src.includes('placeholder-category.svg')) {
-                          target.src = '/images/placeholders/placeholder-category.svg';
-                        }
-                      }}
-                    />
-                    <div className="cat-tile-body">
-                      <div className="name">{c.name}</div>
-                    </div>
-                  </div>
-                ))}
-                <div className="cat-tile home-cat see-all-tile" onClick={() => setActiveTab('categories')}>
-                  <div className="cat-tile-body">
-                    <span className="see-all-arrow">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    </span>
-                    <div className="name">See all categories</div>
-                    <div className="see-all-sub">{categories.length} categories</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Exact Popular on Visasra Blue Band */}
-              <div className="blue-band">
-                <div className="section-title row">
-                  <span>Popular on <span className="visasra-name">Visasra</span></span>
-                  <span className="see-all" onClick={() => setActiveTab('categories')}>See all</span>
-                </div>
-                <div className="product-scroll" id="popularScroll">
-                  {popularProducts.map(p => (
-                    <div key={p.id} className="card" style={{ minWidth: 200, padding: 10, flex: 'none', background: '#fff' }}>
-                      <img
-                        src={p.image || '/images/placeholders/placeholder-item.svg'}
-                        alt={p.name}
-                        style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 10 }}
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (!target.src.includes('placeholder-item.svg')) {
-                            target.src = '/images/placeholders/placeholder-item.svg';
-                          }
-                        }}
-                      />
-                      <div style={{ padding: '8px 4px 4px' }}>
-                        <div style={{ fontSize: 11, color: 'var(--text-faint)', fontWeight: 700, textTransform: 'uppercase' }}>{p.categoryName || 'Sourced'}</div>
-                        <div style={{ fontWeight: 700, fontSize: 14, margin: '2px 0 6px', color: 'var(--text)' }}>{p.name}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 800, color: '#1261B5' }}>₹{p.estMin} – ₹{p.estMax}</span>
-                          <button
-                            className="btn btn-sm btn-primary"
-                            style={{
-                              padding: '5px 12px',
-                              fontSize: 12,
-                              fontWeight: 800,
-                              transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
-                              ...(addedFeedbackId === p.id
-                                ? {
-                                    background: 'linear-gradient(135deg, #10B981, #059669)',
-                                    borderColor: '#059669',
-                                    color: '#fff',
-                                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
-                                    transform: 'scale(1.06)',
-                                  }
-                                : {})
-                            }}
-                            onClick={() => addToCart(p)}
-                          >
-                            {addedFeedbackId === p.id ? '✓ Added' : '+ Add'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Enhanced 6-Milestone How Visasra Works */}
-              <div className="hw-container-6">
-                <div className="section-title" style={{ marginBottom: 4 }}>How <span className="visasra-name">Visasra</span> works</div>
-                <div className="hw-sub">From your wish to your doorstep, in six structured milestones.</div>
-                <div className="hw-grid-6" id="howItWorks">
-                  {HOW_IT_WORKS.map((s, i) => (
-                    <div key={i} className="hw-card-6">
-                      <div className={`hw-badge-6 ${s.badgeClass || `hw-step-${i + 1}`}`}>
-                        {i + 1}
-                      </div>
-                      <div className="hw-card-body-6">
-                        <div className="t">{s.t}</div>
-                        <div className="d">{s.d}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Exact Trust Card */}
-              <div className="trust-card">
-                <div className="tc-eyebrow">Why people trust <span className="visasra-name">Visasra</span></div>
-                <div className="tc-title">Shop India, delivered anywhere.</div>
-                <div className="tc-text">We're the trusted hands on the ground in India for people abroad — a real person sources, verifies and ships what you ask for, so you get the real thing without flying home for it.</div>
-                <div className="tc-points">
-                  <div className="tc-point">
-                    <span className="tc-ico">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/><path d="M9 12l2 2 4-4"/></svg>
-                    </span>
-                    <div><b>Verified before we buy</b><span>A real person checks every item first.</span></div>
-                  </div>
-                  <div className="tc-point">
-                    <span className="tc-ico">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                    </span>
-                    <div><b>Real-time slot booking</b><span>Pick a date and time that suits you.</span></div>
-                  </div>
-                  <div className="tc-point">
-                    <span className="tc-ico">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h13v10H3zM16 10h3l2 3v4h-5z"/><circle cx="7.5" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
-                    </span>
-                    <div><b>Shipped to your door</b><span>Packed and tracked all the way to you.</span></div>
-                  </div>
-                </div>
-
-                {/* Platform & Merchant Compliance Footer (Razorpay / RBI Mandatory Links) */}
-                <footer style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid #E2E8F0', fontSize: 13, color: '#64748B', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '14px 22px', marginBottom: 12, fontWeight: 600 }}>
-                    <a href="/terms" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Terms &amp; Wallet Policy</a>
-                    <a href="/privacy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Privacy Policy</a>
-                    <a href="/refund-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Cancellation &amp; Refund</a>
-                    <a href="/shipping-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Shipping &amp; Delivery</a>
-                    <a href="/customs-policy" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Customs &amp; Duty (DDP)</a>
-                    <a href="/acceptable-use" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Acceptable Use</a>
-                    <a href="/contact" style={{ color: '#1B5AA6', textDecoration: 'none' }}>Contact Us</a>
-                  </div>
-                  <div style={{ fontSize: 12, color: '#94A3B8' }}>
-                    © {new Date().getFullYear()} <b><span className="visasra-name">Visasra</span> Technologies</b>. All rights reserved. · Sourcing &amp; Worldwide Delivery · Secured via <b>Razorpay Gateway</b>
-                  </div>
-                </footer>
-              </div>
-            </section>
+            <HomeTab
+              user={user}
+              cart={cart}
+              orders={orders}
+              categories={categories}
+              popularProducts={popularProducts}
+              addedFeedbackId={addedFeedbackId}
+              onNavigate={(tab) => {
+                setActiveTab(tab);
+                if (tab === 'orders') loadData(user);
+              }}
+              onSelectCategory={(cat) => setSelectedCategoryForView(cat)}
+              onAddToCart={addToCart}
+              onLiveSession={(slotKey) => {
+                setLiveSessionSlot(slotKey);
+                setActiveTab('live-shopping');
+              }}
+              onTrackOrder={(slotKey) => setTrackOrderSlot(slotKey)}
+              renderSearchBar={renderSearchBar}
+            />
           )}
 
           {/* ================= SCREEN 2: CATEGORIES & CATALOG (3-TIER: CATEGORIES -> SUBCATEGORIES/PRODUCTS -> TYPES) ================= */}
@@ -3252,10 +2222,10 @@ export default function CustomerApp() {
             >
               {/* Tier 1: All Categories Grid (Persistent DOM for zero image reload/flicker) */}
               <div className={`cat-tier1-wrap ${selectedCategoryForView ? 'is-hidden' : ''}`}>
-                <img className="corner-leaf" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
+                <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
                 <div className="cat-tier1-inner">
                   <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
                     Back to Home
                   </button>
                   <div className="desk-header">
@@ -3316,7 +2286,7 @@ export default function CustomerApp() {
                     }}
                     aria-label={`Back to ${selectedCategoryForView.name}`}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
                     Back to {selectedCategoryForView.name}
                   </button>
 
@@ -3336,7 +2306,7 @@ export default function CustomerApp() {
                   <div className="cd-body">
                     {/* Search inside this product's varieties */}
                     <div className="cd-search">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                       <input
                         type="text"
                         placeholder={`Search ${selectedProductForTypes.name.toLowerCase()} types (e.g. Cast Iron, Non-Stick, Mini...)`}
@@ -3366,31 +2336,7 @@ export default function CustomerApp() {
                               className="cd-prod-card"
                               tabIndex={0}
                               role="button"
-                              onClick={() => {
-                                const subPhotos = [
-                                  typeImg,
-                                  getProductImg(selectedCategoryForView.slug, selectedProductForTypes.name),
-                                  selectedCategoryForView.image,
-                                ].filter(Boolean);
-
-                                setCustomizingProduct({
-                                  id: `${selectedProductForTypes.id}-${productSlug(t.name)}`,
-                                  name: `${selectedProductForTypes.name} – ${t.name}`,
-                                  price: mid,
-                                  estMin: mid,
-                                  estMax: high,
-                                  image: typeImg,
-                                  images: subPhotos,
-                                  description: `Specific ${t.name} variety of ${selectedProductForTypes.name} sourced directly from verified Indian merchants.`,
-                                  categoryName: selectedCategoryForView.name,
-                                  tag: 'Specific Variety',
-                                });
-                                setCustomizingQty(1);
-                                setCustomizingNotes('');
-                                setCustomizingImg(typeImg);
-                                setCustomizingImgs(subPhotos);
-                                setActiveProductPhotoIdx(0);
-                              }}
+                              onClick={() => handleSelectProductVariety(t, typeImg, mid, high)}
                             >
                               <div className="cd-prod-photo">
                                 <img
@@ -3462,7 +2408,7 @@ export default function CustomerApp() {
                     }}
                     aria-label="Back to categories"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
                     All Categories
                   </button>
 
@@ -3482,7 +2428,7 @@ export default function CustomerApp() {
                   <div className="cd-body">
                     {/* Search inside this category */}
                     <div className="cd-search">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                       <input
                         type="text"
                         placeholder={`Search within ${selectedCategoryForView.name}...`}
@@ -3539,9 +2485,7 @@ export default function CustomerApp() {
                                   className="cat-prod-img"
                                   onError={(e) => {
                                     const target = e.target as HTMLImageElement;
-                                    if (selectedCategoryForView.image && !target.src.includes(selectedCategoryForView.image)) {
-                                      target.src = selectedCategoryForView.image;
-                                    } else if (!target.src.includes('placeholder-item.svg')) {
+                                    if (!target.src.includes('placeholder-item.svg')) {
                                       target.src = '/images/placeholders/placeholder-item.svg';
                                     }
                                   }}
@@ -3591,7 +2535,7 @@ export default function CustomerApp() {
                                     </>
                                   ) : (
                                     <>
-                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ width: 14, height: 14 }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ width: 14, height: 14 }}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                                       Customize Product (4 pics) →
                                     </>
                                   )}
@@ -3640,7 +2584,7 @@ export default function CustomerApp() {
           {activeTab === 'bookslot' && (
             <section className="screen active" data-screen="bookslot">
               <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
                 Back to Home
               </button>
 
@@ -3668,7 +2612,7 @@ export default function CustomerApp() {
                     >
                       <div className="cs-circle">
                         {bookingStep > 1 ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12" /></svg>
                         ) : '1'}
                       </div>
                       <div className="cs-label">Sourcing Basket</div>
@@ -3684,7 +2628,7 @@ export default function CustomerApp() {
                     >
                       <div className="cs-circle">
                         {bookingStep > 2 ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12" /></svg>
                         ) : '2'}
                       </div>
                       <div className="cs-label">Delivery &amp; Contact</div>
@@ -3742,7 +2686,7 @@ export default function CustomerApp() {
                           <div key={item.id} className="basket-item-row">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
                               <img
-                                src={item.image && !item.image.includes('pooja-spiritual.jpg') ? item.image : (item.sourceType === 'mind' ? '/images/placeholders/placeholder-custom.svg' : item.sourceType === 'online' ? '/images/placeholders/placeholder-online.svg' : '/images/placeholders/placeholder-item.svg')}
+                                src={resolveItemImage(item.image, item.sourceType)}
                                 alt=""
                                 className="basket-item-thumb"
                                 onError={(e) => {
@@ -3819,7 +2763,7 @@ export default function CustomerApp() {
                           className={`src-tab-btn ${sourcingSourceTab === 'catalog' ? 'active' : ''}`}
                           onClick={() => setSourcingSourceTab('catalog')}
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
                           <span>From Categories</span>
                         </button>
                         <button
@@ -3827,7 +2771,7 @@ export default function CustomerApp() {
                           className={`src-tab-btn ${sourcingSourceTab === 'mind' ? 'active' : ''}`}
                           onClick={() => setSourcingSourceTab('mind')}
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                           <span>Customize Product</span>
                         </button>
                         <button
@@ -3835,7 +2779,7 @@ export default function CustomerApp() {
                           className={`src-tab-btn ${sourcingSourceTab === 'online' ? 'active' : ''}`}
                           onClick={() => setSourcingSourceTab('online')}
                         >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
                           <span>From Online Store</span>
                         </button>
                       </div>
@@ -4119,7 +3063,7 @@ export default function CustomerApp() {
                         }}
                       >
                         <span>Continue to Delivery Details</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}><polyline points="9 18 15 12 9 6"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}><polyline points="9 18 15 12 9 6" /></svg>
                       </button>
                     </div>
                   </div>
@@ -4150,7 +3094,7 @@ export default function CustomerApp() {
                         onChange={e => setCustomerPhone(e.target.value)}
                       />
                       <div style={{ fontSize: 12, color: '#64748B', marginTop: 6, lineHeight: 1.45 }}>
-                        Live video shopping links, artisan photo approvals, and dispatch alerts are sent to this number.
+                        Real-time shopping updates, artisan photo approvals, and dispatch alerts are sent to this number.
                       </div>
                     </div>
 
@@ -4341,7 +3285,7 @@ export default function CustomerApp() {
                         }}
                       >
                         <span>Continue to Slot &amp; Timing</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}><polyline points="9 18 15 12 9 6"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}><polyline points="9 18 15 12 9 6" /></svg>
                       </button>
                     </div>
                   </div>
@@ -4471,7 +3415,7 @@ export default function CustomerApp() {
 
                       {slotDuration === 3 && [
                         { id: 'w3-1', tag: 'Morning Intensive', time: '11:00 AM – 2:00 PM (IST)', zone: 'Boutique exploration & live trial' },
-                        { id: 'w3-2', tag: 'Afternoon Curation', time: '2:30 PM – 5:30 PM (IST)', zone: 'Bazaar hunt + video inspection' },
+                        { id: 'w3-2', tag: 'Afternoon Curation', time: '2:30 PM – 5:30 PM (IST)', zone: 'Bazaar hunt + photo inspection' },
                       ].map(slot => (
                         <div
                           key={slot.id}
@@ -4601,209 +3545,20 @@ export default function CustomerApp() {
                           </div>
 
                           {/* AbhiBus Inspired Trip Details Bottom Sheet Modal */}
-                          {showTripDetailsModal && (
-                            <div className="abhibus-modal-overlay" onClick={() => setShowTripDetailsModal(false)}>
-                              <div className="abhibus-modal-wrapper" onClick={e => e.stopPropagation()}>
-                                {/* Close circle button at top */}
-                                <div className="abhibus-close-row">
-                                  <button
-                                    type="button"
-                                    className="abhibus-close-btn"
-                                    onClick={() => setShowTripDetailsModal(false)}
-                                    aria-label="Close trip details"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 18, height: 18 }}>
-                                      <line x1="18" y1="6" x2="6" y2="18" />
-                                      <line x1="6" y1="6" x2="18" y2="18" />
-                                    </svg>
-                                  </button>
-                                </div>
-
-                                <div className="abhibus-sheet">
-                                  <div className="abhibus-sheet-header">
-                                    <h2 className="abhibus-title">Sourcing &amp; Payment Details</h2>
-                                  </div>
-
-                                  {/* Service Card (AbhiBus TGSRTC Header Card with Bus Photo) */}
-                                  <div className="abhibus-service-card">
-                                    <div className="absc-header">
-                                      <div className="absc-header-text">
-                                        <div className="absc-service-name">VISASRA SOURCING · {slotDuration}H SHOPPING PASS</div>
-                                        <div className="absc-service-type">
-                                          {slotDuration === 2 ? 'Super Express Sourcing (1–2 Stores)' : slotDuration === 3 ? 'Comprehensive Multi-Bazaar Shopping' : 'VIP Full-Day Artisan & Boutique Tour'}
-                                        </div>
-                                      </div>
-                                      <div className="absc-thumb-box">
-                                        <img
-                                          src={cart[0]?.image || '/images/placeholders/placeholder-item.svg'}
-                                          alt={cart[0]?.name || 'Item'}
-                                          className="absc-bus-img"
-                                          onError={(e) => {
-                                            (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-
-                                    <div className="absc-divider" />
-
-                                    {/* Timeline Stops */}
-                                    <div className="absc-timeline">
-                                      <div className="absc-stop">
-                                        <div className="absc-stop-icon">
-                                          <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" style={{ width: 18, height: 18 }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                        </div>
-                                        <div className="absc-stop-content">
-                                          <div className="absc-stop-city">Local Artisan Markets &amp; Stores</div>
-                                          <div className="absc-stop-time">{selectedDate}, {selectedSlotWindow}</div>
-                                        </div>
-                                      </div>
-
-                                      <div className="absc-timeline-line" />
-
-                                      <div className="absc-stop">
-                                        <div className="absc-stop-icon">
-                                          <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" style={{ width: 18, height: 18 }}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                                        </div>
-                                        <div className="absc-stop-content">
-                                          <div className="absc-stop-city">
-                                            {activeAddr ? [activeAddr.city, activeAddr.country].filter(Boolean).join(', ') : 'International Destination'}
-                                          </div>
-                                          <div className="absc-stop-time">
-                                            {activeAddr ? `${activeAddr.line1} (Insured Air Courier)` : 'Doorstep Delivery (Insured Air Courier)'}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Customer & Sourcing Details */}
-                                  <div className="abhibus-section">
-                                    <div className="abhibus-section-title">CUSTOMER &amp; SOURCING CAPACITY</div>
-
-                                    <div className="abhibus-traveller-row">
-                                      <div className="abhibus-avatar">
-                                        {((activeAddr?.name || user.name || 'CU')
-                                          .split(' ')
-                                          .map((n: string) => n[0])
-                                          .join('')
-                                          .slice(0, 2)
-                                          .toUpperCase()) || 'CU'}
-                                      </div>
-                                      <div className="abhibus-traveller-info">
-                                        <div className="abhibus-traveller-name">
-                                          {activeAddr?.name || user.name || 'Valued Customer'}
-                                        </div>
-                                        <div className="abhibus-traveller-sub">
-                                          {activeAddr ? `Verified Customer · ${activeAddr.country}` : 'Verified Customer'}
-                                        </div>
-                                      </div>
-                                      <div className="abhibus-seat-badge">
-                                        {slotDuration}H Pass Active
-                                      </div>
-                                    </div>
-
-                                    {/* Mini Visual Grid representation for Items */}
-                                    <div className="abhibus-seat-mini-grid">
-                                      <div className="abhibus-seat-grid-label">Reserved Basket Items ({cart.length}):</div>
-                                      <div className="abhibus-seat-slots">
-                                        {cart.map((item, idx) => (
-                                          <div key={item.id || idx} className="abhibus-seat-chip active">
-                                            <img
-                                              src={item.image && !item.image.includes('pooja-spiritual.jpg') ? item.image : (item.sourceType === 'mind' ? '/images/placeholders/placeholder-custom.svg' : item.sourceType === 'online' ? '/images/placeholders/placeholder-online.svg' : '/images/placeholders/placeholder-item.svg')}
-                                              alt={item.name}
-                                              onError={(e) => {
-                                                (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                                              }}
-                                            />
-                                            <span>{item.name} (x{item.qty || 1}) · Est: ₹{(item.priceMax || item.priceMin || 1000).toLocaleString('en-IN')}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Contact Details */}
-                                  <div className="abhibus-section">
-                                    <div className="abhibus-section-title">CONTACT DETAILS</div>
-                                    <div className="abhibus-contact-sub">Your live shopping video call link &amp; store bills will be sent here:</div>
-                                    <div className="abhibus-contact-card">
-                                      <div className="abhibus-contact-phone">
-                                        <span className="abhibus-contact-phone-icon">📞</span>
-                                        <span>{customerPhone || activeAddr?.phone || user.phone || 'Phone Pending'}</span>
-                                      </div>
-                                      <span className="abhibus-wa-tag">WhatsApp Active</span>
-                                    </div>
-                                  </div>
-
-                                  {/* Visasra Money & Payment Structure (Replaced old ₹199 deposit) */}
-                                  <div className="abhibus-fare-card">
-                                    <div className="absc-payment-title">VISASRA MONEY PAYMENT FLOW</div>
-                                    
-                                    <div className="absc-breakdown-row">
-                                      <div className="absc-breakdown-label">
-                                        <span>🛍️ Sourcing Merchandise Budget (Max)</span>
-                                        <span className="absc-sub-tip">Estimated for {cart.length} item{cart.length > 1 ? 's' : ''} in basket</span>
-                                      </div>
-                                      <div className="absc-breakdown-val">₹{merchandiseBudget.toLocaleString('en-IN')}</div>
-                                    </div>
-
-                                    <div className="absc-breakdown-row">
-                                      <div className="absc-breakdown-label">
-                                        <span>⚡ Dedicated Shopper Slot Fee ({slotDuration}h)</span>
-                                        <span className="absc-sub-tip">Deducted immediately to reserve ground personal shopper</span>
-                                      </div>
-                                      <div className="absc-breakdown-val" style={{ color: '#2563EB' }}>₹{currentSlotFee}</div>
-                                    </div>
-
-                                    <div className="absc-total-deposit-row">
-                                      <div>
-                                        <div className="absc-total-label">Total Required Deposit in Visasra Money</div>
-                                        <div className="absc-total-sub">Full deposit required to confirm slot booking</div>
-                                      </div>
-                                      <div className="absc-total-amt">₹{totalDepositRequired.toLocaleString('en-IN')}</div>
-                                    </div>
-
-                                    {/* How Money Works 4-Step Breakdown */}
-                                    <div className="absc-how-money-works">
-                                      <div className="absc-step-item">
-                                        <div className="absc-step-num">1</div>
-                                        <div className="absc-step-text">
-                                          <b>Deposit Upfront:</b> Deposit ₹{totalDepositRequired.toLocaleString('en-IN')} to Visasra Money to lock in your slot.
-                                        </div>
-                                      </div>
-                                      <div className="absc-step-item">
-                                        <div className="absc-step-num">2</div>
-                                        <div className="absc-step-text">
-                                          <b>Slot Fee Deducted:</b> ₹{currentSlotFee} is deducted automatically from your wallet when slot is confirmed.
-                                        </div>
-                                      </div>
-                                      <div className="absc-step-item">
-                                        <div className="absc-step-num">3</div>
-                                        <div className="absc-step-text">
-                                          <b>Live Sample Selection:</b> The remaining ₹{merchandiseBudget.toLocaleString('en-IN')} stays in your Visasra Money. When the shopper shares live samples and you choose one, only that exact item's price is deducted.
-                                        </div>
-                                      </div>
-                                      <div className="absc-step-item">
-                                        <div className="absc-step-num">4</div>
-                                        <div className="absc-step-text">
-                                          <b>Final Settlement:</b> Any leftover balance covers international packaging &amp; courier shipping fees at final dispatch.
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    className="abhibus-sheet-confirm-btn"
-                                    onClick={() => setShowTripDetailsModal(false)}
-                                  >
-                                    Done &amp; Return to Booking
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          <TripDetailsModal
+                            isOpen={showTripDetailsModal}
+                            onClose={() => setShowTripDetailsModal(false)}
+                            slotDuration={slotDuration}
+                            selectedDate={selectedDate}
+                            selectedSlotWindow={selectedSlotWindow}
+                            cart={cart}
+                            activeAddr={activeAddr}
+                            user={user}
+                            customerPhone={customerPhone}
+                            merchandiseBudget={merchandiseBudget}
+                            currentSlotFee={currentSlotFee}
+                            totalDepositRequired={totalDepositRequired}
+                          />
 
                           {/* Clean, Responsive Visasra Sourcing & Wallet Box */}
                           <div className={`visasra-money-pay-box ${walletShortfall > 0 ? 'needs-deposit' : 'sufficient'}`}>
@@ -4933,78 +3688,20 @@ export default function CustomerApp() {
                 setReviewRating(5);
                 setReviewComment('');
               }}
+              onRefresh={() => loadData(user)}
             />
           )}
 
           {/* ================= SCREEN 5: CART ================= */}
           {activeTab === 'cart' && (
-            <section className="screen active" data-screen="cart">
-              <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
-                Back
-              </button>
-              <div className="page-title">Cart</div>
-              <div className="page-sub">A booking in progress, before it's confirmed.</div>
-
-              <div id="cartBody" style={{ marginTop: 16 }}>
-                {cart.length > 0 ? (
-                  <>
-                    {cart.map(item => (
-                      <div key={item.id} className="cart-item">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                          <img
-                            src={item.image && !item.image.includes('jewellery-accessories.jpg') && !item.image.includes('pooja-spiritual.jpg') ? item.image : (item.sourceType === 'mind' ? '/images/placeholders/placeholder-custom.svg' : item.sourceType === 'online' ? '/images/placeholders/placeholder-online.svg' : '/images/placeholders/placeholder-item.svg')}
-                            alt=""
-                            className="thumb"
-                            style={{ width: 56, height: 56, borderRadius: 10, objectFit: 'cover' }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                            }}
-                          />
-                          {item.images && item.images.length > 1 && (
-                            <span style={{ fontSize: 9, fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '1px 5px', borderRadius: 4 }}>
-                              {item.images.slice(0, 4).length} pics
-                            </span>
-                          )}
-                        </div>
-                        <div className="item-body">
-                          <div className="item-name">{item.name}</div>
-                          <div className="item-sub">₹{item.priceMin.toLocaleString('en-IN')} – ₹{item.priceMax.toLocaleString('en-IN')} each × {item.qty}</div>
-                          {item.images && item.images.length > 1 && (
-                            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                              {item.images.slice(0, 4).map((pic, pIdx) => (
-                                <img
-                                  key={pIdx}
-                                  src={pic}
-                                  alt={`Pic ${pIdx + 1}`}
-                                  style={{ width: 28, height: 28, borderRadius: 5, objectFit: 'cover', border: '1px solid #CBD5E1' }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                          <div className="item-actions" style={{ marginTop: 8 }}>
-                            <button className="icon-btn" onClick={() => handleRemoveCartItem(item.id)}>
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 20 }}>
-                      <button className="btn btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => setActiveTab('bookslot')}>
-                        Proceed to Slot Booking →
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="card pad" style={{ textAlign: 'center', padding: '36px 20px' }}>
-                    <b>Nothing in progress</b>
-                    <p style={{ color: 'var(--text-dim)', margin: '6px 0 16px' }}>Start a booking and we'll keep it here until you confirm it.</p>
-                    <button className="btn btn-primary" onClick={() => setActiveTab('categories')}>Start a booking</button>
-                  </div>
-                )}
-              </div>
-            </section>
+            <CartTab
+              cart={cart}
+              onRemoveItem={handleRemoveCartItem}
+              onNavigate={(tab) => {
+                setActiveTab(tab);
+                if (tab === 'orders') loadData(user);
+              }}
+            />
           )}
 
           {/* ================= SCREEN 6: WALLET ================= */}
@@ -5023,7 +3720,10 @@ export default function CustomerApp() {
               user={user}
               customerPhone={customerPhone}
               savedAddressesCount={savedAddresses.length}
-              onNavigate={(tab) => setActiveTab(tab)}
+              onNavigate={(tab) => {
+                setActiveTab(tab);
+                if (tab === 'orders') loadData(user);
+              }}
               onLogout={handleLogout}
               onBack={() => setActiveTab('home')}
               onUpdateUser={(updated) => {
@@ -5031,7 +3731,7 @@ export default function CustomerApp() {
                 if (updated.phone) setCustomerPhone(updated.phone);
                 try {
                   localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, ...updated }));
-                } catch {}
+                } catch { }
               }}
               showToast={showToast}
             />
@@ -5046,6 +3746,7 @@ export default function CustomerApp() {
               onSaveAddress={handleSaveNewAddress}
               defaultName={user.name}
               defaultPhone={customerPhone || user.phone}
+              showToast={showToast}
             />
           )}
 
@@ -5059,7 +3760,10 @@ export default function CustomerApp() {
               liveSessionLoading={liveSessionLoading}
               user={user}
               onBackToOrders={() => setActiveTab('orders')}
-              onNavigate={(tab) => setActiveTab(tab)}
+              onNavigate={(tab) => {
+                setActiveTab(tab);
+                if (tab === 'orders') loadData(user);
+              }}
               onApproveOption={handleApproveOption}
               onRejectOption={handleRejectOption}
               showToast={showToast}
@@ -5070,23 +3774,29 @@ export default function CustomerApp() {
         {/* Mobile Bottom Navigation */}
         <nav className="bottomnav" id="bottomnav">
           <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11L12 4l8 7"/><path d="M6 10v9h5v-5h2v5h5v-9"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11L12 4l8 7" /><path d="M6 10v9h5v-5h2v5h5v-9" /></svg>
             Home
           </button>
           <button className={`nav-btn ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2" /><rect x="13" y="4" width="7" height="7" rx="1.2" /><rect x="4" y="13" width="7" height="7" rx="1.2" /><rect x="13" y="13" width="7" height="7" rx="1.2" /></svg>
             Categories
           </button>
           <button className={`nav-btn ${activeTab === 'bookslot' ? 'active' : ''}`} onClick={() => setActiveTab('bookslot')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/><path d="M12 13v5M9.5 15.5h5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3" /><path d="M4 10h16M9 3v4M15 3v4" /><path d="M12 13v5M9.5 15.5h5" /></svg>
             Book Slot
           </button>
-          <button className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+          <button
+          className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('orders');
+            loadData(user);
+          }}
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
             Orders
           </button>
           <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
             Profile
           </button>
         </nav>
@@ -5122,7 +3832,7 @@ export default function CustomerApp() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
-              }).catch(() => {});
+              }).catch(() => { });
             }
             showToast(`Added ${prod.name} to sourcing basket`);
           }}
@@ -5130,7 +3840,7 @@ export default function CustomerApp() {
         />
       )}
 
-{/* Order Tracking Modal */}
+      {/* Order Tracking Modal */}
       <OrderTrackingModal
         slotKey={trackOrderSlot}
         trackingData={trackingData}
@@ -5168,81 +3878,26 @@ export default function CustomerApp() {
       />
 
       {/* Rate Personal Shopper Modal */}
-      {ratingModalOrder && (
-        <div className="modal-backdrop show" onClick={() => setRatingModalOrder(null)}>
-          <div className="modal-card" style={{ maxWidth: 440, padding: 24, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⭐</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
-              Rate Your Personal Shopper
-            </div>
-            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
-              {ratingModalOrder.liveSession?.worker?.name || 'Personal Shopper'} · Order #{ratingModalOrder.orderNumber}
-            </div>
-
-            {/* 5-Star Selector */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
-              {[1, 2, 3, 4, 5].map(star => (
-                <button
-                  key={star}
-                  type="button"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontSize: 32,
-                    cursor: 'pointer',
-                    color: star <= reviewRating ? '#F59E0B' : '#CBD5E1',
-                    transform: star <= reviewRating ? 'scale(1.15)' : 'scale(1)',
-                    transition: 'transform 0.15s ease',
-                  }}
-                  onClick={() => setReviewRating(star)}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              className="inp"
-              rows={3}
-              placeholder="Write a brief review about your shopping experience (optional)..."
-              value={reviewComment}
-              onChange={e => setReviewComment(e.target.value)}
-              style={{ width: '100%', marginBottom: 18, resize: 'none' }}
-            />
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setRatingModalOrder(null)}
-                disabled={submittingReview}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleSubmitReview}
-                disabled={submittingReview}
-                style={{ minWidth: 120 }}
-              >
-                {submittingReview ? 'Submitting...' : 'Submit Review'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RateShopperModal
+        order={ratingModalOrder}
+        reviewRating={reviewRating}
+        setReviewRating={setReviewRating}
+        reviewComment={reviewComment}
+        setReviewComment={setReviewComment}
+        submittingReview={submittingReview}
+        onClose={() => setRatingModalOrder(null)}
+        onSubmit={handleSubmitReview}
+      />
 
       {/* Toast Notification */}
       <div
         id="toast"
-        className={`toast ${toastMsg ? 'show on' : ''} ${
-          toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
-            ? 'toast-error'
-            : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
+        className={`toast ${toastMsg ? 'show on' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+          ? 'toast-error'
+          : toastMsg && /added|success|congratulations|welcome|approved|saved|updated/i.test(toastMsg)
             ? 'toast-success'
             : ''
-        }`}
+          }`}
       >
         {toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg) && (
           <span style={{ fontSize: 16 }}>⚠️</span>

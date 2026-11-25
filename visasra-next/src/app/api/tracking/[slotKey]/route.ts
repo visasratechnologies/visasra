@@ -40,7 +40,7 @@ export async function GET(
 
     const defaultStages = [
       { key: 'slot_confirmed', title: 'Slot Confirmed & Scheduled', status: 'done', note: 'Customer slot locked with priority personal shopper reservation' },
-      { key: 'worker_assigned', title: 'Personal Shopper Assigned', status: 'done', note: worker ? `${worker.name} (+91 98765 43210)` : 'Assigned from Ground Shoppers Hub' },
+      { key: 'worker_assigned', title: 'Personal Shopper Assigned', status: 'done', note: worker ? `${worker.name} (${worker.phone || 'Dedicated Sourcing Specialist'})` : 'Assigned from Ground Shoppers Hub' },
       { key: 'shopping', title: 'In-Store Verification & Sourcing', status: order.trackingStage === 'shopping' ? 'current' : (order.status === 'confirmed' ? 'current' : 'done'), note: order.liveSession?.storeName || 'Active at Retail & Artisan Store' },
       { key: 'purchased', title: 'Purchased & Billed at Merchant Counter', status: ['purchased', 'packed', 'shipped', 'delivered'].includes(order.status) ? 'done' : 'pending', expected: order.slotDate },
       { key: 'packed', title: 'Quality Check & Packed for International Transit', status: ['packed', 'shipped', 'delivered'].includes(order.status) ? 'done' : 'pending', note: 'At Visasra Central Export Hub, Chennai' },

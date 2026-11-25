@@ -7,6 +7,7 @@ interface OrdersTabProps {
   onJoinLiveShopping: (slotKey: string) => void;
   onTrackOrder: (slotKey: string) => void;
   onRateShopper?: (order: Order) => void;
+  onRefresh?: () => void;
 }
 
 export const OrdersTab: React.FC<OrdersTabProps> = ({
@@ -15,17 +16,39 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
   onJoinLiveShopping,
   onTrackOrder,
   onRateShopper,
+  onRefresh,
 }) => {
   return (
     <section className="screen active screen-orders-root" data-screen="orders">
-      <img className="corner-leaf" src="/images/decor/category-corner-leaf.png" alt="" aria-hidden="true" />
+      <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
       <div className="orders-inner">
-        <button className="back-row" onClick={onBack} aria-label="Back">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 6l-6 6 6 6" />
-          </svg>
-          Back
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <button className="back-row" onClick={onBack} aria-label="Back" style={{ margin: 0 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+            Back
+          </button>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="btn btn-sm"
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '6px 14px',
+                background: '#F1F5F9',
+                color: '#0A2540',
+                border: '1px solid #CBD5E1',
+                borderRadius: 8,
+                cursor: 'pointer',
+              }}
+            >
+              ↻ Refresh
+            </button>
+          )}
+        </div>
         <div className="page-title">Orders</div>
         <div className="page-sub">Everything you've booked with us.</div>
 
@@ -33,7 +56,17 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         {orders.length === 0 ? (
           <div className="card pad" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>No Active Orders Yet</div>
-            <p style={{ margin: 0, fontSize: 13 }}>Browse categories or book a shopping slot to reserve your personal shopper in India.</p>
+            <p style={{ margin: 0, fontSize: 13, marginBottom: 14 }}>Browse categories or book a shopping slot to reserve your personal shopper in India.</p>
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                className="btn btn-primary"
+                style={{ fontSize: 13, padding: '8px 18px', borderRadius: 8 }}
+              >
+                Refresh Orders
+              </button>
+            )}
           </div>
         ) : (
           orders.map(o => (

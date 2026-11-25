@@ -97,11 +97,13 @@ export async function validateSession(token: string) {
 }
 
 /**
- * Resolves the authenticated user from a Request by inspecting Authorization header,
- * or fallback search parameters / request body identifiers.
+ * Resolves the authenticated user from a Request strictly by inspecting
+ * Authorization Bearer header, session cookie, or authoritative session token.
+ * Universal query parameter overrides (?email=, ?userId=) are STRICTLY REJECTED.
  */
 export async function getUserFromRequest(req: Request) {
   try {
+    // 1. Authorization: Bearer <token>
     const authHeader = req.headers.get('authorization') || '';
     if (authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7).trim();
@@ -109,47 +111,21 @@ export async function getUserFromRequest(req: Request) {
       if (user) return user;
     }
 
+    // 2. Cookie: visasra_token
+    const cookieHeader = req.headers.get('cookie') || '';
+    const match = cookieHeader.match(/visasra_token=([^;]+)/);
+    if (match) {
+      const cookieToken = decodeURIComponent(match[1].trim());
+      const user = await validateSession(cookieToken);
+      if (user) return user;
+    }
+
+    // 3. Explicit session token parameter
     const { searchParams } = new URL(req.url);
     const tokenParam = searchParams.get('token');
     if (tokenParam) {
       const user = await validateSession(tokenParam);
       if (user) return user;
-    }
-
-    const email = searchParams.get('email');
-    if (email) {
-      return await prisma.user.findUnique({
-        where: { email: email.toLowerCase().trim() },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          location: true,
-          avatar: true,
-          walletBalance: true,
-          lastLoginAt: true,
-          createdAt: true,
-        },
-      });
-    }
-
-    const userId = searchParams.get('userId');
-    if (userId) {
-      return await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          location: true,
-          avatar: true,
-          walletBalance: true,
-          lastLoginAt: true,
-          createdAt: true,
-        },
-      });
     }
   } catch {
     return null;

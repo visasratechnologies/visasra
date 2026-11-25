@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyStoredOtp } from '@/lib/otp';
+import { signWorkerToken } from '@/lib/jwt';
+
+function sanitizeWorker(w: any) {
+  return {
+    ...w,
+    aadhaarNumber: w.aadhaarNumber ? `XXXX-XXXX-${w.aadhaarNumber.replace(/\D/g, '').slice(-4)}` : null,
+    panNumber: w.panNumber ? `XXXXX${w.panNumber.trim().slice(-4)}` : null,
+    bankAccountNumber: w.bankAccountNumber ? `XXXXXXXX${w.bankAccountNumber.replace(/\D/g, '').slice(-4)}` : null,
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -53,11 +63,27 @@ export async function POST(req: Request) {
         data: { lastLoginAt: new Date() },
       });
 
-      return NextResponse.json({
-        success: true,
-        worker: updatedWorker,
-        token: 'worker_session_' + Date.now(),
+      const token = signWorkerToken({
+        workerId: updatedWorker.id,
+        phone: updatedWorker.phone,
+        email: updatedWorker.email,
       });
+
+      const response = NextResponse.json({
+        success: true,
+        worker: sanitizeWorker(updatedWorker),
+        token,
+      });
+
+      response.cookies.set('visasra_worker_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return response;
     }
 
     // 2. Fallback: Phone and OTP Login
@@ -107,11 +133,27 @@ export async function POST(req: Request) {
         });
       }
 
-      return NextResponse.json({
-        success: true,
-        worker,
-        token: 'worker_session_' + Date.now(),
+      const token = signWorkerToken({
+        workerId: worker.id,
+        phone: worker.phone,
+        email: worker.email,
       });
+
+      const response = NextResponse.json({
+        success: true,
+        worker: sanitizeWorker(worker),
+        token,
+      });
+
+      response.cookies.set('visasra_worker_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return response;
     }
 
     return NextResponse.json({ error: 'Please enter your email and password to log in' }, { status: 400 });

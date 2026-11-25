@@ -93,7 +93,7 @@ export default function RefundPolicyPage() {
           <ol style={{ paddingLeft: 22, marginBottom: 20 }}>
             <li>Locate the order in your Visasra account under the <b>Orders</b> tab.</li>
             <li>Tap &ldquo;Need Help&rdquo; or email our support team at <a href="mailto:visasratechnologies@gmail.com" style={{ color: '#1B5AA6' }}>visasratechnologies@gmail.com</a>.</li>
-            <li>Provide your Order ID (e.g. VIS-XXXXX), detailed description of the issue, and clear photographs/videos of the package and item.</li>
+            <li>Provide your Order ID (e.g. VIS-XXXXX), detailed description of the issue, and clear photographs of the package and item.</li>
           </ol>
 
           <div style={{ marginTop: 36, padding: 24, borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>

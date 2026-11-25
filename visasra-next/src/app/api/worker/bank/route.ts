@@ -1,31 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getWorkerFromRequest } from '@/lib/jwt';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { workerId, email, phone, bankAccountNumber, bankIfscCode, bankName, bankBranch, payoutUpi } = body;
-
-    let worker = null;
-    if (workerId) {
-      worker = await prisma.worker.findUnique({ where: { id: workerId } });
-    } else if (email) {
-      worker = await prisma.worker.findUnique({ where: { email: email.toLowerCase().trim() } });
-    } else if (phone) {
-      const digits = phone.replace(/\D/g, '').slice(-10);
-      worker = await prisma.worker.findFirst({
-        where: {
-          OR: [
-            { phone },
-            { phone: `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` },
-            { phone: digits },
-          ],
-        },
-      });
+    const authWorker = await getWorkerFromRequest(req);
+    if (!authWorker) {
+      return NextResponse.json({ error: 'Unauthorized: Partner session token required' }, { status: 401 });
     }
 
+    const body = await req.json();
+    const { bankAccountNumber, bankIfscCode, bankName, bankBranch, payoutUpi } = body;
+    const targetWorkerId = authWorker.workerId;
+
+    const worker = await prisma.worker.findUnique({ where: { id: targetWorkerId } });
     if (!worker) {
-      return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Partner account not found' }, { status: 404 });
     }
 
     if (bankAccountNumber && bankAccountNumber.replace(/\D/g, '').length < 8) {
@@ -49,7 +39,12 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: 'Bank details updated successfully',
-      worker: updated,
+      worker: {
+        ...updated,
+        aadhaarNumber: updated.aadhaarNumber ? `XXXX-XXXX-${updated.aadhaarNumber.replace(/\D/g, '').slice(-4)}` : null,
+        panNumber: updated.panNumber ? `XXXXX${updated.panNumber.trim().slice(-4)}` : null,
+        bankAccountNumber: updated.bankAccountNumber ? `XXXXXXXX${updated.bankAccountNumber.replace(/\D/g, '').slice(-4)}` : null,
+      },
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to update bank details';

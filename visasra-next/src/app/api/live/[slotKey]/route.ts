@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+function calculateEta(workerLat?: number | null, workerLng?: number | null, storeLat?: number | null, storeLng?: number | null): number {
+  if (!workerLat || !workerLng || !storeLat || !storeLng) return 12;
+  const R = 6371; // km
+  const dLat = ((storeLat - workerLat) * Math.PI) / 180;
+  const dLng = ((storeLng - workerLng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((workerLat * Math.PI) / 180) * Math.cos((storeLat * Math.PI) / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distanceKm = R * c;
+  return Math.max(4, Math.round((distanceKm / 18) * 60) + 3);
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ slotKey: string }> }
@@ -63,7 +76,7 @@ export async function GET(
             lat: session.workerLat || 13.06,
             lng: session.workerLng || 80.25,
             updatedAt: session.updatedAt.getTime(),
-            etaMin: session.workerEtaMin || 14,
+            etaMin: session.workerEtaMin || calculateEta(session.workerLat, session.workerLng, session.storeLat, session.storeLng),
           }
         : null,
       products: session.order
@@ -71,14 +84,14 @@ export async function GET(
             itemId: it.id,
             name: it.name,
             qty: it.qty,
-            estMin: it.estMin,
-            estMax: it.estMax,
+            estMin: Number(it.estMin),
+            estMax: Number(it.estMax),
             status: it.status,
-            approvedAmount: it.approvedAmount,
+            approvedAmount: it.approvedAmount ? Number(it.approvedAmount) : undefined,
             options: it.options.map((opt) => ({
               id: opt.id,
               image: opt.image,
-              price: opt.price,
+              price: Number(opt.price),
               description: opt.description,
               status: opt.status,
             })),

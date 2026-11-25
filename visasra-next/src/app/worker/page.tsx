@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import '@/styles/worker.css';
 import { WorkerEarnTab } from '@/components/worker/WorkerEarnTab';
 import { WorkerProfileTab } from '@/components/worker/WorkerProfileTab';
+import { compressImageClient } from '@/lib/imageCompression';
+import { chime } from '@/lib/chime';
 
 
 // =====================================================================
@@ -107,6 +109,15 @@ interface LiveSession {
   storeLng?: number;
   workerLat?: number;
   workerLng?: number;
+  worker?: {
+    id: string;
+    name: string;
+    phone: string;
+    rating: number;
+    status: string;
+    currentLat?: number;
+    currentLng?: number;
+  } | null;
   user: {
     name: string;
     phone?: string;
@@ -289,8 +300,11 @@ export default function WorkerApp() {
   const handleWorkerFileUpload = async (file: File, docKey: string): Promise<string | null> => {
     setUploadingDoc(docKey);
     try {
+      // Client-side off-screen canvas downscaling to 1280px WebP (reduces 6MB camera raw to ~140KB)
+      const compressedFile = await compressImageClient(file, { maxDimension: 1280, quality: 0.82 });
+
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', compressedFile);
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: fd,
@@ -365,7 +379,7 @@ export default function WorkerApp() {
     try {
       const res = await fetch('/api/worker/bank', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getWorkerAuthHeaders() },
         body: JSON.stringify({
           workerId: worker?.id,
           phone: worker?.phone,
@@ -458,10 +472,25 @@ export default function WorkerApp() {
   // -------------------------------------------------------------------
   // BACKEND API SYNC
   // -------------------------------------------------------------------
+  const getWorkerToken = () => {
+    try {
+      return typeof window !== 'undefined' ? localStorage.getItem('visasra_worker_token') : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getWorkerAuthHeaders = (): Record<string, string> => {
+    const t = getWorkerToken();
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  };
+
   const fetchJobs = async () => {
     try {
       const q = worker ? `?workerId=${worker.id}` : '';
-      const res = await fetch(`/api/worker/jobs${q}`);
+      const res = await fetch(`/api/worker/jobs${q}`, {
+        headers: getWorkerAuthHeaders(),
+      });
       const data = await res.json();
       if (data.sessions) {
         setSessions(data.sessions);
@@ -477,28 +506,76 @@ export default function WorkerApp() {
   useEffect(() => {
     if (!worker?.id) return;
     fetchJobs();
+    // Relaxed background polling interval (45s) when visible; active updates push in real-time via SSE
     const iv = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchJobs();
-    }, 30000);
+    }, 45000);
     return () => clearInterval(iv);
   }, [worker?.id]);
 
-  // Execute Backend Action
+  // Active session for live shopping SSE connection (kills 30s in-store lag)
+  const activeLiveSlotKey = sessions.find(
+    (s) => s.workerId === worker?.id && (s.status === 'live' || ['heading_to_store', 'shopping'].includes(s.stage))
+  )?.slotKey;
+
+  useEffect(() => {
+    if (!activeLiveSlotKey || !worker?.id) return;
+
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource(`/api/live/${encodeURIComponent(activeLiveSlotKey)}/events`);
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed.type === 'option_decision') {
+            fetchJobs();
+            chime.playSuccessChime();
+            const isApproved = parsed.payload?.decision === 'approved';
+            showToast(isApproved ? 'Customer approved an option!' : 'Customer rejected an option');
+          } else if (parsed.type === 'qr_cleared') {
+            fetchJobs();
+            chime.playPaymentClearedChime();
+            showToast('Store merchant payment cleared by Admin!');
+          } else if (['stage_changed', 'session_refresh'].includes(parsed.type)) {
+            fetchJobs();
+          }
+        } catch {
+          // ignore heartbeat
+        }
+      };
+    } catch {
+      // EventSource fallback
+    }
+
+    return () => {
+      if (es) es.close();
+    };
+  }, [activeLiveSlotKey, worker?.id]);
+
+  // Execute Backend Action (Optimistic & fast without redundant blocking full re-fetch)
   const execAction = async (payload: Record<string, unknown>) => {
     try {
       const res = await fetch('/api/worker/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getWorkerAuthHeaders() },
         body: JSON.stringify({ ...payload, workerId: worker?.id }),
       });
       const data = await res.json();
       if (data.success) {
         if (data.worker) setWorker(data.worker);
-        await fetchJobs();
+        if (data.session) {
+          // Direct in-memory session patch (0ms network round-trip overhead)
+          setSessions((prev) =>
+            prev.map((s) => (s.slotKey === data.session.slotKey ? { ...s, ...data.session } : s))
+          );
+        } else {
+          fetchJobs();
+        }
         return true;
       } else {
         showToast(data.error || 'Action failed');
+        fetchJobs();
         return false;
       }
     } catch {
@@ -507,15 +584,39 @@ export default function WorkerApp() {
     }
   };
 
+  // Immediate high-accuracy GPS ping to backend
+  const sendImmediateLocation = (slotKey?: string | null) => {
+    if (typeof window === 'undefined' || !navigator.geolocation || !worker?.id) return;
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        const now = Date.now();
+        lastLocationSentRef.current = { lat: p.coords.latitude, lng: p.coords.longitude, ts: now };
+        fetch('/api/worker/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getWorkerAuthHeaders() },
+          body: JSON.stringify({
+            action: 'update_location',
+            slotKey: slotKey || undefined,
+            workerId: worker.id,
+            lat: p.coords.latitude,
+            lng: p.coords.longitude,
+          }),
+        }).catch(() => {});
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 6000 }
+    );
+  };
+
   // -------------------------------------------------------------------
-  // LIVE GPS TRACKING (Throttled, Non-blocking, No infinite re-fetch loop)
+  // LIVE GPS TRACKING (Active Fleet streaming to Admin Cockpit)
   // -------------------------------------------------------------------
-  const activeTripSlotKey = sessions.find(
-    (s) => s.workerId === worker?.id && ['heading_to_store', 'shopping'].includes(s.stage)
+  const currentAssignedSlotKey = sessions.find(
+    (s) => s.workerId === worker?.id && ['assigned', 'heading_to_store', 'shopping'].includes(s.stage)
   )?.slotKey;
 
   useEffect(() => {
-    if (!navigator.geolocation || !worker?.id || !activeTripSlotKey) return;
+    if (typeof window === 'undefined' || !navigator.geolocation || !worker?.id || worker.status === 'offline') return;
 
     const watchId = navigator.geolocation.watchPosition(
       (p) => {
@@ -528,13 +629,13 @@ export default function WorkerApp() {
         }
         lastLocationSentRef.current = { lat: p.coords.latitude, lng: p.coords.longitude, ts: now };
 
-        // Send silent ping without triggering fetchJobs() or displaying popups
+        // Send silent ping
         fetch('/api/worker/jobs', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getWorkerAuthHeaders() },
           body: JSON.stringify({
             action: 'update_location',
-            slotKey: activeTripSlotKey,
+            slotKey: currentAssignedSlotKey || undefined,
             workerId: worker.id,
             lat: p.coords.latitude,
             lng: p.coords.longitude,
@@ -546,7 +647,7 @@ export default function WorkerApp() {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [activeTripSlotKey, worker?.id]);
+  }, [currentAssignedSlotKey, worker?.id, worker?.status]);
 
   // -------------------------------------------------------------------
   // SLOT TIMING HELPERS
@@ -622,6 +723,9 @@ export default function WorkerApp() {
         setWorker(w);
         localStorage.setItem('visasra_worker_profile_v1', JSON.stringify(w));
         localStorage.setItem('visasra_worker_session_v1', w.phone);
+        if (data.token) {
+          localStorage.setItem('visasra_worker_token', data.token);
+        }
         showToast(`Welcome back, ${w.name.split(' ')[0]}!`);
         populateAppState(w);
         await fetchJobs();
@@ -730,6 +834,9 @@ export default function WorkerApp() {
         setWorker(w);
         localStorage.setItem('visasra_worker_profile_v1', JSON.stringify(w));
         localStorage.setItem('visasra_worker_session_v1', w.phone);
+        if (data.token) {
+          localStorage.setItem('visasra_worker_token', data.token);
+        }
         showToast('Account created! Please submit your application form for admin review.');
         populateAppState(w);
         // Post-registration gating: new user goes directly to application form!
@@ -943,7 +1050,7 @@ export default function WorkerApp() {
         setWorker(w);
         localStorage.setItem('visasra_worker_profile_v1', JSON.stringify(w));
         if (w.kycStatus === 'verified' || w.kycStatus === 'approved') {
-          showToast('🎉 Congratulations! Admin has approved your application.');
+          showToast('Congratulations! Admin has approved your application.');
           setScreen('home');
           setActiveTab('home');
           await fetchJobs();
@@ -977,6 +1084,7 @@ export default function WorkerApp() {
   const handleSignOut = () => {
     localStorage.removeItem('visasra_worker_profile_v1');
     localStorage.removeItem('visasra_worker_session_v1');
+    localStorage.removeItem('visasra_worker_token');
     setWorker(null);
     setScreen('login');
     setAuthTab('signin');
@@ -986,7 +1094,7 @@ export default function WorkerApp() {
   };
 
   // -------------------------------------------------------------------
-  // ACTIONS: SHOPPING PROTOCOL
+  // ACTIONS: SHOPPING PROTOCOL (Optimistic Zero-Lag Transitions)
   // -------------------------------------------------------------------
   const handleAcceptSlot = async (slotKey: string) => {
     if (!isKYCOk()) {
@@ -1007,11 +1115,43 @@ export default function WorkerApp() {
       return;
     }
 
+    // 1. Optimistic UI: zero-lag instant screen transition & local state update
+    setSelectedSlotKey(slotKey);
+    setScreen('detail');
+    showToast('Slot accepted — customer notified');
+    chime.playSuccessChime();
+
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.slotKey === slotKey
+          ? {
+              ...s,
+              workerId: worker?.id,
+              stage: 'assigned',
+              status: 'live',
+              worker: worker
+                ? {
+                    id: worker.id,
+                    name: worker.name,
+                    phone: worker.phone,
+                    rating: worker.rating,
+                    status: worker.status,
+                    currentLat: worker.currentLat,
+                    currentLng: worker.currentLng,
+                  }
+                : s.worker,
+            }
+          : s
+      )
+    );
+
+    // 2. Immediate GPS pin & silent background execution
+    sendImmediateLocation(slotKey);
     const ok = await execAction({ action: 'accept', slotKey });
-    if (ok) {
-      showToast('Slot accepted — customer notified');
-      setSelectedSlotKey(slotKey);
-      setScreen('detail');
+    if (!ok) {
+      // Revert if rejected by backend (e.g. taken by another worker)
+      fetchJobs();
+      setScreen('slots');
     }
   };
 
@@ -1020,18 +1160,27 @@ export default function WorkerApp() {
       showToast('Shopping opens at ' + startLabel(slotKey));
       return;
     }
-    const ok = await execAction({ action: 'start_trip', slotKey });
-    if (ok) {
-      showToast('Trip started — customer is tracking your route');
-    }
+
+    // Optimistic UI: immediate feedback
+    showToast('Trip started — customer is tracking your route');
+    setSessions((prev) =>
+      prev.map((s) => (s.slotKey === slotKey ? { ...s, stage: 'heading_to_store', status: 'live' } : s))
+    );
+
+    sendImmediateLocation(slotKey);
+    execAction({ action: 'start_trip', slotKey });
   };
 
   const handleArrive = async (slotKey: string) => {
-    const ok = await execAction({ action: 'arrive', slotKey });
-    if (ok) {
-      showToast('Entered store — open shopping list');
-      setScreen('list');
-    }
+    // Optimistic UI: transition to shopping list immediately (0ms)
+    showToast('Entered store — open shopping list');
+    setSessions((prev) =>
+      prev.map((s) => (s.slotKey === slotKey ? { ...s, stage: 'shopping', status: 'live' } : s))
+    );
+    setScreen('list');
+
+    sendImmediateLocation(slotKey);
+    execAction({ action: 'arrive', slotKey });
   };
 
   const handleSaveOption = async () => {
@@ -2489,75 +2638,220 @@ export default function WorkerApp() {
         {/* SCREEN 7: MY SLOTS (TODAY, UPCOMING, COMPLETED)               */}
         {/* ============================================================= */}
         {screen === 'slots' && (
-          <div className="screen active">
-            <div className="body">
-              <div className="tabs">
-                <button className={slotsTab === 'today' ? 'on' : ''} onClick={() => setSlotsTab('today')}>
+          <div className="screen active" style={{ paddingBottom: '90px' }}>
+            <div className="body" style={{ maxWidth: '480px', margin: '0 auto', padding: '14px 16px' }}>
+              {/* Modern Segmented Navigation Tabs */}
+              <div className="tabs" style={{ marginBottom: 14 }}>
+                <button
+                  type="button"
+                  className={slotsTab === 'today' ? 'on' : ''}
+                  onClick={() => setSlotsTab('today')}
+                  style={{ fontWeight: 700, fontSize: 13 }}
+                >
                   Today ({sessions.filter((s) => slotDateOf(s.slotKey) === todayDateStr).length})
                 </button>
-                <button className={slotsTab === 'upcoming' ? 'on' : ''} onClick={() => setSlotsTab('upcoming')}>
+                <button
+                  type="button"
+                  className={slotsTab === 'upcoming' ? 'on' : ''}
+                  onClick={() => setSlotsTab('upcoming')}
+                  style={{ fontWeight: 700, fontSize: 13 }}
+                >
                   Upcoming ({sessions.filter((s) => slotDateOf(s.slotKey) > todayDateStr).length})
                 </button>
-                <button className={slotsTab === 'completed' ? 'on' : ''} onClick={() => setSlotsTab('completed')}>
-                  Completed ({sessions.filter((s) => phaseOf(s) === 'done' || phaseOf(s) === 'missed').length})
+                <button
+                  type="button"
+                  className={slotsTab === 'completed' ? 'on' : ''}
+                  onClick={() => setSlotsTab('completed')}
+                  style={{ fontWeight: 700, fontSize: 13 }}
+                >
+                  Completed ({sessions.filter((s) => phaseOf(s) === 'done' || phaseOf(s) === 'missed' || s.stage === 'packed' || s.status === 'completed').length})
                 </button>
               </div>
 
-              {sessions
-                .filter((s) => {
+              {/* Slots List or Smart State */}
+              {(() => {
+                const filtered = sessions.filter((s) => {
                   const d = slotDateOf(s.slotKey);
                   const p = phaseOf(s);
                   if (slotsTab === 'today') return d === todayDateStr && p !== 'done';
                   if (slotsTab === 'upcoming') return d > todayDateStr && p !== 'done';
-                  return p === 'done' || p === 'missed';
-                })
-                .map((j) => {
-                  const p = phaseOf(j);
+                  return p === 'done' || p === 'missed' || s.stage === 'packed' || s.status === 'completed';
+                });
+
+                const completedCount = sessions.filter(
+                  (s) => phaseOf(s) === 'done' || phaseOf(s) === 'missed' || s.stage === 'packed' || s.status === 'completed'
+                ).length;
+
+                if (filtered.length === 0) {
                   return (
                     <div
-                      key={j.id}
-                      className="card"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => {
-                        setSelectedSlotKey(j.slotKey);
-                        setScreen('detail');
+                      style={{
+                        background: '#FFFFFF',
+                        borderRadius: 16,
+                        padding: '36px 20px',
+                        textAlign: 'center',
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 4px 16px rgba(11, 30, 54, 0.04)',
+                        marginTop: 8,
                       }}
                     >
-                      <div className="row">
-                        <div className="av">{j.user.name.slice(0, 2).toUpperCase()}</div>
-                        <div className="grow">
-                          <div className="b">{j.user.name}</div>
-                          <div className="m">{j.order?.slotLabel || j.slotKey}</div>
-                        </div>
-                        {p === 'open' ? (
-                          tooSoon(j.slotKey) ? (
-                            <span className="pill">Opens {acceptLabel(j.slotKey)}</span>
-                          ) : (
+                      <div
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: '50%',
+                          background: '#EFF6FF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 16px',
+                          border: '1px solid #BFDBFE',
+                        }}
+                      >
+                        <img
+                          src="/images/icons/slot.png"
+                          alt=""
+                          style={{ width: 28, height: 28, objectFit: 'contain' }}
+                        />
+                      </div>
+
+                      {slotsTab === 'today' && (
+                        <>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '4px 10px', borderRadius: 20, marginBottom: 10 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E' }} />
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#065F46' }}>Online &bull; Chennai Hub</span>
+                          </div>
+                          <h3 style={{ fontSize: 17, fontWeight: 800, color: '#092B55', margin: '0 0 6px' }}>
+                            Ready for Your Next Slot
+                          </h3>
+                          <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 300, margin: '0 auto 18px', lineHeight: 1.5 }}>
+                            You are active and ready to receive bookings. When an overseas customer reserves a slot in Chennai, you will be notified instantly.
+                          </p>
+
+                          {completedCount > 0 && (
                             <button
-                              className="btn s"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAcceptSlot(j.slotKey);
+                              type="button"
+                              onClick={() => setSlotsTab('completed')}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                background: '#F8FAFC',
+                                border: '1px solid #CBD5E1',
+                                borderRadius: 10,
+                                padding: '9px 16px',
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                color: '#1B5AA6',
+                                cursor: 'pointer',
                               }}
                             >
-                              Accept
+                              <span>View Completed Slot History ({completedCount})</span>
                             </button>
-                          )
-                        ) : (
-                          <span className={`pill ${p === 'done' || p === 'purchased' ? 'g' : 'o'}`}>
-                            {p.replace(/_/g, ' ')}
-                          </span>
-                        )}
-                      </div>
-                      <div className="row m" style={{ marginTop: 10 }}>
-                        <span><b>{j.order?.items.length || 1}</b> item(s)</span>
-                        <span className="grow" style={{ background: '#EAF2FC', borderRadius: 9, padding: 5, textAlign: 'center' }}>
-                          <b>{inr(j.order?.totalAmount || 2500)}</b> est.
-                        </span>
-                      </div>
+                          )}
+                        </>
+                      )}
+
+                      {slotsTab === 'upcoming' && (
+                        <>
+                          <h3 style={{ fontSize: 17, fontWeight: 800, color: '#092B55', margin: '0 0 6px' }}>
+                            No Upcoming Advance Slots
+                          </h3>
+                          <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 300, margin: '0 auto 18px', lineHeight: 1.5 }}>
+                            Future bookings scheduled by customers will appear here once reserved. Check back for tomorrow&apos;s assignments.
+                          </p>
+                        </>
+                      )}
+
+                      {slotsTab === 'completed' && (
+                        <>
+                          <h3 style={{ fontSize: 17, fontWeight: 800, color: '#092B55', margin: '0 0 6px' }}>
+                            No Completed Slots Yet
+                          </h3>
+                          <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 300, margin: '0 auto 18px', lineHeight: 1.5 }}>
+                            Completed personal shopping trips and hub handovers will be recorded here with your +₹350 fulfillment credits.
+                          </p>
+                        </>
+                      )}
                     </div>
                   );
-                })}
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {filtered.map((j) => {
+                      const p = phaseOf(j);
+                      const isCompleted = p === 'done' || p === 'missed' || j.stage === 'packed' || j.status === 'completed';
+
+                      return (
+                        <div
+                          key={j.id}
+                          className="card"
+                          style={{
+                            background: '#FFFFFF',
+                            borderRadius: 14,
+                            padding: '16px',
+                            border: '1px solid #E2E8F0',
+                            borderLeft: isCompleted ? '4px solid #16A34A' : '4px solid #1B5AA6',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 10px rgba(11, 30, 54, 0.04)',
+                          }}
+                          onClick={() => {
+                            setSelectedSlotKey(j.slotKey);
+                            setScreen('detail');
+                          }}
+                        >
+                          {/* Top Row: Store & Order Number */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: '#092B55' }}>
+                                {j.storeName || 'Local Market / Store'}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: '#475569', marginTop: 2 }}>
+                                Order #{j.order?.orderNumber || j.slotKey} &bull; Customer: {j.user?.name || 'Verified Customer'}
+                              </div>
+                            </div>
+
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                fontSize: 11,
+                                fontWeight: 800,
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                background: isCompleted ? '#DCFCE7' : '#EFF6FF',
+                                color: isCompleted ? '#166534' : '#1E40AF',
+                              }}
+                            >
+                              {isCompleted ? 'Completed' : 'Active'}
+                            </span>
+                          </div>
+
+                          {/* Middle: Slot Schedule */}
+                          <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <img src="/images/icons/slot.png" alt="" style={{ width: 13, height: 13, objectFit: 'contain' }} />
+                            <span>{j.order?.slotDate || slotDateOf(j.slotKey)} ({j.order?.slotLabel || 'Standard Window'})</span>
+                          </div>
+
+                          {/* Footer: Items count and Payout credit */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
+                            <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 600 }}>
+                              {j.order?.items?.length || 1} Item(s) Requested
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 14, fontWeight: 800, color: '#16A34A' }}>
+                                {isCompleted ? '+₹350 Paid' : 'Earn ₹350'}
+                              </span>
+                              <span style={{ color: '#94A3B8', fontSize: 14 }}>&rsaquo;</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -2598,14 +2892,51 @@ export default function WorkerApp() {
                   {svg(ICONS.cal)}
                   <span>{currentSession.order?.slotLabel || currentSession.slotKey}</span>
                 </div>
-                <div className="kv">
-                  {svg(ICONS.pin)}
-                  <span>{currentSession.storeAddress || 'Local Market / Artisan Store'}</span>
+                <div className="kv" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                    {svg(ICONS.pin)}
+                    <span>{currentSession.storeAddress || currentSession.storeName || 'Local Market / Artisan Store'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'none',
+                      border: '1px solid #D97706',
+                      color: '#B45309',
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                    onClick={() => {
+                      const dest = currentSession.storeAddress || currentSession.storeName || 'Local Market';
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
+                    }}
+                  >
+                    Get Directions
+                  </button>
                 </div>
                 <div className="kv">
                   {svg(ICONS.bag)}
                   <span>{currentSession.order?.items.length || 0} product(s) to verify</span>
                 </div>
+              </div>
+
+              {/* Customer Sourcing Instructions */}
+              <div className="note" style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E', marginTop: 12 }}>
+                <b style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Customer Sourcing Instructions:
+                </b>
+                <div style={{ fontSize: 13, marginTop: 4 }}>
+                  Client: <b>{currentSession.user?.name || 'Visasra Client'}</b> (Communications routed via Visasra Hub)
+                </div>
+                {currentSession.order?.items.some(i => i.notes) && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#78350F' }}>
+                    Artisan notes attached for {currentSession.order.items.filter(i => i.notes).length} product(s). Tap each product below to view customer requirements.
+                  </div>
+                )}
               </div>
 
               {/* Timing Alerts */}
@@ -2633,6 +2964,11 @@ export default function WorkerApp() {
                     <div className="grow">
                       <div className="b sm">{it.name}</div>
                       <div className="m">Qty: {it.qty} · Budget: ₹{it.estMin} – ₹{it.estMax}</div>
+                      {it.notes && (
+                        <div style={{ fontSize: 11, color: '#B45309', background: '#FEF3C7', padding: '2px 6px', borderRadius: 4, marginTop: 4 }}>
+                          Note: {it.notes}
+                        </div>
+                      )}
                       <span className={`pill ${it.status === 'approved' ? 'g' : 'o'}`} style={{ marginTop: 4 }}>
                         {it.status.replace(/_/g, ' ')}
                       </span>
@@ -2660,12 +2996,33 @@ export default function WorkerApp() {
                   Start trip to store
                 </button>
               ) : currentSession.stage === 'heading_to_store' ? (
-                <button
-                  className="btn"
-                  onClick={() => handleArrive(currentSession.slotKey)}
-                >
-                  I&apos;ve started shopping
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      background: '#071D3A',
+                      color: '#FFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                    onClick={() => {
+                      const dest = currentSession.storeAddress || currentSession.storeName || 'Local Market';
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
+                    }}
+                  >
+                    Open Store in Google Maps
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ background: '#D97706' }}
+                    onClick={() => handleArrive(currentSession.slotKey)}
+                  >
+                    I&apos;ve arrived at store &amp; started shopping
+                  </button>
+                </div>
               ) : currentSession.stage === 'shopping' ? (
                 <button
                   className="btn"
@@ -2913,7 +3270,7 @@ export default function WorkerApp() {
                     <div className="grow">
                       <b style={{ color: '#166534', fontSize: 16 }}>Customer Approved &amp; Paid from Wallet!</b>
                       <div style={{ color: '#15803d', fontSize: 13, marginTop: 2 }}>
-                        Total {inr(currentItem.approvedAmount || 2440)} has been automatically debited from the customer's wallet.
+                        Total {inr(currentItem.approvedAmount || currentItem.options.find(o => o.status === 'approved')?.price || 0)} has been automatically debited from the customer's wallet.
                       </div>
                     </div>
                   </div>
@@ -2974,17 +3331,17 @@ export default function WorkerApp() {
 
               {currentItem.status === 'purchased' && (
                 <div className="card" style={{ border: '2px solid #22c55e', background: '#f0fdf4', textAlign: 'center', padding: '16px' }}>
-                  <div style={{ fontSize: 24, marginBottom: 4 }}>🛍️</div>
+                  <img src="/images/icons/slot.png" alt="" style={{ width: 28, height: 28, objectFit: 'contain', margin: '0 auto 6px', display: 'block' }} />
                   <b style={{ color: '#166534', fontSize: 16 }}>Purchased &amp; Packed in Visasra Bag</b>
                   <div style={{ color: '#15803d', fontSize: 13, marginTop: 4 }}>
-                    Total {inr(currentItem.approvedAmount || 2440)} debited from customer wallet.
+                    Total {inr(currentItem.approvedAmount || currentItem.options.find(o => o.status === 'approved')?.price || 0)} debited from customer wallet.
                   </div>
                   <button
                     className="btn o"
                     style={{ marginTop: 12, width: '100%' }}
                     onClick={() => setScreen('list')}
                   >
-                    ← Back to Shopping List (Next Product)
+                    &larr; Back to Shopping List (Next Product)
                   </button>
                 </div>
               )}
@@ -3214,12 +3571,12 @@ export default function WorkerApp() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 10, background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                        🏢
+                      <div style={{ width: 34, height: 34, borderRadius: 10, background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src="/images/icons/slot.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
                       </div>
                       <div>
                         <div style={{ fontSize: 10.5, fontWeight: 800, color: '#15803D', letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                          Step 1 · Bring Packages to QC Hub / Delivery
+                          Step 1 &bull; Bring Packages to QC Hub / Delivery
                         </div>
                         <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0F172A' }}>
                           Order #{currentSession.order?.orderNumber || 'Handover'}
@@ -3230,7 +3587,7 @@ export default function WorkerApp() {
                     {/* Visasra Central QC Warehouse Hub Location */}
                     <div style={{ background: '#F8FAFC', border: '1.5px solid #CFE0F3', borderRadius: 12, padding: 12, marginBottom: 10 }}>
                       <div style={{ fontSize: 11, fontWeight: 800, color: '#0A3A6B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
-                        🏢 Primary Drop-Off: Visasra QC &amp; Packaging Hub
+                        Primary Drop-Off: Visasra QC &amp; Packaging Hub
                       </div>
                       <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, fontWeight: 600 }}>
                         {hubAddress}
@@ -3250,32 +3607,17 @@ export default function WorkerApp() {
                       </button>
                     </div>
 
-                    {/* Customer Destination Address */}
+                    {/* Final Destination City/Country */}
                     <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: 12, marginBottom: 8 }}>
                       <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
-                        📍 Final Customer Destination
+                        Final Customer Destination
                       </div>
-                      <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.5, fontWeight: 600 }}>
-                        {formattedAddr}
+                      <div style={{ fontSize: 13, color: '#0F172A', lineHeight: 1.5, fontWeight: 700 }}>
+                        {addr?.city || 'Overseas Client'}, {addr?.country || 'International Dispatch'}
                       </div>
-                      {addr?.phone && (
-                        <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
-                          📞 <b>Customer Contact:</b> {addr.phone}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        style={{ width: '100%', fontSize: 12, fontWeight: 700, padding: '8px 12px', marginTop: 8, background: '#FFFFFF', color: '#15803D', borderColor: '#86EFAC' }}
-                        onClick={() => {
-                          window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(formattedAddr), '_blank');
-                        }}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14, marginRight: 6 }}>
-                          <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                        </svg>
-                        Navigate to Customer Address (Google Maps)
-                      </button>
+                      <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 4 }}>
+                        International air freight is handled directly from Visasra Central Hub. Personal shopper task completes upon successful handover at the Hub.
+                      </div>
                     </div>
                   </div>
                 );
@@ -3292,12 +3634,12 @@ export default function WorkerApp() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                    🔐
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src="/images/icons/kyc.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
                   </div>
                   <div>
                     <div style={{ fontSize: 10.5, fontWeight: 800, color: '#2563EB', letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                      Step 2 · Admin Quality Inspection &amp; OTP
+                      Step 2 &bull; Admin Quality Inspection &amp; OTP
                     </div>
                     <div style={{ fontSize: 14.5, fontWeight: 800, color: '#0F172A' }}>
                       Admin Handover Verification
@@ -3350,7 +3692,10 @@ export default function WorkerApp() {
 
               {handoverVerified && (
                 <div style={{ background: '#DCFCE7', border: '1.5px solid #86EFAC', borderRadius: 14, padding: 14, textAlign: 'center', marginBottom: 14 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#15803D' }}>🎉 Handover Verified!</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <img src="/images/icons/check.png" alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                    <span>Handover Verified!</span>
+                  </div>
                   <div style={{ fontSize: 12.5, color: '#166534', marginTop: 3 }}>
                     Packages accepted by Admin. +₹{PAY_PER_SLOT} payout credited to your wallet!
                   </div>

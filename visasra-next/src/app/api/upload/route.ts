@@ -1,8 +1,53 @@
 import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB maximum server-side boundary
+
+/**
+ * Inspects leading magic bytes to identify authoritative MIME type & file extension.
+ * Rejects disguised executable payloads or scripts with spoofed extensions.
+ */
+function detectFileType(buffer: Buffer): { mime: string; ext: string } | null {
+  if (buffer.length < 4) return null;
+
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return { mime: 'image/jpeg', ext: '.jpg' };
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4E &&
+    buffer[3] === 0x47
+  ) {
+    return { mime: 'image/png', ext: '.png' };
+  }
+
+  // WebP: RIFF .... WEBP
+  if (
+    buffer.length >= 12 &&
+    buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+    buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+  ) {
+    return { mime: 'image/webp', ext: '.webp' };
+  }
+
+  // GIF: GIF87a or GIF89a
+  if (buffer.subarray(0, 3).toString('ascii') === 'GIF') {
+    return { mime: 'image/gif', ext: '.gif' };
+  }
+
+  // PDF: %PDF- (Authorized for KYC document proofs)
+  if (buffer.subarray(0, 4).toString('ascii') === '%PDF') {
+    return { mime: 'application/pdf', ext: '.pdf' };
+  }
+
+  return null;
+}
 
 export async function POST(req: Request) {
   try {
@@ -16,12 +61,34 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Sanitize filename and create unique ID
-    const ext = path.extname(file.name) || '.jpg';
-    const cleanBase = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    // Enforce size limit
+    if (buffer.length > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { success: false, error: 'File size exceeds maximum 10MB boundary.' },
+        { status: 413 }
+      );
+    }
+
+    // Cryptographic Magic-Byte Validation
+    const verifiedType = detectFileType(buffer);
+    if (!verifiedType) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unsupported or disguised file format. Only JPEG, PNG, WebP, GIF, and PDF documents are allowed.',
+        },
+        { status: 415 }
+      );
+    }
+
+    const { mime, ext } = verifiedType;
+
+    // Sanitize filename and create unique key
+    const rawName = file.name || 'image';
+    const cleanBase = path.basename(rawName, path.extname(rawName)).replace(/[^a-zA-Z0-9_-]/g, '_');
     const uniqueName = `sourcing_${Date.now()}_${cleanBase}${ext}`;
 
-    // 1. Check for Cloudflare R2 credentials
+    // 1. Direct Multipart Streaming to Cloudflare R2
     const r2AccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const r2AccessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
     const r2SecretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
@@ -44,7 +111,8 @@ export async function POST(req: Request) {
             Bucket: r2BucketName,
             Key: uniqueName,
             Body: buffer,
-            ContentType: file.type || 'image/jpeg',
+            ContentType: mime,
+            CacheControl: 'public, max-age=31536000, immutable',
           })
         );
 
@@ -57,13 +125,14 @@ export async function POST(req: Request) {
           url: fileUrl,
           provider: 'cloudflare-r2',
           filename: uniqueName,
+          mime,
         });
       } catch (r2Err) {
-        console.error('Cloudflare R2 upload failed, falling back to local storage:', r2Err);
+        console.error('Cloudflare R2 streaming failed, falling back to local storage:', r2Err);
       }
     }
 
-    // 2. Fallback: Save to public/uploads directory
+    // 2. Fallback: Save to public/uploads directory (for local offline dev)
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     await mkdir(uploadDir, { recursive: true });
 
@@ -77,7 +146,8 @@ export async function POST(req: Request) {
       url: publicUrl,
       provider: 'local',
       filename: uniqueName,
-      message: 'Stored locally. Provide CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_IMAGES_API_TOKEN or R2 credentials in .env to sync directly to Cloudflare.',
+      mime,
+      message: 'Stored locally. Configure Cloudflare R2 credentials in production for high-availability CDN streaming.',
     });
   } catch (error) {
     console.error('Image upload failed:', error);

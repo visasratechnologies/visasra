@@ -89,6 +89,12 @@ export interface TrackingDetails {
   slotDate?: string;
   slotLabel?: string;
   totalAmount?: number;
+  customerNotes?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  shippedAt?: string | Date;
+  deliveredAt?: string | Date;
   stages: TrackingStageItem[];
   shopper: {
     name: string;

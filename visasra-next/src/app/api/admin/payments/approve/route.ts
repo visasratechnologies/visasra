@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminFromRequest } from '@/lib/jwt';
 
 export async function POST(req: Request) {
   try {
+    const admin = await getAdminFromRequest(req);
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { itemId, proofUrl } = await req.json();
+
+    if (!itemId) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
 
     const updated = await prisma.orderItem.update({
       where: { id: itemId },
       data: {
         shopPaymentStatus: 'paid',
-        shopPaymentProof: proofUrl || '/images/decor/visasra-bag.png',
+        shopPaymentProof: proofUrl || null,
       },
     });
 

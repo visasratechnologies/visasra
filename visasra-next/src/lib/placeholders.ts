@@ -16,8 +16,12 @@ export function getItemImageFallback(sourceType?: string | null): string {
 }
 
 export function resolveItemImage(image?: string | null, sourceType?: string | null): string {
-  if (image && image.trim() && !image.includes('pooja-spiritual.jpg') && !image.includes('jewellery-accessories.jpg')) {
-    return image.trim();
+  if (image && image.trim()) {
+    const trimmed = image.trim();
+    // Do not use category banner header files as individual product item photos
+    if (!trimmed.startsWith('/images/categories/')) {
+      return trimmed;
+    }
   }
   return getItemImageFallback(sourceType);
 }

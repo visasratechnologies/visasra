@@ -1,21 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getWorkerFromRequest } from '@/lib/jwt';
+import { broadcastLiveEvent } from '@/lib/eventBus';
 
 export async function GET(req: Request) {
   try {
+    const authWorker = await getWorkerFromRequest(req);
     const { searchParams } = new URL(req.url);
-    const workerId = searchParams.get('workerId');
+    const queryWorkerId = searchParams.get('workerId');
+
+    const targetWorkerId = authWorker?.workerId || queryWorkerId;
+    if (!targetWorkerId) {
+      return NextResponse.json({ error: 'Unauthorized: Partner session token required' }, { status: 401 });
+    }
 
     const sessions = await prisma.liveSession.findMany({
       where: {
-        ...(workerId
-          ? {
-              OR: [
-                { workerId },
-                { workerId: null },
-              ],
-            }
-          : {}),
+        OR: [
+          { workerId: targetWorkerId },
+          { workerId: null },
+        ],
         // Ground shoppers must NEVER see online concierge orders (Amazon/Flipkart)
         order: {
           orderType: { not: 'online' },
@@ -49,38 +53,79 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
-    let worker = null;
-    if (workerId) {
-      worker = await prisma.worker.findUnique({
-        where: { id: workerId },
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          rating: true,
-          ordersDone: true,
-          status: true,
-          kycStatus: true,
-          walletBalance: true,
-          aadhaarNumber: true,
-          panNumber: true,
-          drivingLicenseNumber: true,
-          currentAddress: true,
-          permanentAddress: true,
-          altPhone: true,
-          bankAccountNumber: true,
-          bankIfscCode: true,
-          bankName: true,
-          bankBranch: true,
-          payoutUpi: true,
-          currentLat: true,
-          currentLng: true,
-        },
-      });
-    }
+    const rawWorker = await prisma.worker.findUnique({
+      where: { id: targetWorkerId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        rating: true,
+        ordersDone: true,
+        status: true,
+        kycStatus: true,
+        walletBalance: true,
+        aadhaarNumber: true,
+        panNumber: true,
+        drivingLicenseNumber: true,
+        currentAddress: true,
+        permanentAddress: true,
+        altPhone: true,
+        bankAccountNumber: true,
+        bankIfscCode: true,
+        bankName: true,
+        bankBranch: true,
+        payoutUpi: true,
+        currentLat: true,
+        currentLng: true,
+      },
+    });
 
-    return NextResponse.json({ success: true, sessions, worker });
+    // Mask sensitive government PII and financial identifiers
+    const worker = rawWorker
+      ? {
+          ...rawWorker,
+          walletBalance: Number(rawWorker.walletBalance),
+          aadhaarNumber: rawWorker.aadhaarNumber
+            ? `XXXX-XXXX-${rawWorker.aadhaarNumber.replace(/\D/g, '').slice(-4)}`
+            : null,
+          panNumber: rawWorker.panNumber
+            ? `XXXXX${rawWorker.panNumber.trim().slice(-4)}`
+            : null,
+          bankAccountNumber: rawWorker.bankAccountNumber
+            ? `XXXXXXXX${rawWorker.bankAccountNumber.replace(/\D/g, '').slice(-4)}`
+            : null,
+        }
+      : null;
+
+    // Sanitize sessions to protect customer privacy from gig workers
+    const sanitizedSessions = sessions.map((s) => {
+      const order = s.order;
+      const rawAddr = order?.shippingAddress as Record<string, any> | null;
+      const safeAddr = rawAddr
+        ? {
+            city: rawAddr.city || 'Overseas Destination',
+            country: rawAddr.country || 'International',
+            // Omit line1, line2, zip, phone to prevent worker from seeing private customer residence
+          }
+        : null;
+
+      return {
+        ...s,
+        user: {
+          name: s.user?.name || 'Visasra Client',
+          // Omit phone number
+        },
+        order: order
+          ? {
+              ...order,
+              shippingAddress: safeAddr,
+            }
+          : null,
+      };
+    });
+
+    return NextResponse.json({ success: true, sessions: sanitizedSessions, worker });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to fetch worker jobs';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -89,6 +134,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const authWorker = await getWorkerFromRequest(req);
     const body = await req.json();
     const {
       slotKey,
@@ -106,6 +152,15 @@ export async function POST(req: Request) {
       isOnline,
       payoutAmount,
     } = body;
+
+    const effectiveWorkerId = authWorker?.workerId || workerId;
+    if (!effectiveWorkerId) {
+      return NextResponse.json({ error: 'Unauthorized: Partner credentials required' }, { status: 401 });
+    }
+
+    if (authWorker && workerId && authWorker.workerId !== workerId) {
+      return NextResponse.json({ error: 'Forbidden: Cannot act on behalf of another partner' }, { status: 403 });
+    }
 
     // Handle global worker actions (not tied to a specific slotKey)
     if (action === 'toggle_online' && workerId) {
@@ -139,18 +194,65 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, worker: updatedWorker });
     }
 
-    if (action === 'request_payout' && workerId && payoutAmount) {
-      const currentWorker = await prisma.worker.findUnique({ where: { id: workerId } });
-      if (!currentWorker || currentWorker.walletBalance < payoutAmount) {
-        return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+    if (action === 'request_payout') {
+      const currentWorker = await prisma.worker.findUnique({ where: { id: effectiveWorkerId } });
+      if (!currentWorker) {
+        return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
       }
-      const updatedWorker = await prisma.worker.update({
-        where: { id: workerId },
-        data: {
-          walletBalance: { decrement: Number(payoutAmount) },
+
+      if (!currentWorker.payoutUpi && !currentWorker.bankAccountNumber) {
+        return NextResponse.json(
+          { error: 'Please save your Payout UPI or Bank Account in Profile before requesting withdrawal.' },
+          { status: 400 }
+        );
+      }
+
+      const reqAmount = Number(payoutAmount);
+      if (isNaN(reqAmount) || reqAmount <= 0) {
+        return NextResponse.json({ error: 'Invalid payout amount' }, { status: 400 });
+      }
+
+      if (Number(currentWorker.walletBalance) < reqAmount) {
+        return NextResponse.json(
+          { error: `Insufficient wallet balance. You have ₹${Number(currentWorker.walletBalance).toLocaleString('en-IN')}, but requested ₹${reqAmount.toLocaleString('en-IN')}.` },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Payout request for ₹${reqAmount.toLocaleString('en-IN')} queued for ${currentWorker.payoutUpi || currentWorker.bankAccountNumber}. Admin will disburse with Bank UTR.`,
+        worker: {
+          ...currentWorker,
+          walletBalance: Number(currentWorker.walletBalance),
+          aadhaarNumber: currentWorker.aadhaarNumber ? `XXXX-XXXX-${currentWorker.aadhaarNumber.replace(/\D/g, '').slice(-4)}` : null,
+          panNumber: currentWorker.panNumber ? `XXXXX${currentWorker.panNumber.trim().slice(-4)}` : null,
+          bankAccountNumber: currentWorker.bankAccountNumber ? `XXXXXXXX${currentWorker.bankAccountNumber.replace(/\D/g, '').slice(-4)}` : null,
         },
       });
-      return NextResponse.json({ success: true, worker: updatedWorker });
+    }
+
+    // Real-Time GPS Location ping from Worker mobile device (Non-blocking)
+    if (action === 'update_location' && lat !== undefined && lng !== undefined) {
+      const numLat = Number(lat);
+      const numLng = Number(lng);
+      if (!isNaN(numLat) && !isNaN(numLng)) {
+        if (effectiveWorkerId) {
+          await prisma.worker.update({
+            where: { id: effectiveWorkerId },
+            data: { currentLat: numLat, currentLng: numLng },
+          });
+        }
+        if (slotKey) {
+          const decodedKey = decodeURIComponent(slotKey);
+          await prisma.liveSession.updateMany({
+            where: { slotKey: decodedKey },
+            data: { workerLat: numLat, workerLng: numLng },
+          });
+          broadcastLiveEvent(decodedKey, 'location_updated', { lat: numLat, lng: numLng });
+        }
+        return NextResponse.json({ success: true, message: 'Location updated', lat: numLat, lng: numLng });
+      }
     }
 
     if (!slotKey) {
@@ -210,6 +312,7 @@ export async function POST(req: Request) {
           data: { status: 'current' },
         });
       }
+      broadcastLiveEvent(decodedKey, 'stage_changed', { stage: 'heading_to_store' });
     }
 
     // 3. Arrive / In store
@@ -221,6 +324,7 @@ export async function POST(req: Request) {
           status: 'live',
         },
       });
+      broadcastLiveEvent(decodedKey, 'stage_changed', { stage: 'shopping' });
     }
 
     // 4. Update Stage directly
@@ -246,6 +350,7 @@ export async function POST(req: Request) {
           data: { status: 'current' },
         });
       }
+      broadcastLiveEvent(decodedKey, 'stage_changed', { stage });
     }
 
     // 5. Upload option photo & price
@@ -275,6 +380,7 @@ export async function POST(req: Request) {
           },
         });
       }
+      broadcastLiveEvent(decodedKey, 'option_created', { itemId, option: optionData });
     }
 
     // 6. Remove Option
@@ -282,6 +388,7 @@ export async function POST(req: Request) {
       await prisma.productOption.delete({
         where: { id: optionId },
       });
+      broadcastLiveEvent(decodedKey, 'session_refresh', { itemId, optionId });
     }
 
     // 7. Share options with customer
@@ -300,6 +407,7 @@ export async function POST(req: Request) {
           data: { trackingStage: 'shopping', status: 'shopping' },
         });
       }
+      broadcastLiveEvent(decodedKey, 'option_created', { itemId, status: 'options_ready' });
     }
 
     // 8. Upload Shop QR payment
@@ -312,6 +420,7 @@ export async function POST(req: Request) {
           shopPaymentAmount: Number(qrData.amount),
         },
       });
+      broadcastLiveEvent(decodedKey, 'qr_uploaded', { itemId, amount: qrData.amount });
     }
 
     // 9. Mark product as bought (Allows purchase once customer approved & debited from wallet, or paid via QR)
@@ -335,6 +444,8 @@ export async function POST(req: Request) {
           data: { stage: 'purchased' },
         });
       }
+
+      broadcastLiveEvent(decodedKey, 'stage_changed', { itemId, status: 'purchased' });
 
       return NextResponse.json({ success: true, message: 'Item marked as purchased' });
     }
@@ -375,6 +486,8 @@ export async function POST(req: Request) {
           },
         });
       }
+
+      broadcastLiveEvent(decodedKey, 'stage_changed', { stage: 'packed' });
     }
 
     // 11. Update GPS Location
@@ -395,6 +508,7 @@ export async function POST(req: Request) {
           },
         });
       }
+      broadcastLiveEvent(decodedKey, 'location_updated', { lat: Number(lat), lng: Number(lng) });
       return NextResponse.json({ success: true, message: 'Location updated' });
     }
 

@@ -24,8 +24,8 @@ function formatCartItem(it: {
   productId: string | null;
   name: string;
   qty: number;
-  priceMin: number;
-  priceMax: number;
+  priceMin: Prisma.Decimal | number;
+  priceMax: Prisma.Decimal | number;
   image: string | null;
   images: unknown;
   notes: string | null;
@@ -47,8 +47,8 @@ function formatCartItem(it: {
     productId: it.productId || undefined,
     name: it.name,
     qty: it.qty,
-    priceMin: it.priceMin,
-    priceMax: it.priceMax,
+    priceMin: Number(it.priceMin),
+    priceMax: Number(it.priceMax),
     image: it.image || undefined,
     images: parsedImages,
     notes: it.notes || undefined,
@@ -87,20 +87,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    let user = await getUserFromRequest(req);
-
-    if (!user && (body.userId || body.email)) {
-      if (body.userId) {
-        user = await prisma.user.findUnique({
-          where: { id: body.userId },
-        });
-      }
-      if (!user && body.email) {
-        user = await prisma.user.findUnique({
-          where: { email: String(body.email).toLowerCase().trim() },
-        });
-      }
-    }
+    const user = await getUserFromRequest(req);
 
     if (!user) {
       return NextResponse.json({ error: 'User must be authenticated to persist cart to database' }, { status: 401 });
@@ -215,16 +202,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    let user = await getUserFromRequest(req);
-
-    if (!user && (body.userId || body.email)) {
-      if (body.userId) {
-        user = await prisma.user.findUnique({ where: { id: body.userId } });
-      }
-      if (!user && body.email) {
-        user = await prisma.user.findUnique({ where: { email: String(body.email).toLowerCase().trim() } });
-      }
-    }
+    const user = await getUserFromRequest(req);
 
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -294,18 +272,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    let user = await getUserFromRequest(req);
-
-    if (!user) {
-      const email = searchParams.get('email');
-      const userId = searchParams.get('userId');
-      if (userId) {
-        user = await prisma.user.findUnique({ where: { id: userId } });
-      }
-      if (!user && email) {
-        user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
-      }
-    }
+    const user = await getUserFromRequest(req);
 
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

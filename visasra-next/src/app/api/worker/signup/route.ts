@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { createAndStoreOtp, verifyStoredOtp } from '@/lib/otp';
+import { signWorkerToken } from '@/lib/jwt';
 
 export async function POST(req: Request) {
   try {
@@ -93,12 +94,33 @@ export async function POST(req: Request) {
         },
       });
 
-      return NextResponse.json({
+      const token = signWorkerToken({
+        workerId: worker.id,
+        phone: worker.phone,
+        email: worker.email,
+      });
+
+      const response = NextResponse.json({
         success: true,
         message: 'Account created successfully! Please complete your verification application.',
-        worker,
-        token: 'worker_session_' + Date.now(),
+        worker: {
+          ...worker,
+          aadhaarNumber: null,
+          panNumber: null,
+          bankAccountNumber: null,
+        },
+        token,
       });
+
+      response.cookies.set('visasra_worker_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return response;
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminFromRequest } from '@/lib/jwt';
+import { broadcastLiveEvent } from '@/lib/eventBus';
 
 export async function POST(req: Request) {
   try {
-    const adminEmail = req.headers.get('x-admin-email');
-    if (!adminEmail) {
-      return NextResponse.json({ error: 'Unauthorized: Admin credentials required' }, { status: 401 });
-    }
-
-    const admin = await prisma.admin.findUnique({
-      where: { email: adminEmail.toLowerCase().trim() },
-    });
-
-    if (!admin) {
-      return NextResponse.json({ error: 'Forbidden: Admin access denied' }, { status: 403 });
+    const adminSession = await getAdminFromRequest(req);
+    if (!adminSession) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Valid admin session token required' },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
@@ -124,6 +121,7 @@ export async function POST(req: Request) {
         where: { id: targetWorker.id },
         data: {
           kycStatus: isApprove ? 'verified' : 'rejected',
+          status: isApprove ? 'active' : targetWorker.status,
         },
       });
 
@@ -133,32 +131,95 @@ export async function POST(req: Request) {
       });
     }
 
+    // 4b. Toggle Worker Status (Active / Suspended)
+    if (action === 'toggle_worker_status' && workerId) {
+      const targetWorker = await prisma.worker.findUnique({ where: { id: workerId } });
+      if (!targetWorker) {
+        return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
+      }
+      const newStatus = body.status || (targetWorker.status === 'active' ? 'suspended' : 'active');
+      await prisma.worker.update({
+        where: { id: targetWorker.id },
+        data: { status: newStatus },
+      });
+      return NextResponse.json({
+        success: true,
+        message: `Shopper status updated to ${newStatus}`,
+      });
+    }
+
     // 5. Settle Shop Payment
     if (action === 'approve_shop_payment' && itemId) {
-      await prisma.orderItem.update({
+      const updatedItem = await prisma.orderItem.update({
         where: { id: itemId },
         data: {
           shopPaymentStatus: 'paid',
           shopPaymentProof: proofUrl || '/images/decor/visasra-bag.png',
         },
+        include: {
+          order: {
+            include: {
+              liveSession: true,
+            },
+          },
+        },
       });
+
+      if (updatedItem.order?.liveSession?.slotKey) {
+        broadcastLiveEvent(updatedItem.order.liveSession.slotKey, 'qr_cleared', {
+          itemId,
+          amount: updatedItem.shopPaymentAmount,
+          proofUrl: updatedItem.shopPaymentProof,
+        });
+      }
 
       return NextResponse.json({ success: true, message: 'Shop payment cleared in PostgreSQL' });
     }
 
     // 6. Settle Worker Payout
     if (action === 'settle_payout' && workerId) {
-      const payoutAmt = Number(amount) || 1000;
-      await prisma.worker.update({
-        where: { id: workerId },
+      const payoutAmt = Number(amount);
+      if (isNaN(payoutAmt) || payoutAmt <= 0) {
+        return NextResponse.json({ error: 'Valid payout amount greater than 0 is required' }, { status: 400 });
+      }
+
+      // Atomic conditional decrement: prevents race conditions and negative worker balances
+      const updateResult = await prisma.worker.updateMany({
+        where: {
+          id: workerId,
+          walletBalance: { gte: payoutAmt },
+        },
         data: {
-          walletBalance: { decrement: Math.max(0, payoutAmt) },
+          walletBalance: { decrement: payoutAmt },
         },
       });
 
+      if (updateResult.count === 0) {
+        const currentWorker = await prisma.worker.findUnique({
+          where: { id: workerId },
+          select: { walletBalance: true },
+        });
+
+        if (!currentWorker) {
+          return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({
+          error: `Payout failed: Insufficient worker balance. Current balance is ₹${Number(currentWorker.walletBalance).toLocaleString('en-IN')}, but requested payout is ₹${payoutAmt.toLocaleString('en-IN')}.`,
+        }, { status: 400 });
+      }
+
+      const updatedWorker = await prisma.worker.findUnique({
+        where: { id: workerId },
+        select: { walletBalance: true, name: true },
+      });
+
+      const remBal = updatedWorker ? Number(updatedWorker.walletBalance) : 0;
+
       return NextResponse.json({
         success: true,
-        message: `Payout of ₹${payoutAmt} marked paid (UTR: ${utr || 'UPI-' + Date.now()})`,
+        message: `Payout of ₹${payoutAmt.toLocaleString('en-IN')} marked paid to ${updatedWorker?.name || 'worker'} (UTR: ${utr || 'UPI-' + Date.now()}). Remaining balance: ₹${remBal.toLocaleString('en-IN')}`,
+        remainingBalance: remBal,
       });
     }
 
@@ -358,6 +419,21 @@ export async function POST(req: Request) {
         success: true,
         message: `Order #${updatedOrder.orderNumber} marked as successfully delivered!`,
         order: updatedOrder,
+      });
+    }
+
+    // 13. Delete / Purge Test Order (Admin Cleanup)
+    if (action === 'delete_order' && orderId) {
+      await prisma.liveSession.deleteMany({
+        where: { orderId },
+      });
+      await prisma.order.delete({
+        where: { id: orderId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Order and associated test data purged successfully from PostgreSQL',
       });
     }
 

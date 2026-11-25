@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { createAndStoreOtp, verifyStoredOtp } from '@/lib/otp';
+import { signAdminToken } from '@/lib/jwt';
 
 export async function POST(req: Request) {
   try {
@@ -26,14 +28,14 @@ export async function POST(req: Request) {
     });
 
     if (!admin) {
-      // If admin doesn't exist yet, seed default Visasra Administrator
+      // If admin doesn't exist yet, seed initial administrator with random hash and require OTP
       if (cleanEmail === 'admin@visasra.com' || cleanEmail === 'visasratechnologies@gmail.com') {
-        const hashedPassword = await bcrypt.hash('visasra123*', 10);
+        const initialRandomPassword = await bcrypt.hash(crypto.randomUUID(), 10);
         admin = await prisma.admin.create({
           data: {
             name: 'Visasra Administrator',
             email: cleanEmail,
-            password: hashedPassword,
+            password: initialRandomPassword,
             role: 'superadmin',
           },
         });
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Check verification OTP against PostgreSQL
+    // Check verification OTP or Password against PostgreSQL
     if (otp) {
       const verifyCheck = await verifyStoredOtp(cleanEmail, otp, 'login');
       if (!verifyCheck.valid) {
@@ -57,22 +59,40 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Password or OTP required' }, { status: 400 });
     }
 
-      const updatedAdmin = await prisma.admin.update({
-        where: { id: admin.id },
-        data: { lastLoginAt: new Date() },
-      });
+    const updatedAdmin = await prisma.admin.update({
+      where: { id: admin.id },
+      data: { lastLoginAt: new Date() },
+    });
 
-      return NextResponse.json({
-        success: true,
-        admin: {
-          id: updatedAdmin.id,
-          name: updatedAdmin.name,
-          email: updatedAdmin.email,
-          role: updatedAdmin.role,
-          lastLoginAt: updatedAdmin.lastLoginAt,
-        },
-        token: 'admin_session_' + Date.now(),
-      });
+    // Generate authoritative cryptographic JWT session token
+    const token = signAdminToken({
+      adminId: updatedAdmin.id,
+      email: updatedAdmin.email,
+      role: updatedAdmin.role,
+    });
+
+    const response = NextResponse.json({
+      success: true,
+      admin: {
+        id: updatedAdmin.id,
+        name: updatedAdmin.name,
+        email: updatedAdmin.email,
+        role: updatedAdmin.role,
+        lastLoginAt: updatedAdmin.lastLoginAt,
+      },
+      token,
+    });
+
+    // Set secure HttpOnly cookie for defense-in-depth
+    response.cookies.set('visasra_admin_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Admin login failed';
     return NextResponse.json({ error: message }, { status: 500 });

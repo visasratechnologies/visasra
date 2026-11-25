@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TrackingDetails } from '@/types';
+import { TrackingDetails } from '@/types/customer';
 
 interface OrderTrackingModalProps {
   slotKey: string | null;
@@ -16,178 +16,433 @@ export default function OrderTrackingModal({
 }: OrderTrackingModalProps) {
   if (!slotKey) return null;
 
-  const status = trackingData?.orderStatus || 'confirmed';
-  const isDelivered = status === 'delivered';
-  const isShipped = isDelivered || status === 'shipped';
-  const isPacked = isShipped || status === 'packed';
-  const isSourced =
-    isPacked ||
-    ['purchased', 'bought', 'approved'].includes(status) ||
-    (trackingData?.items?.some((i) => i.status === 'purchased') ?? false);
-  const isConfirmed = true;
+  const orderStatus = trackingData?.orderStatus || 'confirmed';
+  const trackingStage = trackingData?.trackingStage || 'slot_confirmed';
 
-  const steps = [
-    { label: 'Order Placed', done: isSourced, current: !isSourced && isConfirmed },
+  // The 7 Official Milestones
+  const SEVEN_STAGES = [
     {
-      label: trackingData?.orderType === 'online' ? 'Procured' : 'Sourced',
-      done: isPacked,
-      current: isSourced && !isPacked,
+      key: 'slot_confirmed',
+      num: 1,
+      title: 'Slot Confirmed & Scheduled',
+      desc: 'Priority shopping window reserved across ground shopper network.',
+      icon: '📅',
     },
-    { label: 'Shipped', done: isDelivered, current: isPacked && !isDelivered },
-    { label: 'Delivered', done: isDelivered, current: isDelivered },
+    {
+      key: 'worker_assigned',
+      num: 2,
+      title: 'Personal Shopper Assigned',
+      desc: trackingData?.shopper
+        ? `${trackingData.shopper.name} (${trackingData.shopper.phone}) assigned as your dedicated in-store shopper.`
+        : 'Dedicated personal shopper assigned from regional fulfillment team.',
+      icon: '🧑‍💼',
+    },
+    {
+      key: 'shopping',
+      num: 3,
+      title: 'In-Store Verification & Sourcing',
+      desc: trackingData?.store?.name
+        ? `Live sourcing and photo verification active at ${trackingData.store.name}.`
+        : 'Shopper active in local retail / wholesale market selecting verified pieces.',
+      icon: '🛍️',
+    },
+    {
+      key: 'purchased',
+      num: 4,
+      title: 'Purchased & Merchant Billed',
+      desc: 'Items approved by customer, payment settled at counter, and tax invoices collected.',
+      icon: '💳',
+    },
+    {
+      key: 'packed',
+      num: 5,
+      title: 'Central Hub Quality Check & Export Packing',
+      desc: 'Inspected for international transit, bubble-wrapped, and packed at Visasra Central Export Hub.',
+      icon: '📦',
+    },
+    {
+      key: 'shipped',
+      num: 6,
+      title: 'Customs Clearance & International Flight Dispatch',
+      desc: trackingData?.trackingNumber
+        ? `Dispatched via ${trackingData.carrier || 'International Airway Carrier'} (AWB: ${trackingData.trackingNumber}).`
+        : 'Export documents prepared and handed to international air cargo carrier.',
+      icon: '✈️',
+    },
+    {
+      key: 'out_for_delivery',
+      num: 7,
+      title: 'Doorstep Delivery Overseas',
+      desc: 'Customs cleared in destination country and out for final courier delivery.',
+      icon: '🏠',
+    },
   ];
 
-  const progressPct = isDelivered ? '100%' : isShipped ? '70%' : isSourced ? '40%' : '10%';
+  // Helper to determine stage status: 'done', 'current', or 'pending'
+  const STAGE_ORDER = ['slot_confirmed', 'worker_assigned', 'shopping', 'purchased', 'packed', 'shipped', 'out_for_delivery'];
+
+  const getStageState = (stageKey: string): 'done' | 'current' | 'pending' => {
+    // If order is delivered, everything is done
+    if (orderStatus === 'delivered') return 'done';
+
+    // Map high-level orderStatus or trackingStage to stage index
+    const effectiveStage = orderStatus === 'shipped'
+      ? 'shipped'
+      : orderStatus === 'packed'
+      ? 'packed'
+      : orderStatus === 'purchased'
+      ? 'purchased'
+      : trackingStage || 'slot_confirmed';
+
+    const currentIdx = STAGE_ORDER.indexOf(effectiveStage);
+    const thisIdx = STAGE_ORDER.indexOf(stageKey);
+
+    if (thisIdx < currentIdx) return 'done';
+    if (thisIdx === currentIdx) return 'current';
+    return 'pending';
+  };
+
+  const completedCount = SEVEN_STAGES.filter((s) => getStageState(s.key) === 'done').length;
+  const progressPercent = Math.min(100, Math.round(((completedCount + 0.5) / 7) * 100));
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
       <div
         className="modal-card"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 480, width: '100%', maxHeight: '88vh', overflowY: 'auto' }}
+        style={{
+          maxWidth: 540,
+          width: '100%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          padding: '24px',
+          borderRadius: '18px',
+          background: '#ffffff',
+          boxShadow: '0 20px 45px -10px rgba(7, 29, 58, 0.25)',
+        }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        {/* Modal Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 18, color: '#0F172A' }}>
-                Order Tracking
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontFamily: 'var(--font-display, serif)', fontSize: 20, color: '#071D3A', fontWeight: 800 }}>
+                Live Order Journey
               </h3>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#E0F2FE', color: '#0369A1' }}>
-                {trackingData?.orderNumber || 'VIS-92014'}
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  background: '#FEF3C7',
+                  color: '#92400E',
+                  border: '1px solid #FDE68A',
+                }}
+              >
+                {trackingData?.orderNumber || 'VIS-ORDER'}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-              Slot: <b>{trackingData?.slotLabel || slotKey}</b>
+            <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
+              Shopping Slot: <strong style={{ color: '#071D3A' }}>{trackingData?.slotLabel || slotKey}</strong>
             </div>
           </div>
           <button
             type="button"
             className="btn btn-sm btn-ghost"
             onClick={onClose}
-            style={{ fontSize: 13, padding: '4px 10px' }}
+            aria-label="Close"
+            style={{ fontSize: 18, padding: '4px 8px', color: '#64748B', lineHeight: 1 }}
           >
-            Close
+            ✕
           </button>
         </div>
 
-        {/* 4-Step Progress Bar */}
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 10px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
-            {/* Background Progress Track */}
-            <div style={{ position: 'absolute', top: 12, left: '12%', right: '12%', height: 3, background: '#E2E8F0', zIndex: 0 }}>
-              <div style={{ height: '100%', background: '#22C55E', width: progressPct, transition: 'width 0.3s ease' }} />
-            </div>
-
-            {steps.map((s, idx) => (
-              <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, width: '24%' }}>
-                <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: s.done ? '#22C55E' : s.current ? '#0284C7' : '#fff',
-                    border: s.done || s.current ? 'none' : '2px solid #CBD5E1',
-                    color: s.done || s.current ? '#fff' : '#94A3B8',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    boxShadow: s.current ? '0 0 0 4px rgba(2, 132, 199, 0.18)' : 'none',
-                  }}
-                >
-                  {s.done ? '✓' : idx + 1}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: s.current ? 800 : 600,
-                    color: s.current ? '#0284C7' : s.done ? '#1E293B' : '#94A3B8',
-                    marginTop: 6,
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {s.label}
-                </div>
-              </div>
-            ))}
+        {/* Global Progress Metric */}
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#071D3A', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Fulfilment Pipeline (7 Milestones)
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#D97706' }}>
+              {orderStatus === 'delivered' ? '100% Complete' : `Stage ${Math.min(7, completedCount + 1)} of 7`}
+            </span>
+          </div>
+          <div style={{ width: '100%', height: 6, background: '#E2E8F0', borderRadius: 999, overflow: 'hidden' }}>
+            <div
+              style={{
+                width: orderStatus === 'delivered' ? '100%' : `${progressPercent}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #D97706, #059669)',
+                transition: 'width 0.4s ease',
+              }}
+            />
           </div>
         </div>
 
-        {/* Shopper / Sourcing Badge (Physical Market Orders) */}
-        {trackingData?.orderType !== 'online' && trackingData?.shopper && (
-          <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#0284C7', color: '#fff', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 12 }}>
+        {/* Carrier Tracking Banner if Shipped */}
+        {(trackingData?.trackingNumber || trackingData?.carrier) && (
+          <div
+            style={{
+              background: '#ECFDF5',
+              border: '1.5px solid #A7F3D0',
+              borderRadius: 12,
+              padding: '12px 16px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 10,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#065F46', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                International Carrier Tracking
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#047857', marginTop: 2 }}>
+                {trackingData.carrier || 'Express Air Cargo'} · {trackingData.trackingNumber || 'AWB-PENDING'}
+              </div>
+            </div>
+            {trackingData.trackingUrl && (
+              <a
+                href={trackingData.trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  background: '#059669',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  textDecoration: 'none',
+                }}
+              >
+                Track on Carrier ↗
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Dedicated Personal Shopper In-Store Card */}
+        {trackingData?.shopper && (
+          <div
+            style={{
+              background: '#F0F9FF',
+              border: '1px solid #BAE6FD',
+              borderRadius: 12,
+              padding: '12px 14px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  background: '#071D3A',
+                  color: '#F59E0B',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontWeight: 800,
+                  fontSize: 15,
+                }}
+              >
                 {trackingData.shopper.name.charAt(0)}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 12.5, color: '#0369A1' }}>{trackingData.shopper.name}</div>
-                <div style={{ fontSize: 11, color: '#0284C7' }}>Personal Shopper · {trackingData.store?.name || 'Local Store'}</div>
+                <div style={{ fontWeight: 800, fontSize: 13.5, color: '#071D3A' }}>
+                  {trackingData.shopper.name}
+                </div>
+                <div style={{ fontSize: 11.5, color: '#0369A1' }}>
+                  Personal Shopper · ⭐ {trackingData.shopper.rating?.toFixed(1) || '4.9'} ({trackingData.shopper.ordersDone || 12}+ orders)
+                </div>
               </div>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 999 }}>
-              ● Active
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#15803D',
+                background: '#DCFCE7',
+                padding: '3px 10px',
+                borderRadius: 999,
+                border: '1px solid #86EFAC',
+              }}
+            >
+              ● On Duty
             </span>
           </div>
         )}
 
-        {/* Items Summary */}
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
-            Items ({trackingData?.items?.length || 0})
+        {/* Complete 7-Stage Stepper List */}
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+            Official Milestones
           </div>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {trackingData?.items?.map((it) => {
-              const isBought = it.status === 'purchased';
-              const isApproved = it.status === 'approved';
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
+            {SEVEN_STAGES.map((s, idx) => {
+              const state = getStageState(s.key);
+              const isLast = idx === SEVEN_STAGES.length - 1;
+
               return (
-                <div
-                  key={it.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
-                    background: '#fff',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: 10,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                    <span style={{ fontSize: 16 }}>{it.sourceType === 'online' ? '📦' : '🛍️'}</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>
-                        {it.name}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#64748B' }}>
-                        Qty: {it.qty || 1} · {it.onlinePlatform || 'In-Store'}
-                      </div>
-                    </div>
-                  </div>
-                  <span
+                <div key={s.key} style={{ display: 'flex', gap: 14, position: 'relative' }}>
+                  {/* Vertical Connecting Line */}
+                  {!isLast && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 28,
+                        left: 14,
+                        width: 2,
+                        bottom: -4,
+                        background: state === 'done' ? '#059669' : '#E2E8F0',
+                        zIndex: 0,
+                      }}
+                    />
+                  )}
+
+                  {/* Node Badge */}
+                  <div
                     style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: 6,
-                      background: isBought ? '#DCFCE7' : isApproved ? '#EFF6FF' : '#FEF3C7',
-                      color: isBought ? '#166534' : isApproved ? '#1E40AF' : '#92400E',
+                      width: 30,
+                      height: 30,
+                      borderRadius: '50%',
+                      background: state === 'done' ? '#059669' : state === 'current' ? '#071D3A' : '#F1F5F9',
+                      color: state === 'done' || state === 'current' ? '#ffffff' : '#94A3B8',
+                      border: state === 'current' ? '3px solid #D97706' : state === 'done' ? 'none' : '2px solid #CBD5E1',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontSize: 12,
+                      fontWeight: 800,
                       flexShrink: 0,
+                      zIndex: 1,
+                      boxShadow: state === 'current' ? '0 0 0 4px rgba(217, 119, 6, 0.2)' : 'none',
                     }}
                   >
-                    {isBought ? '✓ Purchased' : isApproved ? 'Approved' : 'Procuring'}
-                  </span>
+                    {state === 'done' ? '✓' : s.num}
+                  </div>
+
+                  {/* Stage Details */}
+                  <div style={{ paddingBottom: isLast ? 0 : 20, flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div
+                        style={{
+                          fontSize: 13.5,
+                          fontWeight: state === 'current' ? 800 : state === 'done' ? 700 : 600,
+                          color: state === 'current' ? '#071D3A' : state === 'done' ? '#0F172A' : '#94A3B8',
+                        }}
+                      >
+                        {s.icon} {s.title}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                          background:
+                            state === 'done'
+                              ? '#DCFCE7'
+                              : state === 'current'
+                              ? '#FEF3C7'
+                              : '#F1F5F9',
+                          color:
+                            state === 'done'
+                              ? '#15803D'
+                              : state === 'current'
+                              ? '#B45309'
+                              : '#94A3B8',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {state === 'done' ? 'Completed' : state === 'current' ? 'In Progress' : 'Upcoming'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: state === 'pending' ? '#94A3B8' : '#64748B', marginTop: 3, lineHeight: 1.4 }}>
+                      {s.desc}
+                    </div>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Delivery Note */}
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 12px', fontSize: 11.5, color: '#64748B', textAlign: 'center' }}>
-          Shipped via Express International Courier directly to your doorstep.
+        {/* Basket Items Sourced & Purchased */}
+        {trackingData?.items && trackingData.items.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+              Sourced Items ({trackingData.items.length})
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {trackingData.items.map((it) => {
+                const isPurchased = it.status === 'purchased';
+                const isApproved = it.status === 'approved';
+
+                return (
+                  <div
+                    key={it.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 10,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <span style={{ fontSize: 18 }}>{it.sourceType === 'online' ? '📦' : '🛍️'}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#071D3A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240 }}>
+                          {it.name}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#64748B' }}>
+                          Qty: {it.qty || 1} {it.approvedAmount ? `· ₹${Number(it.approvedAmount).toLocaleString('en-IN')}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '3px 10px',
+                        borderRadius: 6,
+                        background: isPurchased ? '#DCFCE7' : isApproved ? '#EFF6FF' : '#FEF3C7',
+                        color: isPurchased ? '#166534' : isApproved ? '#1E40AF' : '#92400E',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isPurchased ? '✓ Purchased' : isApproved ? 'Customer Approved' : 'Sourcing in Store'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Notice */}
+        <div
+          style={{
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            borderRadius: 10,
+            padding: '10px 14px',
+            fontSize: 11.5,
+            color: '#64748B',
+            textAlign: 'center',
+            lineHeight: 1.4,
+          }}
+        >
+          Protected by Visasra Guarantee: Inspected at Central QC Hub, verified against counterfeit goods, and delivered with door-to-door international insurance.
         </div>
       </div>
     </div>

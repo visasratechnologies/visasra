@@ -1,16 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 
-const POOLER_TRANSACTION_URL =
-  "postgresql://postgres.xdjqsoveqzmrrbooxkpn:visasra123*@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=25&pool_timeout=30";
-const POOLER_SESSION_URL =
-  "postgresql://postgres.xdjqsoveqzmrrbooxkpn:visasra123*@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres";
-
 function resolveDatabaseUrl(): string {
   let envUrl = process.env.DATABASE_URL;
-  // If empty or pointing to the legacy IPv6 direct endpoint that fails on IPv4 networks
-  if (!envUrl || envUrl.includes('db.xdjqsoveqzmrrbooxkpn.supabase.co')) {
-    envUrl = POOLER_TRANSACTION_URL;
+  if (!envUrl) {
+    throw new Error('DATABASE_URL environment variable is missing. Check your .env configuration.');
   }
+
+  // Ensure connection pooling parameters are attached for high-concurrency serverless environments
   if (!envUrl.includes('connection_limit=')) {
     const sep = envUrl.includes('?') ? '&' : '?';
     envUrl = `${envUrl}${sep}connection_limit=25&pool_timeout=30`;
@@ -20,14 +16,13 @@ function resolveDatabaseUrl(): string {
 
 const activeUrl = resolveDatabaseUrl();
 process.env.DATABASE_URL = activeUrl;
-process.env.DIRECT_URL = POOLER_SESSION_URL;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   prismaConfiguredUrl: string | undefined;
 };
 
-// Force purge any old cached Prisma client connected to the old IPv6 host
+// Force purge any old cached Prisma client connected to a previous URL
 if (globalForPrisma.prisma && globalForPrisma.prismaConfiguredUrl !== activeUrl) {
   try {
     globalForPrisma.prisma.$disconnect();
@@ -48,5 +43,3 @@ export const prisma =
 
 globalForPrisma.prisma = prisma;
 globalForPrisma.prismaConfiguredUrl = activeUrl;
-
-

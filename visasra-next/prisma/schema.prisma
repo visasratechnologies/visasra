@@ -16,7 +16,7 @@ model User {
   phone          String?
   location       String?
   avatar         String?
-  walletBalance  Float               @default(0)
+  walletBalance  Decimal             @default(0.00) @db.Decimal(12, 2)
   lastLoginAt    DateTime?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
@@ -44,15 +44,17 @@ model OtpVerification {
 }
 
 model WalletTransaction {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // 'credit' | 'debit'
-  amount    Float
-  note      String
-  date      DateTime @default(now())
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String   // 'credit' | 'debit'
+  amount            Decimal  @db.Decimal(12, 2)
+  note              String
+  razorpayPaymentId String?  @unique
+  date              DateTime @default(now())
 
   @@index([userId])
+  @@index([userId, date(sort: Desc)])
 }
 
 model Worker {
@@ -79,7 +81,7 @@ model Worker {
   selfie               String?
   currentLat           Float?
   currentLng           Float?
-  walletBalance        Float         @default(0)
+  walletBalance        Decimal       @default(0.00) @db.Decimal(12, 2)
   payoutUpi            String?
   bankAccountNumber    String?
   bankIfscCode         String?
@@ -93,14 +95,14 @@ model Worker {
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("superadmin") // 'superadmin' | 'ops' | 'finance'
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        String   @default("superadmin") // 'superadmin' | 'ops' | 'finance'
   lastLoginAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Category {
@@ -117,15 +119,18 @@ model ProductCatalog {
   name        String
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  price       Float
-  estMin      Float
-  estMax      Float
+  price       Decimal  @db.Decimal(12, 2)
+  estMin      Decimal  @db.Decimal(12, 2)
+  estMax      Decimal  @db.Decimal(12, 2)
   image       String
   description String?
   tag         String?  // 'popular' | 'trending' | 'bestseller'
   unit        String?  @default("piece")
   types       Json?
   createdAt   DateTime @default(now())
+
+  @@index([categoryId])
+  @@index([categoryId, price])
 }
 
 model Order {
@@ -140,7 +145,7 @@ model Order {
   status          String            @default("confirmed") // 'confirmed' | 'shopping' | 'purchased' | 'packed' | 'shipped' | 'delivered' | 'cancelled'
   trackingStage   String            @default("slot_confirmed") // 'slot_confirmed' | 'worker_assigned' | 'shopping' | 'purchased' | 'packed' | 'shipped' | 'out_for_delivery'
   orderType       String            @default("market") // 'market' | 'online' | 'hybrid'
-  totalAmount     Float             @default(0)
+  totalAmount     Decimal           @default(0.00) @db.Decimal(12, 2)
   shippingAddress Json?
   customerNotes   String?           // Customer special instructions or item requirements
   carrier         String?           // 'DHL Express' | 'FedEx Global' | 'BlueDart' | etc.
@@ -156,7 +161,9 @@ model Order {
   review          WorkerReview?
 
   @@index([userId])
+  @@index([userId, status])
   @@index([slotKey])
+  @@index([slotKey, status])
   @@index([status])
 }
 
@@ -168,8 +175,8 @@ model OrderItem {
   name                 String
   category             String?
   qty                  Int             @default(1)
-  estMin               Float
-  estMax               Float
+  estMin               Decimal         @db.Decimal(12, 2)
+  estMax               Decimal         @db.Decimal(12, 2)
   image                String?
   notes                String?
   sourceType           String?         @default("market") // 'market' | 'online' | 'mind' | 'catalog'
@@ -182,14 +189,16 @@ model OrderItem {
   onlinePurchasedAt    DateTime?
   onlineReceivedAt     DateTime?
   status               String          @default("waiting") // 'waiting' | 'options_ready' | 'needs_options' | 'approved' | 'purchased'
-  approvedAmount       Float?
+  approvedAmount       Decimal?        @db.Decimal(12, 2)
   shopPaymentStatus    String?         @default("none") // 'none' | 'qr_uploaded' | 'paid'
   shopPaymentQr        String?
   shopPaymentProof     String?
-  shopPaymentAmount    Float?
+  shopPaymentAmount    Decimal?        @db.Decimal(12, 2)
   options              ProductOption[]
 
   @@index([orderId])
+  @@index([orderId, status])
+  @@index([productId])
   @@index([status])
 }
 
@@ -198,12 +207,13 @@ model ProductOption {
   orderItemId String
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   image       String
-  price       Float     // exact per unit price
+  price       Decimal   @db.Decimal(12, 2)     // exact per unit price
   description String
   status      String    @default("pending") // 'pending' | 'approved' | 'rejected' | 'not_chosen'
   createdAt   DateTime  @default(now())
 
   @@index([orderItemId])
+  @@index([orderItemId, status])
 }
 
 model LiveSession {
@@ -228,8 +238,10 @@ model LiveSession {
   createdAt    DateTime  @default(now())
 
   @@index([workerId])
+  @@index([workerId, status])
   @@index([userId])
   @@index([status])
+  @@index([slotKey, stage])
 }
 
 model OrderTrackingStage {
@@ -244,6 +256,7 @@ model OrderTrackingStage {
   updatedAt DateTime @default(now())
 
   @@index([orderId])
+  @@index([orderId, stageKey])
 }
 
 model UserAddress {
@@ -300,8 +313,8 @@ model CartItem {
   productId    String?
   name         String
   qty          Int      @default(1)
-  priceMin     Float
-  priceMax     Float
+  priceMin     Decimal  @db.Decimal(12, 2)
+  priceMax     Decimal  @db.Decimal(12, 2)
   image        String?
   images       Json?
   notes        String?
@@ -329,4 +342,3 @@ model UserSession {
   @@index([userId])
   @@index([token])
 }
-

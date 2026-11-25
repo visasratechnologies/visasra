@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminFromRequest } from '@/lib/jwt';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const admin = await getAdminFromRequest(req);
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin authentication required' },
+        { status: 401 }
+      );
+    }
+
     const totalOrders = await prisma.order.count();
     const liveSessionsCount = await prisma.liveSession.count({
       where: { status: 'live' },
@@ -20,9 +29,16 @@ export async function GET() {
       take: 20,
     });
 
-    const pendingKycWorkers = await prisma.worker.findMany({
+    const rawPendingKycWorkers = await prisma.worker.findMany({
       where: { kycStatus: 'pending' },
     });
+
+    const pendingKycWorkers = rawPendingKycWorkers.map(w => ({
+      ...w,
+      aadhaarNumber: w.aadhaarNumber ? `XXXX-XXXX-${w.aadhaarNumber.replace(/\D/g, '').slice(-4)}` : null,
+      panNumber: w.panNumber ? `XXXXX${w.panNumber.trim().slice(-4)}` : null,
+      bankAccountNumber: w.bankAccountNumber ? `XXXXXXXX${w.bankAccountNumber.replace(/\D/g, '').slice(-4)}` : null,
+    }));
 
     const pendingShopPayments = await prisma.orderItem.findMany({
       where: { shopPaymentStatus: 'qr_uploaded' },

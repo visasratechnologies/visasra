@@ -36,7 +36,7 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
   const approvedItemsTotal = liveSessionData?.products?.reduce(
     (acc, p) => acc + (p.options?.filter(o => o.status === 'approved').reduce((s, o) => s + o.price, 0) || 0),
     0
-  ) || 2440;
+  ) || 0;
 
   return (
     <section className="screen active" data-screen="live-shopping">
@@ -163,7 +163,7 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                               <div className="live-sugg-img-wrapper">
                                 <img
                                   src={opt.image || '/images/placeholders/placeholder-item.svg'}
-                                  alt=""
+                                  alt={opt.description || `${item.name} Sourced In-Store Option #${optIdx + 1}`}
                                   className="live-sugg-img"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';

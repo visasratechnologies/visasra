@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getWorkerFromRequest, getAdminFromRequest } from '@/lib/jwt';
 
 export async function POST(req: Request) {
   try {
@@ -111,17 +112,27 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const authWorker = await getWorkerFromRequest(req);
+    const authAdmin = await getAdminFromRequest(req);
+
+    if (!authWorker && !authAdmin) {
+      return NextResponse.json({ error: 'Unauthorized: Partner session or Admin token required' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const workerId = searchParams.get('workerId');
     const email = searchParams.get('email');
     const phone = searchParams.get('phone');
 
+    // If worker requesting, target MUST be self
+    const targetId = authWorker ? authWorker.workerId : workerId;
+
     let worker = null;
-    if (workerId) {
-      worker = await prisma.worker.findUnique({ where: { id: workerId } });
-    } else if (email) {
+    if (targetId) {
+      worker = await prisma.worker.findUnique({ where: { id: targetId } });
+    } else if (email && authAdmin) {
       worker = await prisma.worker.findUnique({ where: { email: email.toLowerCase().trim() } });
-    } else if (phone) {
+    } else if (phone && authAdmin) {
       const digits = phone.replace(/\D/g, '').slice(-10);
       worker = await prisma.worker.findFirst({
         where: {
@@ -138,9 +149,16 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
     }
 
+    const maskedWorker = {
+      ...worker,
+      aadhaarNumber: worker.aadhaarNumber ? `XXXX-XXXX-${worker.aadhaarNumber.replace(/\D/g, '').slice(-4)}` : null,
+      panNumber: worker.panNumber ? `XXXXX${worker.panNumber.trim().slice(-4)}` : null,
+      bankAccountNumber: worker.bankAccountNumber ? `XXXXXXXX${worker.bankAccountNumber.replace(/\D/g, '').slice(-4)}` : null,
+    };
+
     return NextResponse.json({
       success: true,
-      worker,
+      worker: maskedWorker,
       kycStatus: worker.kycStatus,
     });
   } catch (err: unknown) {
