@@ -544,12 +544,22 @@ export default function WorkerApp() {
           // ignore heartbeat
         }
       };
+      es.onerror = () => {
+        // Close on serverless environments to avoid reconnect storms and socket exhaustion
+        if (es) {
+          try { es.close(); } catch {}
+          es = null;
+        }
+      };
     } catch {
       // EventSource fallback
     }
 
     return () => {
-      if (es) es.close();
+      if (es) {
+        try { es.close(); } catch {}
+        es = null;
+      }
     };
   }, [activeLiveSlotKey, worker?.id]);
 
@@ -601,9 +611,9 @@ export default function WorkerApp() {
             lat: p.coords.latitude,
             lng: p.coords.longitude,
           }),
-        }).catch(() => {});
+        }).catch(() => { });
       },
-      () => {},
+      () => { },
       { enableHighAccuracy: true, timeout: 6000 }
     );
   };
@@ -640,9 +650,9 @@ export default function WorkerApp() {
             lat: p.coords.latitude,
             lng: p.coords.longitude,
           }),
-        }).catch(() => {});
+        }).catch(() => { });
       },
-      () => {},
+      () => { },
       { enableHighAccuracy: true, maximumAge: 10000 }
     );
 
@@ -1125,22 +1135,22 @@ export default function WorkerApp() {
       prev.map((s) =>
         s.slotKey === slotKey
           ? {
-              ...s,
-              workerId: worker?.id,
-              stage: 'assigned',
-              status: 'live',
-              worker: worker
-                ? {
-                    id: worker.id,
-                    name: worker.name,
-                    phone: worker.phone,
-                    rating: worker.rating,
-                    status: worker.status,
-                    currentLat: worker.currentLat,
-                    currentLng: worker.currentLng,
-                  }
-                : s.worker,
-            }
+            ...s,
+            workerId: worker?.id,
+            stage: 'assigned',
+            status: 'live',
+            worker: worker
+              ? {
+                id: worker.id,
+                name: worker.name,
+                phone: worker.phone,
+                rating: worker.rating,
+                status: worker.status,
+                currentLat: worker.currentLat,
+                currentLng: worker.currentLng,
+              }
+              : s.worker,
+          }
           : s
       )
     );
@@ -1189,10 +1199,18 @@ export default function WorkerApp() {
       showToast('Add a photo of the option');
       return;
     }
-    if (!Number(optionPrice) || Number(optionPrice) <= 0) {
-      showToast('Enter valid price in ₹');
+    const priceNum = Number(optionPrice);
+    if (!priceNum || priceNum <= 0 || priceNum > 1000000) {
+      showToast('Enter valid price in ₹ (₹1 to ₹10,00,000)');
       return;
     }
+
+    const cleanStore = optionStore.trim();
+    const cleanNote = optionNote.trim();
+    const optionDesc = [
+      cleanStore ? `Sourced at ${cleanStore}` : 'Sourced in-store',
+      cleanNote || null,
+    ].filter(Boolean).join(' · ');
 
     const ok = await execAction({
       action: 'upload_option',
@@ -1200,9 +1218,9 @@ export default function WorkerApp() {
       itemId: selectedItemId,
       optionData: {
         image: optionImage,
-        price: Number(optionPrice),
-        store: optionStore.trim() || 'Local Store',
-        description: `From ${optionStore.trim() || 'Local Store'}. ${optionNote}`.trim(),
+        price: priceNum,
+        store: cleanStore || 'Local Retail Store',
+        description: optionDesc,
       },
     });
 
@@ -1372,17 +1390,17 @@ export default function WorkerApp() {
               ) : (
                 <h2 className="serif">
                   {screen === 'slots' ? 'My Shopping Slots' :
-                   screen === 'map' ? 'Live Route Map' :
-                   screen === 'earn' ? 'Partner Earnings' :
-                   screen === 'profile' ? 'Partner Profile' :
-                   screen === 'detail' ? 'Slot Details' :
-                   screen === 'list' ? 'Shopping List' :
-                   screen === 'prod' ? currentItem?.name || 'Product Details' :
-                   screen === 'add' ? 'Add Option' :
-                   screen === 'complete' ? 'Warehouse Handover' :
-                   screen === 'notes' ? 'Notifications' :
-                   screen === 'kycform' ? 'Identity Verification' :
-                   screen === 'kycwait' ? 'Verification Status' : 'Visasra Worker'}
+                    screen === 'map' ? 'Live Route Map' :
+                      screen === 'earn' ? 'Partner Earnings' :
+                        screen === 'profile' ? 'Partner Profile' :
+                          screen === 'detail' ? 'Slot Details' :
+                            screen === 'list' ? 'Shopping List' :
+                              screen === 'prod' ? currentItem?.name || 'Product Details' :
+                                screen === 'add' ? 'Add Option' :
+                                  screen === 'complete' ? 'Warehouse Handover' :
+                                    screen === 'notes' ? 'Notifications' :
+                                      screen === 'kycform' ? 'Identity Verification' :
+                                        screen === 'kycwait' ? 'Verification Status' : 'Visasra Worker'}
                 </h2>
               )}
 
@@ -2065,7 +2083,7 @@ export default function WorkerApp() {
 
               {/* Bank Account for Direct Payouts */}
               <div className="sec" style={{ marginTop: 18 }}><h3>5 · Bank Account for Direct Payouts</h3></div>
-              
+
               <label className="fl">Bank Name</label>
               <input
                 className="kin"
@@ -3069,8 +3087,8 @@ export default function WorkerApp() {
                           <div className="b">{boughtCount} of {items.length} bought</div>
                           <div className="m">
                             {readyToBuy.length ? 'Collect the paid items next.' :
-                             sendQr.length ? 'Send shop QR for approved items.' :
-                             waitingCustomer.length ? 'Waiting for customer approval.' : 'All items verified.'}
+                              sendQr.length ? 'Send shop QR for approved items.' :
+                                waitingCustomer.length ? 'Waiting for customer approval.' : 'All items verified.'}
                           </div>
                         </div>
                         <b style={{ color: 'var(--blue)', fontSize: 20 }}>{pct}%</b>
@@ -3838,13 +3856,12 @@ export default function WorkerApp() {
         {/* ============================================================= */}
         <div
           id="toast"
-          className={`${toastMsg ? 'show' : ''} ${
-            toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
-              ? 'toast-error'
-              : toastMsg && /success|congratulations|welcome|approved|verified|credited|complete|filled/i.test(toastMsg)
+          className={`${toastMsg ? 'show' : ''} ${toastMsg && /error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
+            ? 'toast-error'
+            : toastMsg && /success|congratulations|welcome|approved|verified|credited|complete|filled/i.test(toastMsg)
               ? 'toast-success'
               : ''
-          }`}
+            }`}
           role="status"
         >
           {toastMsg && (
@@ -3852,8 +3869,8 @@ export default function WorkerApp() {
               {/error|failed|incorrect|invalid|not found|no account|warning/i.test(toastMsg)
                 ? '✕'
                 : /success|congratulations|welcome|approved|verified|credited|complete|filled/i.test(toastMsg)
-                ? '✓'
-                : 'ℹ'}
+                  ? '✓'
+                  : 'ℹ'}
             </span>
           )}
           <span>{toastMsg}</span>

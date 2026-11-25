@@ -16,6 +16,7 @@ import { AddressesTab } from '@/components/tabs/AddressesTab';
 import { LiveShoppingTab } from '@/components/tabs/LiveShoppingTab';
 import { OrderPlacedModal } from '@/components/modals/OrderPlacedModal';
 import { InsufficientBalanceModal } from '@/components/modals/InsufficientBalanceModal';
+import OrderTrackingModal from '@/components/modals/OrderTrackingModal';
 import { compressImageClient } from '@/lib/imageCompression';
 import { chime } from '@/lib/chime';
 import { resolveItemImage } from '@/lib/placeholders';
@@ -23,7 +24,6 @@ import { resolveItemImage } from '@/lib/placeholders';
 // Code-split heavy modals to reduce initial JavaScript payload by ~40%
 const CustomizeProductModal = dynamic(() => import('@/components/modals/CustomizeProductModal'), { ssr: false });
 const EditBasketItemModal = dynamic(() => import('@/components/modals/EditBasketItemModal'), { ssr: false });
-const OrderTrackingModal = dynamic(() => import('@/components/modals/OrderTrackingModal'), { ssr: false });
 const TripDetailsModal = dynamic(() => import('@/components/modals/TripDetailsModal').then(m => m.TripDetailsModal), { ssr: false });
 const RateShopperModal = dynamic(() => import('@/components/modals/RateShopperModal').then(m => m.RateShopperModal), { ssr: false });
 
@@ -92,6 +92,12 @@ interface TrackingDetails {
   slotDate?: string;
   slotLabel?: string;
   totalAmount?: number;
+  customerNotes?: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  shippedAt?: string | Date;
+  deliveredAt?: string | Date;
   stages: TrackingStageItem[];
   shopper: {
     name: string;
@@ -226,15 +232,32 @@ interface Order {
   shippedAt?: string | Date;
   deliveredAt?: string | Date;
   items: OrderItem[];
+  stageHistory?: Array<{
+    stageKey: string;
+    title?: string;
+    status: string;
+    expected?: string;
+    note?: string;
+    updatedAt?: string;
+  }>;
   liveSession?: {
     id: string;
     status: string;
     stage: string;
+    storeName?: string;
+    storeAddress?: string;
+    storeLat?: number;
+    storeLng?: number;
+    workerLat?: number;
+    workerLng?: number;
+    workerEtaMin?: number;
     worker?: {
       id?: string;
       name: string;
       phone: string;
       rating?: number;
+      ordersDone?: number;
+      photo?: string;
     };
   };
 }
@@ -863,6 +886,74 @@ export default function CustomerApp() {
     }
   };
 
+  const handleTrackOrder = (slotKey: string, initialOrder?: Order) => {
+    // 1. Immediately hydrate tracking data synchronously from in-memory orders (0ms latency, zero skeleton delay)
+    const existing = initialOrder || orders.find(o => o.slotKey === slotKey || o.orderNumber === slotKey);
+    if (existing) {
+      const defaultStages = [
+        { key: 'slot_confirmed', title: 'Slot Confirmed & Scheduled', status: 'done', note: 'Priority shopping window reserved across ground shopper network.' },
+        { key: 'worker_assigned', title: 'Personal Shopper Assigned', status: ['worker_assigned', 'shopping', 'purchased', 'packed', 'shipped', 'out_for_delivery', 'delivered'].includes(existing.trackingStage || existing.status) ? 'done' : 'pending', note: existing.liveSession?.worker ? `${existing.liveSession.worker.name} (${existing.liveSession.worker.phone || 'Dedicated Sourcing Specialist'})` : 'Dedicated personal shopper assigned.' },
+        { key: 'shopping', title: 'In-Store Verification & Sourcing', status: ['shopping', 'purchased', 'packed', 'shipped', 'out_for_delivery', 'delivered'].includes(existing.trackingStage || existing.status) ? (existing.trackingStage === 'shopping' ? 'current' : 'done') : 'pending', note: existing.liveSession?.storeName || 'Sourcing in local retail market' },
+        { key: 'purchased', title: 'Purchased & Merchant Billed', status: ['purchased', 'packed', 'shipped', 'out_for_delivery', 'delivered'].includes(existing.trackingStage || existing.status) ? 'done' : 'pending' },
+        { key: 'packed', title: 'Central Hub Quality Check & Export Packing', status: ['packed', 'shipped', 'out_for_delivery', 'delivered'].includes(existing.trackingStage || existing.status) ? 'done' : 'pending' },
+        { key: 'shipped', title: 'Customs Clearance & International Flight Dispatch', status: ['shipped', 'out_for_delivery', 'delivered'].includes(existing.trackingStage || existing.status) ? 'done' : 'pending', note: existing.trackingNumber ? `AWB: ${existing.trackingNumber}` : undefined },
+        { key: 'out_for_delivery', title: 'Doorstep Delivery Overseas', status: existing.status === 'delivered' ? 'done' : 'pending' },
+      ];
+
+      setTrackingData({
+        slotKey: existing.slotKey,
+        orderNumber: existing.orderNumber,
+        orderType: existing.orderType,
+        orderStatus: existing.status,
+        trackingStage: existing.trackingStage,
+        slotDate: existing.slotDate,
+        slotLabel: existing.slotLabel || existing.slotKey,
+        totalAmount: existing.totalAmount,
+        customerNotes: existing.customerNotes,
+        carrier: existing.carrier,
+        trackingNumber: existing.trackingNumber,
+        trackingUrl: existing.trackingUrl,
+        shippedAt: existing.shippedAt,
+        deliveredAt: existing.deliveredAt,
+        items: existing.items || [],
+        stages: existing.stageHistory && existing.stageHistory.length > 0
+          ? existing.stageHistory.map((s) => ({
+              key: s.stageKey,
+              title: s.title || s.stageKey,
+              status: s.status,
+              expected: s.expected,
+              note: s.note,
+              updatedAt: s.updatedAt,
+            }))
+          : defaultStages,
+        shopper: existing.liveSession?.worker
+          ? {
+              name: existing.liveSession.worker.name,
+              rating: existing.liveSession.worker.rating ?? 4.9,
+              ordersDone: existing.liveSession.worker.ordersDone ?? 12,
+              phone: existing.liveSession.worker.phone,
+              photo: existing.liveSession.worker.photo,
+            }
+          : null,
+        store: {
+          name: existing.liveSession?.storeName || 'Local Retail & Artisan Store',
+          address: existing.liveSession?.storeAddress || 'Physical In-Store Sourcing Across India',
+          lat: existing.liveSession?.storeLat ?? 13.0418,
+          lng: existing.liveSession?.storeLng ?? 80.2341,
+        },
+        workerLocation: existing.liveSession?.workerLat && existing.liveSession?.workerLng
+          ? {
+              lat: existing.liveSession.workerLat,
+              lng: existing.liveSession.workerLng,
+              stage: existing.liveSession.stage,
+              etaMin: existing.liveSession.workerEtaMin ?? 12,
+            }
+          : null,
+      });
+    }
+    setTrackOrderSlot(slotKey);
+  };
+
   useEffect(() => {
     if (!liveSessionSlot) {
       setLiveSessionData(null);
@@ -896,12 +987,16 @@ export default function CustomerApp() {
       };
 
       es.onerror = () => {
-        // SSE disconnected / reconnecting; fall back to passive 60s backup sync
+        // SSE disconnected; close to stop 3s reconnect loop and prevent socket exhaustion on serverless
+        if (es) {
+          try { es.close(); } catch {}
+          es = null;
+        }
         if (!fallbackInterval) {
           fallbackInterval = setInterval(() => {
             if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
             fetchLiveSession(liveSessionSlot);
-          }, 60000);
+          }, 15000);
         }
       };
 
@@ -916,11 +1011,14 @@ export default function CustomerApp() {
       fallbackInterval = setInterval(() => {
         if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
         fetchLiveSession(liveSessionSlot);
-      }, 45000);
+      }, 20000);
     }
 
     return () => {
-      if (es) es.close();
+      if (es) {
+        try { es.close(); } catch {}
+        es = null;
+      }
       if (fallbackInterval) clearInterval(fallbackInterval);
     };
   }, [liveSessionSlot]);
@@ -930,50 +1028,8 @@ export default function CustomerApp() {
       setTrackingData(null);
       return;
     }
-    setTrackingLoading(true);
-    fetchTracking(trackOrderSlot).finally(() => setTrackingLoading(false));
-
-    // Real-time SSE listener for tracking modal
-    let es: EventSource | null = null;
-    let trackingFallback: NodeJS.Timeout | null = null;
-
-    try {
-      es = new EventSource(`/api/live/${encodeURIComponent(trackOrderSlot)}/events`);
-      es.onmessage = (event) => {
-        try {
-          const parsed = JSON.parse(event.data);
-          if (['stage_changed', 'location_updated', 'session_refresh'].includes(parsed.type)) {
-            fetchTracking(trackOrderSlot);
-          }
-        } catch {
-          // ignore heartbeat
-        }
-      };
-      es.onerror = () => {
-        if (!trackingFallback) {
-          trackingFallback = setInterval(() => {
-            if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-            fetchTracking(trackOrderSlot);
-          }, 60000);
-        }
-      };
-      es.onopen = () => {
-        if (trackingFallback) {
-          clearInterval(trackingFallback);
-          trackingFallback = null;
-        }
-      };
-    } catch {
-      trackingFallback = setInterval(() => {
-        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-        fetchTracking(trackOrderSlot);
-      }, 45000);
-    }
-
-    return () => {
-      if (es) es.close();
-      if (trackingFallback) clearInterval(trackingFallback);
-    };
+    // Silently fetch any fresh tracking updates without resetting in-memory hydrated state
+    fetchTracking(trackOrderSlot);
   }, [trackOrderSlot]);
 
   // Lock body scroll cleanly whenever any modal is active (prevents mobile background scroll trap)
@@ -2263,7 +2319,7 @@ export default function CustomerApp() {
                 setLiveSessionSlot(slotKey);
                 setActiveTab('live-shopping');
               }}
-              onTrackOrder={(slotKey) => setTrackOrderSlot(slotKey)}
+              onTrackOrder={handleTrackOrder}
               renderSearchBar={renderSearchBar}
             />
           )}
@@ -3736,7 +3792,7 @@ export default function CustomerApp() {
                 setLiveSessionSlot(slotKey);
                 setActiveTab('live-shopping');
               }}
-              onTrackOrder={(slotKey) => setTrackOrderSlot(slotKey)}
+              onTrackOrder={handleTrackOrder}
               onRateShopper={(order) => {
                 setRatingModalOrder(order);
                 setReviewRating(5);

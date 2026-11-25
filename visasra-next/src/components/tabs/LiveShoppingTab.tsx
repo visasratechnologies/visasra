@@ -206,43 +206,50 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
                               </div>
                             </div>
 
-                            {opt.status === 'pending' && (
-                              <div className="live-sugg-actions" style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-                                <button
-                                  type="button"
-                                  className={`btn-live-approve ${user.walletBalance < opt.price * (item.qty || 1) ? 'needs-topup' : ''}`}
-                                  onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
-                                >
-                                  {user.walletBalance < opt.price * (item.qty || 1) ? (
-                                    <>
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="2" y="5" width="20" height="14" rx="3" />
-                                        <line x1="2" y1="10" x2="22" y2="10" />
-                                      </svg>
-                                      <span>Top-Up ₹{(opt.price * (item.qty || 1) - user.walletBalance).toLocaleString('en-IN')} & Approve</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12" />
-                                      </svg>
-                                      <span>Approve Option · ₹{opt.price.toLocaleString('en-IN')}</span>
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn-live-reject"
-                                  onClick={() => onRejectOption(item.itemId, opt.id)}
-                                >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                    <path d="M3 3v5h5" />
-                                  </svg>
-                                  <span>Request Alternative</span>
-                                </button>
-                              </div>
-                            )}
+                            {opt.status === 'pending' && (() => {
+                              const balance = Number(user.walletBalance) || 0;
+                              const totalCost = opt.price * (item.qty || 1);
+                              const shortfall = Math.max(0, totalCost - balance);
+                              const needsTopup = balance < totalCost;
+
+                              return (
+                                <div className="live-sugg-actions" style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+                                  <button
+                                    type="button"
+                                    className={`btn-live-approve ${needsTopup ? 'needs-topup' : ''}`}
+                                    onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
+                                  >
+                                    {needsTopup ? (
+                                      <>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                          <rect x="2" y="5" width="20" height="14" rx="3" />
+                                          <line x1="2" y1="10" x2="22" y2="10" />
+                                        </svg>
+                                        <span>Top-Up ₹{shortfall.toLocaleString('en-IN')} & Approve</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                        <span>Approve Option · ₹{opt.price.toLocaleString('en-IN')}</span>
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-live-reject"
+                                    onClick={() => onRejectOption(item.itemId, opt.id)}
+                                  >
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                      <path d="M3 3v5h5" />
+                                    </svg>
+                                    <span>Request Alternative</span>
+                                  </button>
+                                </div>
+                              );
+                            })()}
 
                             {opt.status === 'approved' && (
                               <div className="live-approved-banner">

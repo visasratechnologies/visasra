@@ -10,7 +10,12 @@ export async function GET(
     const decodedKey = decodeURIComponent(slotKey);
 
     const order = await prisma.order.findFirst({
-      where: { slotKey: decodedKey },
+      where: {
+        OR: [
+          { slotKey: decodedKey },
+          { orderNumber: decodedKey },
+        ],
+      },
       include: {
         items: true,
         stageHistory: {
@@ -99,6 +104,10 @@ export async function GET(
             etaMin: order.liveSession.workerEtaMin || 12,
           }
         : null,
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=5, stale-while-revalidate=15',
+      },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to fetch tracking';
