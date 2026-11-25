@@ -13,6 +13,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      { source: '/book-slot', destination: '/' },
+      { source: '/bookslot', destination: '/' },
+      { source: '/orders', destination: '/' },
+      { source: '/cart', destination: '/' },
+      { source: '/wallet', destination: '/' },
+      { source: '/profile', destination: '/' },
+      { source: '/categories', destination: '/' },
+      { source: '/live-shopping', destination: '/' },
+    ];
+  },
   async headers() {
     return [
       {

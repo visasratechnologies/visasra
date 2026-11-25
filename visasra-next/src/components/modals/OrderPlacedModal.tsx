@@ -117,7 +117,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Held Securely</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#0284C7', marginTop: 1 }}>₹{order.totalAmount.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#0284C7', marginTop: 1 }}>₹{Number(order.totalAmount || 0).toLocaleString('en-IN')}</div>
             </div>
           </div>
 

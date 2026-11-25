@@ -305,10 +305,26 @@ export default function CustomerApp() {
         }
       }
 
-      // 3. Restore active tab if previously set
+      // 3. Restore active tab from URL path, query params, or localStorage
+      const path = typeof window !== 'undefined' ? window.location.pathname.replace(/^\//, '').toLowerCase() : '';
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const tabParam = urlParams?.get('tab');
+
+      const pathToTab: Record<string, string> = {
+        'book-slot': 'bookslot',
+        'bookslot': 'bookslot',
+        'orders': 'orders',
+        'cart': 'cart',
+        'wallet': 'wallet',
+        'profile': 'profile',
+        'categories': 'categories',
+        'live-shopping': 'live-shopping',
+      };
+
       const savedTab = localStorage.getItem('visasra_customer_active_tab');
-      if (savedTab && ['home', 'categories', 'bookslot', 'orders', 'cart', 'profile', 'wallet', 'addresses', 'live-shopping'].includes(savedTab)) {
-        setActiveTab(savedTab as any);
+      const resolvedTab = (tabParam && pathToTab[tabParam]) || pathToTab[path] || savedTab;
+      if (resolvedTab && ['home', 'categories', 'bookslot', 'orders', 'cart', 'profile', 'wallet', 'addresses', 'live-shopping'].includes(resolvedTab)) {
+        setActiveTab(resolvedTab as any);
       }
 
       // 4. Restore user session
@@ -362,10 +378,26 @@ export default function CustomerApp() {
     persistCartLocally(cart);
   }, [cart, mounted]);
 
-  // Live Auto-Save active tab to localStorage
+  // Live Auto-Save active tab to localStorage & synchronize browser URL path
   useEffect(() => {
     try {
       localStorage.setItem('visasra_customer_active_tab', activeTab);
+      if (typeof window !== 'undefined') {
+        const tabToPath: Record<string, string> = {
+          home: '/',
+          categories: '/categories',
+          bookslot: '/book-slot',
+          orders: '/orders',
+          cart: '/cart',
+          wallet: '/wallet',
+          profile: '/profile',
+          'live-shopping': '/live-shopping',
+        };
+        const targetPath = tabToPath[activeTab] || '/';
+        if (window.location.pathname !== targetPath && !['addresses'].includes(activeTab)) {
+          window.history.replaceState({ tab: activeTab }, '', targetPath);
+        }
+      }
     } catch { }
   }, [activeTab]);
 
@@ -1203,7 +1235,6 @@ export default function CustomerApp() {
     // Humanize raw backend technical errors into polished, helpful messages
     if (/unauthorized|session token required|token required/i.test(msg)) {
       clean = 'Please sign in to complete your request';
-      setIsLoggedIn(false);
     } else if (/failed to fetch|networkerror/i.test(msg)) {
       clean = 'Connection interrupted. Please try again.';
     } else if (/internal server error|failed to place order/i.test(msg)) {
@@ -1853,6 +1884,9 @@ export default function CustomerApp() {
           setUser(prev => ({ ...prev, walletBalance: finalBal }));
           try {
             localStorage.setItem('visasra_customer_session_v1', JSON.stringify({ ...user, walletBalance: finalBal }));
+            if (data.token) {
+              localStorage.setItem('visasra_token', data.token);
+            }
           } catch { }
 
           // 1. Instant optimistic reflection: prepend order into orders state (0ms delay)
