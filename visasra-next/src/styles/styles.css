@@ -48,6 +48,13 @@ html, body { height: 100%; margin: 0; }
   button { font-family: inherit; }
   a { color: inherit; }
   input, textarea { font-family: inherit; }
+  /* Disable native browser password reveal & clear icons (fixes duplicate eye in Edge) */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
   img { max-width: 100%; }
 
   #app { width: 100%; max-width: 460px; min-height: 100vh; background: var(--bg); position: relative; display: flex; flex-direction: column; box-sizing: border-box; overflow-x: hidden; }
