@@ -1,6 +1,25 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { Bodoni_Moda, Fraunces, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+
+const bodoni = Bodoni_Moda({
+  subsets: ['latin'],
+  variable: '--font-bodoni',
+  display: 'swap',
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-ui',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.visasra.com'),
@@ -46,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${bodoni.variable} ${fraunces.variable} ${plusJakartaSans.variable}`}>
       <body>
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
