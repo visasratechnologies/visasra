@@ -14,7 +14,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
   onNavigate,
   onJoinLiveShopping,
 }) => {
-  if (!order) return null;
+  if (!order || !order.id || !order.orderNumber) return null;
 
   return (
     <div

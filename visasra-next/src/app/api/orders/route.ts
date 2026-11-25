@@ -320,7 +320,7 @@ export async function POST(req: Request) {
     const customerNotes = body.customerNotes || body.itemRequirement || (shippingAddress && shippingAddress.deliveryNotes) || null;
 
     // Atomically debit slot fee from Visasra Money, log transaction, clear cart, and create order
-    const [updatedUser, walletTx, order] = await prisma.$transaction([
+    const [updatedUser, walletTx, , order] = await prisma.$transaction([
       prisma.user.update({
         where: { id: targetUserId },
         data: {
@@ -388,6 +388,7 @@ export async function POST(req: Request) {
         include: {
           items: true,
           liveSession: true,
+          stageHistory: true,
         },
       }),
     ]);

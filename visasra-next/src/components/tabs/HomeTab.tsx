@@ -156,14 +156,14 @@ export function HomeTab({
           </div>
 
           <div id="homeBookings">
-            {orders.slice(0, 2).map(o => (
+            {orders.filter(o => o && o.id).slice(0, 2).map(o => (
               <div key={o.id} className="booking-card">
                 <div className="booking-strip"><span style={{ background: 'var(--gold)' }} /></div>
                 <div className="booking-main">
                   <div className="booking-top">
                     <div className="booking-top-left">
                       <img
-                        src={o.items[0]?.image || '/images/placeholders/placeholder-item.svg'}
+                        src={o.items?.[0]?.image || '/images/placeholders/placeholder-item.svg'}
                         alt=""
                         style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
                         onError={(e) => {
@@ -171,18 +171,18 @@ export function HomeTab({
                         }}
                       />
                       <div>
-                        <div className="booking-id">{o.orderNumber}</div>
-                        <div className="booking-slot">{o.slotLabel || o.slotKey}</div>
-                        <div className="booking-items">{o.items.map(i => i.name).join(', ')}</div>
-                        <div className="booking-meta">{o.items.length} product(s)</div>
+                        <div className="booking-id">{o.orderNumber || 'Order'}</div>
+                        <div className="booking-slot">{o.slotLabel || o.slotKey || 'Scheduled Slot'}</div>
+                        <div className="booking-items">{(o.items || []).map(i => i?.name).filter(Boolean).join(', ') || 'Sourcing items'}</div>
+                        <div className="booking-meta">{(o.items || []).length} product(s)</div>
                       </div>
                     </div>
-                    <div className="booking-total">₹{o.totalAmount}</div>
+                    <div className="booking-total">₹{Number(o.totalAmount || 0)}</div>
                   </div>
                   <div style={{ marginTop: 8 }}>
                     <span className="order-status-badge">
                       <span className="osb-dot" />
-                      {o.trackingStage.replace(/_/g, ' ')}
+                      {(o.trackingStage || 'slot_confirmed').replace(/_/g, ' ')}
                     </span>
                   </div>
                   <div className="booking-actions-row" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>

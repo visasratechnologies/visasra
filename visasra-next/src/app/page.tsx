@@ -1889,24 +1889,9 @@ export default function CustomerApp() {
             }
           } catch { }
 
-          // 1. Instant optimistic reflection: prepend order into orders state (0ms delay)
-          if (data.order) {
-            setOrders(prev => [data.order, ...prev.filter(o => o.id !== data.order.id)]);
-          }
-          // Mark cached orders as up-to-date so subsequent tab switches are instantaneous
-          lastOrdersFetchRef.current = Date.now();
-
-          // 2. Clear booking wizard state & clear database cart (already cleared atomically on server)
+          // 1. Instant optimistic reflection: prepend valid order into orders state
           const bookedCartItems = [...cart];
-          setCart([]);
-          localStorage.removeItem('visasra_customer_cart_v1');
-          setItemRequirement('');
-          setDeliveryNotes('');
-          setBookingStep(1);
-          setShowTripDetailsModal(false);
-
-          // 3. Open celebration modal "Order Placed Successfully! 🎉"
-          setOrderPlacedSuccess(data.order || {
+          const validOrder = (data.order && data.order.id && data.order.orderNumber) ? data.order : {
             id: `ord-${Date.now()}`,
             orderNumber: `VIS-${Math.floor(10000 + Math.random() * 90000)}`,
             slotKey,
@@ -1926,7 +1911,22 @@ export default function CustomerApp() {
               status: 'waiting',
               options: [],
             })),
-          });
+          };
+
+          setOrders(prev => [validOrder, ...prev.filter(o => o && o.id !== validOrder.id)]);
+          // Mark cached orders as up-to-date so subsequent tab switches are instantaneous
+          lastOrdersFetchRef.current = Date.now();
+
+          // 2. Clear booking wizard state & clear database cart (already cleared atomically on server)
+          setCart([]);
+          localStorage.removeItem('visasra_customer_cart_v1');
+          setItemRequirement('');
+          setDeliveryNotes('');
+          setBookingStep(1);
+          setShowTripDetailsModal(false);
+
+          // 3. Open celebration modal "Order Placed Successfully! 🎉"
+          setOrderPlacedSuccess(validOrder);
         } else {
           showToast(data.error || 'Booking failed');
         }

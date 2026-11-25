@@ -69,14 +69,14 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
             )}
           </div>
         ) : (
-          orders.map(o => (
+          orders.filter(o => o && o.id).map(o => (
             <div key={o.id} className="booking-card">
               <div className="booking-strip"><span style={{ background: 'var(--gold)' }} /></div>
               <div className="booking-main">
                 <div className="booking-top">
                   <div className="booking-top-left">
                     <img
-                      src={o.items[0]?.image || '/images/placeholders/placeholder-item.svg'}
+                      src={o.items?.[0]?.image || '/images/placeholders/placeholder-item.svg'}
                       alt=""
                       style={{ width: 54, height: 54, borderRadius: 10, objectFit: 'cover' }}
                       onError={(e) => {
@@ -84,19 +84,19 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       }}
                     />
                     <div>
-                      <div className="booking-id">{o.orderNumber}</div>
-                      <div className="booking-slot">{o.slotLabel || o.slotKey}</div>
-                      <div className="booking-items">{o.items.map(i => i.name).join(', ')}</div>
-                      <div className="booking-meta">{o.items.length} product(s)</div>
+                      <div className="booking-id">{o.orderNumber || 'Order'}</div>
+                      <div className="booking-slot">{o.slotLabel || o.slotKey || 'Scheduled Slot'}</div>
+                      <div className="booking-items">{(o.items || []).map(i => i?.name).filter(Boolean).join(', ') || 'Sourcing items'}</div>
+                      <div className="booking-meta">{(o.items || []).length} product(s)</div>
                     </div>
                   </div>
-                  <div className="booking-total">₹{o.totalAmount}</div>
+                  <div className="booking-total">₹{Number(o.totalAmount || 0)}</div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                   <span className="order-status-badge">
                     <span className="osb-dot" />
-                    {o.trackingStage.replace(/_/g, ' ')}
+                    {(o.trackingStage || 'slot_confirmed').replace(/_/g, ' ')}
                   </span>
                   {o.orderType === 'online' && (
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#F3E8FF', color: '#6B21A8', border: '1px solid #E9D5FF' }}>
