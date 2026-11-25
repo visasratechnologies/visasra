@@ -102,8 +102,9 @@ export async function POST(req: Request) {
       include: { items: true },
     });
 
-    // 1. Merge an array of guest items into the user's DB cart upon login
+    // 1. Merge an array of guest items into the user's DB cart upon login in parallel
     if (action === 'merge' && Array.isArray(items)) {
+      const ops = [];
       for (const raw of items as IncomingCartItem[]) {
         if (!raw.name) continue;
 
@@ -115,31 +116,38 @@ export async function POST(req: Request) {
         );
 
         if (existing) {
-          await prisma.cartItem.update({
-            where: { id: existing.id },
-            data: {
-              qty: existing.qty + (raw.qty || 1),
-              notes: raw.notes ? `${existing.notes || ''} ${raw.notes}`.trim() : existing.notes,
-            },
-          });
+          ops.push(
+            prisma.cartItem.update({
+              where: { id: existing.id },
+              data: {
+                qty: existing.qty + (raw.qty || 1),
+                notes: raw.notes ? `${existing.notes || ''} ${raw.notes}`.trim() : existing.notes,
+              },
+            })
+          );
         } else {
-          await prisma.cartItem.create({
-            data: {
-              cartId: cart.id,
-              productId: raw.productId || null,
-              name: raw.name.trim(),
-              qty: Math.max(1, raw.qty || 1),
-              priceMin: Number(raw.priceMin) || 0,
-              priceMax: Number(raw.priceMax) || Number(raw.priceMin) || 1000,
-              image: raw.image || null,
-              images: raw.images && raw.images.length > 0 ? (raw.images as unknown as object) : undefined,
-              notes: raw.notes?.trim() || null,
-              sourceType: raw.sourceType || 'catalog',
-              sourceUrl: raw.sourceUrl?.trim() || null,
-              categoryName: raw.categoryName?.trim() || null,
-            },
-          });
+          ops.push(
+            prisma.cartItem.create({
+              data: {
+                cartId: cart.id,
+                productId: raw.productId || null,
+                name: raw.name.trim(),
+                qty: Math.max(1, raw.qty || 1),
+                priceMin: Number(raw.priceMin) || 0,
+                priceMax: Number(raw.priceMax) || Number(raw.priceMin) || 1000,
+                image: raw.image || null,
+                images: raw.images && raw.images.length > 0 ? (raw.images as unknown as object) : undefined,
+                notes: raw.notes?.trim() || null,
+                sourceType: raw.sourceType || 'catalog',
+                sourceUrl: raw.sourceUrl?.trim() || null,
+                categoryName: raw.categoryName?.trim() || null,
+              },
+            })
+          );
         }
+      }
+      if (ops.length > 0) {
+        await Promise.all(ops);
       }
     } else if (item && typeof item === 'object') {
       // 2. Add single item
@@ -182,16 +190,12 @@ export async function POST(req: Request) {
     }
 
     // Return fresh list of all cart items
-    const freshCart = await prisma.cart.findUnique({
-      where: { id: cart.id },
-      include: {
-        items: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+    const itemsList = await prisma.cartItem.findMany({
+      where: { cartId: cart.id },
+      orderBy: { createdAt: 'asc' },
     });
 
-    const formatted = (freshCart?.items || []).map(formatCartItem);
+    const formatted = itemsList.map(formatCartItem);
     return NextResponse.json({ success: true, items: formatted });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to update cart';
@@ -252,16 +256,12 @@ export async function PUT(req: Request) {
       });
     }
 
-    const freshCart = await prisma.cart.findUnique({
-      where: { id: cart.id },
-      include: {
-        items: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+    const itemsList = await prisma.cartItem.findMany({
+      where: { cartId: cart.id },
+      orderBy: { createdAt: 'asc' },
     });
 
-    const formatted = (freshCart?.items || []).map(formatCartItem);
+    const formatted = itemsList.map(formatCartItem);
     return NextResponse.json({ success: true, items: formatted });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to modify cart item';
@@ -299,16 +299,12 @@ export async function DELETE(req: Request) {
       });
     }
 
-    const freshCart = await prisma.cart.findUnique({
-      where: { id: cart.id },
-      include: {
-        items: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+    const itemsList = await prisma.cartItem.findMany({
+      where: { cartId: cart.id },
+      orderBy: { createdAt: 'asc' },
     });
 
-    const formatted = (freshCart?.items || []).map(formatCartItem);
+    const formatted = itemsList.map(formatCartItem);
     return NextResponse.json({ success: true, items: formatted });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to delete from cart';

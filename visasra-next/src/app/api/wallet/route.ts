@@ -65,6 +65,7 @@ export async function GET(req: Request) {
       include: {
         transactions: {
           orderBy: { date: 'desc' },
+          take: 50,
         },
       },
     });

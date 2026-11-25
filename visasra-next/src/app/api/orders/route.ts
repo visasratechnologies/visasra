@@ -94,13 +94,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized: Please log in to view orders' }, { status: 401 });
     }
 
-    const orders = await prisma.order.findMany({
-      where: {
-        OR: [
-          { userId: authUser.id },
-          { orderNumber: 'VIS-33025' },
-        ],
-      },
+    let orders = await prisma.order.findMany({
+      where: { userId: authUser.id },
       include: {
         items: {
           include: {
@@ -125,7 +120,41 @@ export async function GET(req: Request) {
         stageHistory: true,
       },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
+
+    // If customer has no orders yet, include demo order so experience is demonstrated cleanly
+    if (orders.length === 0) {
+      const demoOrder = await prisma.order.findFirst({
+        where: { orderNumber: 'VIS-33025' },
+        include: {
+          items: {
+            include: {
+              options: true,
+            },
+          },
+          liveSession: {
+            include: {
+              worker: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                  rating: true,
+                  currentLat: true,
+                  currentLng: true,
+                  photo: true,
+                },
+              },
+            },
+          },
+          stageHistory: true,
+        },
+      });
+      if (demoOrder) {
+        orders = [demoOrder];
+      }
+    }
 
     return NextResponse.json({ success: true, orders });
   } catch (err: unknown) {
@@ -216,19 +245,9 @@ export async function POST(req: Request) {
         })
       : null;
 
-    // Verify user account exists
-    const existingUser = await prisma.user.findUnique({ where: { id: targetUserId } }).catch(() => null);
-    if (!existingUser) {
-      return NextResponse.json({ error: 'Valid user account required to place order' }, { status: 400 });
-    }
-
-    // 2. Generate a guaranteed unique orderNumber
-    let orderNumber = 'VIS-' + Math.floor(10000 + Math.random() * 90000);
-    for (let i = 0; i < 5; i++) {
-      const existingOrder = await prisma.order.findUnique({ where: { orderNumber } });
-      if (!existingOrder) break;
-      orderNumber = 'VIS-' + Math.floor(10000 + Math.random() * 90000);
-    }
+    // User is already verified via getUserFromRequest(req)
+    // 2. Generate a unique orderNumber
+    const orderNumber = `VIS-${Math.floor(100000 + Math.random() * 900000)}`;
 
     // 3. Ensure slotKey is unique for LiveSession (@unique constraint on slotKey)
     let finalSlotKey = slotKey;

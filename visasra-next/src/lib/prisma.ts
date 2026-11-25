@@ -6,10 +6,18 @@ function resolveDatabaseUrl(): string {
     throw new Error('DATABASE_URL environment variable is missing. Check your .env configuration.');
   }
 
-  // Ensure connection pooling parameters are attached for high-concurrency serverless environments
+  // Supabase PgBouncer (transaction pooler on port 6543) requires disciplined connection limits
+  // to avoid pool exhaustion, queue starvation, and 30-50s request timeouts.
+  envUrl = envUrl.replace(/connection_limit=\d+/, 'connection_limit=5');
+  envUrl = envUrl.replace(/pool_timeout=\d+/, 'pool_timeout=10');
+
   if (!envUrl.includes('connection_limit=')) {
     const sep = envUrl.includes('?') ? '&' : '?';
-    envUrl = `${envUrl}${sep}connection_limit=25&pool_timeout=30`;
+    envUrl = `${envUrl}${sep}connection_limit=5&pool_timeout=10`;
+  }
+  if (!envUrl.includes('connect_timeout=')) {
+    const sep = envUrl.includes('?') ? '&' : '?';
+    envUrl = `${envUrl}${sep}connect_timeout=10`;
   }
   return envUrl;
 }

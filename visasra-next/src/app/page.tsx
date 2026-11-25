@@ -271,6 +271,7 @@ export default function CustomerApp() {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const isCartInitializedRef = useRef(false);
+  const lastOrdersFetchRef = useRef<number>(0);
 
   // Helper to synchronously persist cart to localStorage
   const persistCartLocally = (newCart: CartItem[]) => {
@@ -420,7 +421,8 @@ export default function CustomerApp() {
       if (token) localStorage.setItem('visasra_token', token);
     } catch { }
     showToast(`Welcome back, ${authUser.name || 'Customer'}!`);
-    loadData(authUser);
+    loadData(authUser, true);
+    syncCartWithDatabase(authUser);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -980,7 +982,7 @@ export default function CustomerApp() {
       if (!res.ok) throw new Error(data.error || 'Failed to approve option');
       showToast('Option Approved! Shopper will proceed to billing counter.');
       fetchLiveSession(liveSessionSlot);
-      loadData();
+      loadData(user, true);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error approving option');
     }
@@ -1079,7 +1081,7 @@ export default function CustomerApp() {
         showToast('Requested alternative options from shopper');
       }
       fetchLiveSession(liveSessionSlot);
-      loadData();
+      loadData(user, true);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Error rejecting option');
     }
@@ -1367,18 +1369,23 @@ export default function CustomerApp() {
     showToast('Item removed from basket');
   };
 
-  // Load Data from PostgreSQL
-  const loadData = async (targetUser?: User | null) => {
+  // Load Data from PostgreSQL with smart caching
+  const loadData = async (targetUser?: User | null, force: boolean = false) => {
     try {
       const activeUser = targetUser !== undefined ? targetUser : (isLoggedIn ? user : null);
       if (activeUser) {
+        const now = Date.now();
+        // Skip re-fetching if recently loaded within 30 seconds unless explicitly forced
+        if (!force && now - lastOrdersFetchRef.current < 30000 && orders.length > 0) {
+          return;
+        }
+        lastOrdersFetchRef.current = now;
         const q = activeUser.email ? `?email=${encodeURIComponent(activeUser.email)}` : '';
         const ordRes = await fetch(`/api/orders${q}`, { headers: getAuthHeaders() });
         const ordData = await ordRes.json();
         if (ordData.orders) {
           setOrders(ordData.orders);
         }
-        syncCartWithDatabase(activeUser);
       } else {
         setOrders([]);
       }
@@ -1391,7 +1398,8 @@ export default function CustomerApp() {
     const active = isLoggedIn && (user?.id || user?.email) ? user : null;
     if (active) {
       fetchAddresses(active);
-      loadData(active);
+      loadData(active, true);
+      syncCartWithDatabase(active);
     } else {
       loadData(null);
       return;
@@ -1566,9 +1574,9 @@ export default function CustomerApp() {
     persistCartLocally(newCart);
 
     if (isLoggedIn && user.email) {
-      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+      fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ item: itemToSync, userId: user.id, email: user.email }),
       }).catch(() => { });
     }
@@ -1599,9 +1607,9 @@ export default function CustomerApp() {
     persistCartLocally(newCart);
 
     if (isLoggedIn && user.email) {
-      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+      fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
       }).catch(() => { });
     }
@@ -1650,9 +1658,9 @@ export default function CustomerApp() {
     persistCartLocally(newCart);
 
     if (isLoggedIn && user.email) {
-      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+      fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
       }).catch(() => { });
     }
@@ -1698,9 +1706,9 @@ export default function CustomerApp() {
     persistCartLocally(newCart);
 
     if (isLoggedIn && user.email) {
-      fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+      fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
       }).catch(() => { });
     }
@@ -1799,7 +1807,7 @@ export default function CustomerApp() {
         const slotKey = `${selectedDate}|${selectedSlotWindow}`;
         const res = await fetch('/api/orders', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           body: JSON.stringify({
             userId: user.id,
             email: user.email,
@@ -1840,16 +1848,13 @@ export default function CustomerApp() {
           if (data.order) {
             setOrders(prev => [data.order, ...prev.filter(o => o.id !== data.order.id)]);
           }
+          // Mark cached orders as up-to-date so subsequent tab switches are instantaneous
+          lastOrdersFetchRef.current = Date.now();
 
-          // 2. Clear booking wizard state & clear database cart
+          // 2. Clear booking wizard state & clear database cart (already cleared atomically on server)
           const bookedCartItems = [...cart];
           setCart([]);
           localStorage.removeItem('visasra_customer_cart_v1');
-          if (isLoggedIn && user.email) {
-            fetch(`/api/cart?clearAll=true&userId=${encodeURIComponent(user.id || '')}&email=${encodeURIComponent(user.email)}`, {
-              method: 'DELETE',
-            }).catch(() => { });
-          }
           setItemRequirement('');
           setDeliveryNotes('');
           setBookingStep(1);
@@ -1877,9 +1882,6 @@ export default function CustomerApp() {
               options: [],
             })),
           });
-
-          // 4. Background re-sync
-          loadData();
         } else {
           showToast(data.error || 'Booking failed');
         }
@@ -3684,7 +3686,7 @@ export default function CustomerApp() {
                 setReviewRating(5);
                 setReviewComment('');
               }}
-              onRefresh={() => loadData(user)}
+              onRefresh={() => loadData(user, true)}
             />
           )}
 
@@ -3824,9 +3826,9 @@ export default function CustomerApp() {
               return updated;
             });
             if (isLoggedIn && user.email) {
-              fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+              fetch('/api/cart', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
               }).catch(() => { });
             }
