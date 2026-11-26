@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Order } from '@/types/customer';
 
 interface OrdersTabProps {
@@ -18,154 +18,237 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
   onRateShopper,
   onRefresh,
 }) => {
+  const [activeFilter, setActiveFilter] = useState<'upcoming' | 'in_progress' | 'completed'>('upcoming');
+
+  const validOrders = orders.filter((o) => o && o.id);
+
+  const filteredOrders = validOrders.filter((o) => {
+    const isCompleted = o.status === 'delivered' || o.status === 'shipped';
+    const isInProgress = o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping';
+
+    if (activeFilter === 'completed') return isCompleted;
+    if (activeFilter === 'in_progress') return isInProgress;
+    return !isCompleted;
+  });
+
+  // Find the top active or in-flight order for the featured card
+  const activeOrder = filteredOrders.find(
+    (o) => o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping'
+  ) || (filteredOrders.length > 0 ? filteredOrders[0] : null);
+
+  const otherOrders = activeOrder
+    ? filteredOrders.filter((o) => o.id !== activeOrder.id)
+    : filteredOrders;
+
+  // Determine stage index for the 4-milestone stepper (Booked = 1, Assigned = 2, Shopping = 3, Shipped = 4)
+  const getStageIndex = (order: Order) => {
+    if (order.status === 'delivered' || order.status === 'shipped') return 4;
+    if (order.trackingStage === 'shopping' || order.status === 'shopping') return 3;
+    if (order.trackingStage === 'worker_assigned' || order.liveSession?.worker) return 2;
+    return 1;
+  };
+
   return (
-    <section className="screen active screen-orders-root" data-screen="orders">
-      <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
-      <div className="orders-inner">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <button className="back-row" onClick={onBack} aria-label="Back" style={{ margin: 0 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 6l-6 6 6 6" />
-            </svg>
-            Back
-          </button>
+    <section className="screen active screen-orders-root" data-screen="orders" style={{ padding: 0 }}>
+      <div className="orders-modern-wrap">
+        {/* Header Row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <h1 className="orders-title" style={{ margin: 0 }}>Orders</h1>
           {onRefresh && (
             <button
               type="button"
               onClick={onRefresh}
-              className="btn btn-sm"
               style={{
-                fontSize: 12,
+                background: 'none',
+                border: 'none',
+                color: '#0B4F9C',
+                fontSize: 12.5,
                 fontWeight: 700,
-                padding: '6px 14px',
-                background: '#F1F5F9',
-                color: '#0A2540',
-                border: '1px solid #CBD5E1',
-                borderRadius: 8,
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
-              ↻ Refresh
+              <span>↻</span> Refresh
             </button>
           )}
         </div>
-        <div className="page-title">Orders</div>
-        <div className="page-sub">Everything you've booked with us.</div>
 
-        <div id="ordersList" style={{ marginTop: 16 }}>
-        {orders.length === 0 ? (
-          <div className="card pad" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>No Active Orders Yet</div>
-            <p style={{ margin: 0, fontSize: 13, marginBottom: 14 }}>Browse categories or book a shopping slot to reserve your personal shopper in India.</p>
+        {/* 3 Segmented Filter Tabs (Upcoming | In progress | Completed) */}
+        <div className="orders-filter-bar">
+          <button
+            type="button"
+            className={`orders-filter-pill ${activeFilter === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('upcoming')}
+          >
+            Upcoming
+          </button>
+          <button
+            type="button"
+            className={`orders-filter-pill ${activeFilter === 'in_progress' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('in_progress')}
+          >
+            In progress
+          </button>
+          <button
+            type="button"
+            className={`orders-filter-pill ${activeFilter === 'completed' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('completed')}
+          >
+            Completed
+          </button>
+        </div>
+
+        {filteredOrders.length === 0 ? (
+          <div style={{ background: '#FFFFFF', borderRadius: 16, padding: '36px 20px', textAlign: 'center', border: '1px solid #E2E8F0', marginTop: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#071D3A', marginBottom: 4 }}>
+              {activeFilter === 'completed' ? 'No Completed Orders Yet' : activeFilter === 'in_progress' ? 'No Orders In Progress' : 'No Upcoming Orders'}
+            </div>
+            <p style={{ margin: '0 0 16px', fontSize: 12.5, color: '#64748B' }}>
+              Reserve a shopping slot to have your dedicated shopper visit physical stores in India.
+            </p>
             {onRefresh && (
               <button
                 type="button"
                 onClick={onRefresh}
-                className="btn btn-primary"
-                style={{ fontSize: 13, padding: '8px 18px', borderRadius: 8 }}
+                style={{ background: '#0B4F9C', color: '#FFFFFF', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
               >
-                Refresh Orders
+                Refresh
               </button>
             )}
           </div>
         ) : (
-          orders.filter(o => o && o.id).map(o => (
-            <div key={o.id} className="booking-card">
-              <div className="booking-strip"><span style={{ background: 'var(--gold)' }} /></div>
-              <div className="booking-main">
-                <div className="booking-top">
-                  <div className="booking-top-left">
-                    <img
-                      src={o.items?.[0]?.image || '/images/placeholders/placeholder-item.svg'}
-                      alt=""
-                      style={{ width: 54, height: 54, borderRadius: 10, objectFit: 'cover' }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                      }}
-                    />
-                    <div>
-                      <div className="booking-id">{o.orderNumber || 'Order'}</div>
-                      <div className="booking-slot">{o.slotLabel || o.slotKey || 'Scheduled Slot'}</div>
-                      <div className="booking-items">{(o.items || []).map(i => i?.name).filter(Boolean).join(', ') || 'Sourcing items'}</div>
-                      <div className="booking-meta">{(o.items || []).length} product(s)</div>
+          <>
+            {/* Featured Active Order Card (Matching Official Mockup) */}
+            {activeOrder && (() => {
+              const stageIdx = getStageIndex(activeOrder);
+              const progressPct = stageIdx === 4 ? 100 : stageIdx === 3 ? 66 : stageIdx === 2 ? 33 : 0;
+              const titleItem = (activeOrder.items || [])[0]?.name || 'Sourcing Order';
+              const timingText = activeOrder.slotLabel || activeOrder.slotDate || 'Scheduled Slot';
+              const totalText = `₹${Number(activeOrder.totalAmount || 0).toLocaleString('en-IN')}`;
+
+              return (
+                <div className="order-card-active">
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div className="order-card-icon" style={{ width: 48, height: 48, background: '#EDF5FD', borderRadius: 12 }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <path d="M16 10a4 4 0 0 1-8 0" />
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="order-badge-pill">
+                        {stageIdx >= 3 ? 'Shopper is in store' : stageIdx === 2 ? 'Shopper assigned' : 'Slot confirmed'}
+                      </div>
+                      <div style={{ fontSize: 15.5, fontWeight: 700, color: '#071D3A', lineHeight: 1.3, marginBottom: 2 }}>
+                        {titleItem}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#64748B' }}>
+                        {timingText} · {totalText}
+                      </div>
                     </div>
                   </div>
-                  <div className="booking-total">₹{Number(o.totalAmount || 0)}</div>
-                </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <span className="order-status-badge">
-                    <span className="osb-dot" />
-                    {(o.trackingStage || 'slot_confirmed').replace(/_/g, ' ')}
-                  </span>
-                  {o.orderType === 'online' && (
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#F3E8FF', color: '#6B21A8', border: '1px solid #E9D5FF' }}>
-                      Online Concierge
-                    </span>
-                  )}
-                  {o.trackingNumber && (
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
-                      ✈️ {o.carrier || 'Express'}: {o.trackingNumber}
-                    </span>
-                  )}
-                </div>
+                  {/* 4-Milestone Progress Stepper */}
+                  <div className="order-stepper-track">
+                    <div className="order-stepper-line">
+                      <div className="order-stepper-progress" style={{ width: `${progressPct}%` }} />
+                    </div>
 
-                {o.orderType !== 'online' && (o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping') && (
-                  <div className="order-live-market-pill">
-                    <span className="radar-live-dot">
-                      <span className="radar-live-ping" />
-                      <span className="radar-live-core" />
-                    </span>
-                    <span className="order-live-market-text">Personal Shopper Active in Market</span>
+                    <div className="order-stepper-node">
+                      <div className={`order-node-dot ${stageIdx >= 1 ? 'done' : ''}`} />
+                      <span className={`order-node-label ${stageIdx === 1 ? 'active' : ''}`}>Booked</span>
+                    </div>
+
+                    <div className="order-stepper-node">
+                      <div className={`order-node-dot ${stageIdx >= 2 ? 'done' : ''}`} />
+                      <span className={`order-node-label ${stageIdx === 2 ? 'active' : ''}`}>Assigned</span>
+                    </div>
+
+                    <div className="order-stepper-node">
+                      <div className={`order-node-dot ${stageIdx >= 3 ? (stageIdx === 3 ? 'current' : 'done') : ''}`} />
+                      <span className={`order-node-label ${stageIdx === 3 ? 'active' : ''}`}>Shopping</span>
+                    </div>
+
+                    <div className="order-stepper-node">
+                      <div className={`order-node-dot ${stageIdx >= 4 ? 'done' : ''}`} />
+                      <span className={`order-node-label ${stageIdx === 4 ? 'active' : ''}`}>Shipped</span>
+                    </div>
                   </div>
-                )}
 
-                <div className="booking-actions-row">
-                  {o.orderType !== 'online' && (
+                  {/* Actions Row */}
+                  <div className="order-actions-row">
+                    {activeOrder.orderType !== 'online' && (
+                      <button
+                        type="button"
+                        className="order-btn-solid"
+                        onClick={() => onJoinLiveShopping(activeOrder.slotKey)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M4.93 4.93a10 10 0 0 1 14.14 0" />
+                          <path d="M7.76 7.76a6 6 0 0 1 8.48 0" />
+                        </svg>
+                        <span>Join live shopping</span>
+                      </button>
+                    )}
                     <button
                       type="button"
-                      className={`order-btn-live ${(o.trackingStage === 'shopping' || o.status === 'shopping') ? 'active-pulse' : ''}`}
-                      onClick={() => onJoinLiveShopping(o.slotKey)}
+                      className="order-btn-outline"
+                      onClick={() => onTrackOrder(activeOrder.slotKey)}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M4.93 4.93a10 10 0 0 1 14.14 0" />
-                        <path d="M7.76 7.76a6 6 0 0 1 8.48 0" />
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <circle cx="6" cy="18" r="2.5" />
+                        <circle cx="18" cy="6" r="2.5" />
+                        <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
                       </svg>
-                      <span>Join Live Shopping</span>
+                      <span>Track order</span>
                     </button>
-                  )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Other Orders List (Clean Minimal Cards matching Mockup) */}
+            {otherOrders.map((o) => {
+              const primaryItem = (o.items || [])[0]?.name || 'Sourcing order';
+              const timing = o.slotLabel || o.slotDate || 'Oct 16, 11 AM to 2 PM IST';
+              const total = `₹${Number(o.totalAmount || 0).toLocaleString('en-IN')}`;
+
+              return (
+                <div key={o.id} className="order-card-standard">
+                  <div className="order-card-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="7" />
+                      <path d="M12 9v6" />
+                      <path d="M9 12h6" />
+                    </svg>
+                  </div>
+                  <div className="order-card-info">
+                    <div className="order-card-status-line">
+                      Slot confirmed · {timing}
+                    </div>
+                    <div className="order-card-name">
+                      {primaryItem}
+                    </div>
+                    <div className="order-card-meta">
+                      {o.orderNumber || 'VIS-ORDER'} · {total}
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    className="order-btn-track"
+                    className="order-card-view-btn"
                     onClick={() => onTrackOrder(o.slotKey)}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="6" cy="18" r="2.5" />
-                      <circle cx="18" cy="6" r="2.5" />
-                      <path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5" />
-                    </svg>
-                    <span>{o.orderType === 'online' ? 'Track Procurement' : 'Track Order'}</span>
+                    View
                   </button>
-
-                  {o.liveSession?.worker && onRateShopper && (
-                    <button
-                      type="button"
-                      className="order-btn-rate"
-                      onClick={() => onRateShopper(o)}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                      <span>Rate Shopper</span>
-                    </button>
-                  )}
                 </div>
-              </div>
-            </div>
-          ))
+              );
+            })}
+          </>
         )}
-      </div>
       </div>
     </section>
   );

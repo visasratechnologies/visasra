@@ -1640,6 +1640,39 @@ export default function CustomerApp() {
 
 
 
+  // Quick Add from Popular Picks matching target mockup
+  const handleAddPopularQuick = (name: string, defaultMin: number, defaultMax: number) => {
+    const feedbackKey = name.toLowerCase().includes('cooker') ? 'quick-cooker' : 'quick-pan';
+    setAddedFeedbackId(feedbackKey);
+    setTimeout(() => {
+      setAddedFeedbackId(prev => (prev === feedbackKey ? null : prev));
+    }, 1500);
+
+    let found = popularProducts.find(p => p.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(p.name.toLowerCase()));
+    if (!found) {
+      for (const c of categories) {
+        const p = (c.products || []).find(prod => prod.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(prod.name.toLowerCase()));
+        if (p) {
+          found = p;
+          break;
+        }
+      }
+    }
+    if (found) {
+      addToCart(found);
+    } else {
+      addToCart({
+        id: name.toLowerCase().includes('cooker') ? 'quick-cooker' : 'quick-pan',
+        name,
+        price: defaultMin,
+        estMin: defaultMin,
+        estMax: defaultMax,
+        image: '/images/placeholders/placeholder-item.svg',
+        categoryName: 'Cookware',
+      });
+    }
+  };
+
   // Add Item to Cart (Quick) with button expression
   const addToCart = (product: Product) => {
     setAddedFeedbackId(product.id);
@@ -2698,102 +2731,98 @@ export default function CustomerApp() {
                 Back to Home
               </button>
 
-              <div className="page-title">Book a Shopping Slot</div>
-              <div className="page-sub">Add sourcing items, provide international delivery details, and reserve your dedicated shopping slot.</div>
+              <h1 className="bookslot-title" style={{ marginTop: 12, marginBottom: 16 }}>
+                {bookingStep === 1 ? 'What should your shopper buy?' : bookingStep === 2 ? 'Where should we courier your purchases?' : 'Select your shopping slot'}
+              </h1>
+
+              {/* Minimal Connected Stepper (1) --- (2) --- (3) matching official mockup */}
+              <div className="bookslot-stepper-minimal">
+                <button
+                  type="button"
+                  onClick={() => setBookingStep(1)}
+                  className={`bookslot-step-num ${bookingStep >= 1 ? 'active' : ''}`}
+                  style={{ border: 'none', cursor: 'pointer' }}
+                >
+                  1
+                </button>
+                <div className="bookslot-step-line" style={{ background: bookingStep > 1 ? '#0B4F9C' : '#CBD5E1' }} />
+                <button
+                  type="button"
+                  onClick={() => cart.length > 0 && setBookingStep(2)}
+                  disabled={cart.length === 0}
+                  className={`bookslot-step-num ${bookingStep >= 2 ? 'active' : ''}`}
+                  style={{ border: 'none', cursor: cart.length > 0 ? 'pointer' : 'not-allowed' }}
+                >
+                  2
+                </button>
+                <div className="bookslot-step-line" style={{ background: bookingStep > 2 ? '#0B4F9C' : '#CBD5E1' }} />
+                <button
+                  type="button"
+                  onClick={() => cart.length > 0 && setBookingStep(3)}
+                  disabled={cart.length === 0}
+                  className={`bookslot-step-num ${bookingStep >= 3 ? 'active' : ''}`}
+                  style={{ border: 'none', cursor: cart.length > 0 ? 'pointer' : 'not-allowed' }}
+                >
+                  3
+                </button>
+              </div>
 
               <div className="booking-wizard">
-                {/* Luxury Connected Stepper Progress */}
-                <div className="concierge-stepper-wrap">
-                  <div className="concierge-stepper">
-                    <div className="cs-track-line">
-                      <div
-                        className="cs-track-progress"
-                        style={{
-                          width: bookingStep === 1 ? '0%' : bookingStep === 2 ? '50%' : '100%',
-                        }}
-                      />
-                    </div>
-
-                    {/* Step 1 Node */}
-                    <button
-                      type="button"
-                      className={`cs-step-item ${bookingStep === 1 ? 'active' : 'done'}`}
-                      onClick={() => setBookingStep(1)}
-                    >
-                      <div className="cs-circle">
-                        {bookingStep > 1 ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12" /></svg>
-                        ) : '1'}
-                      </div>
-                      <div className="cs-label">Sourcing Basket</div>
-                      <div className="cs-hint">{cart.length} item{cart.length === 1 ? '' : 's'}</div>
-                    </button>
-
-                    {/* Step 2 Node */}
-                    <button
-                      type="button"
-                      className={`cs-step-item ${bookingStep === 2 ? 'active' : bookingStep > 2 ? 'done' : ''}`}
-                      disabled={cart.length === 0}
-                      onClick={() => cart.length > 0 && setBookingStep(2)}
-                    >
-                      <div className="cs-circle">
-                        {bookingStep > 2 ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12" /></svg>
-                        ) : '2'}
-                      </div>
-                      <div className="cs-label">Delivery &amp; Contact</div>
-                      <div className="cs-hint">Global Address</div>
-                    </button>
-
-                    {/* Step 3 Node */}
-                    <button
-                      type="button"
-                      className={`cs-step-item ${bookingStep === 3 ? 'active' : ''}`}
-                      disabled={cart.length === 0}
-                      onClick={() => cart.length > 0 && setBookingStep(3)}
-                    >
-                      <div className="cs-circle">3</div>
-                      <div className="cs-label">Slot &amp; Timing</div>
-                      <div className="cs-hint">Reserve Window</div>
-                    </button>
-                  </div>
-                </div>
 
                 {/* ================= STEP 1: SOURCING BASKET (MANDATORY ITEMS) ================= */}
                 {bookingStep === 1 && (
-                  <div className="luxury-step-card">
-                    <div className="luxury-step-header">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <div className="luxury-step-title">
-                            <span>1. Sourcing Request Basket</span>
-                          </div>
-                          <div className="luxury-step-subtitle">
-                            Add items from our catalog, describe custom items with photos, or paste online store links.
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 13, fontWeight: 800, padding: '4px 12px', borderRadius: 20, background: cart.length > 0 ? '#ECFDF5' : '#FEF2F2', color: cart.length > 0 ? '#065F46' : '#991B1B' }}>
-                          {cart.length} item{cart.length === 1 ? '' : 's'} added
-                        </span>
-                      </div>
+                  <div className="bookslot-step1-wrap" style={{ marginBottom: 40 }}>
+                    {/* Three Source Pill Buttons: Catalog, Store link, Photo */}
+                    <div className="bookslot-sources-row">
+                      <button
+                        type="button"
+                        className={`bookslot-source-btn ${sourcingSourceTab === 'catalog' ? 'active' : ''}`}
+                        onClick={() => setSourcingSourceTab('catalog')}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                        <span>Catalog</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`bookslot-source-btn ${sourcingSourceTab === 'online' ? 'active' : ''}`}
+                        onClick={() => setSourcingSourceTab('online')}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                        <span>Store link</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`bookslot-source-btn ${sourcingSourceTab === 'mind' ? 'active' : ''}`}
+                        onClick={() => setSourcingSourceTab('mind')}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                        <span>Photo</span>
+                      </button>
                     </div>
 
-                    {/* Empty Guard Alert */}
+                    {/* Basket Status: Empty Bag Card vs Items List */}
                     {cart.length === 0 ? (
-                      <div className="basket-guard-alert">
-                        <div className="bga-ico">!</div>
-                        <div className="bga-copy">
-                          <h4>Sourcing Basket is Empty</h4>
-                          <p>Please add at least one item below using any of the 3 sourcing options to proceed with slot booking.</p>
+                      <div className="bookslot-empty-card">
+                        <div className="bookslot-empty-icon">
+                          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <path d="M16 10a4 4 0 0 1-8 0" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="bookslot-empty-title">Your basket is empty</div>
+                          <div className="bookslot-empty-sub">Add a product below or paste a store link.</div>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13, color: '#081E3B', marginBottom: 10 }}>
-                          Current Sourcing Items in your Request:
+                      <div style={{ marginBottom: 18, background: '#FFFFFF', borderRadius: 14, border: '1.5px solid #E2E8F0', padding: 14 }}>
+                        <div style={{ fontWeight: 800, fontSize: 13, color: '#071D3A', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>Your Sourcing Basket ({cart.length})</span>
+                          <span style={{ color: '#0B4F9C', fontWeight: 700, fontSize: 12 }}>Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+</span>
                         </div>
                         {cart.map(item => (
-                          <div key={item.id} className="basket-item-row">
+                          <div key={item.id} className="basket-item-row" style={{ padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
                               <img
                                 src={resolveItemImage(item.image, item.sourceType)}
@@ -2803,33 +2832,15 @@ export default function CustomerApp() {
                                   (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
                                 }}
                               />
-                              {item.images && item.images.length > 1 && (
-                                <span style={{ fontSize: 9.5, fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '1px 5px', borderRadius: 4 }}>
-                                  {item.images.slice(0, 4).length} pics
-                                </span>
-                              )}
                             </div>
                             <div className="basket-item-info">
                               <span className={`basket-source-tag ${item.sourceType === 'online' ? 'tag-online' : item.sourceType === 'mind' ? 'tag-mind' : 'tag-catalog'}`}>
-                                {item.sourceType === 'online' ? 'Online Store' : item.sourceType === 'mind' ? 'Customized Product' : 'Visasra Catalog'}
+                                {item.sourceType === 'online' ? 'Online Store' : item.sourceType === 'mind' ? 'Customized Product' : 'Catalog'}
                               </span>
                               <div className="basket-item-title">{item.name}</div>
                               <div className="basket-item-meta">
                                 Est. ₹{item.priceMin.toLocaleString('en-IN')} – ₹{item.priceMax.toLocaleString('en-IN')} · Qty: {item.qty}
-                                {item.notes && <span> · &ldquo;{item.notes}&rdquo;</span>}
                               </div>
-                              {item.images && item.images.length > 1 && (
-                                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                                  {item.images.slice(0, 4).map((pic, pIdx) => (
-                                    <img
-                                      key={pIdx}
-                                      src={pic}
-                                      alt={`Pic ${pIdx + 1}`}
-                                      style={{ width: 34, height: 34, borderRadius: 6, objectFit: 'cover', border: '1.5px solid #CBD5E1' }}
-                                    />
-                                  ))}
-                                </div>
-                              )}
                             </div>
                             <div className="basket-actions-col">
                               <button
@@ -2838,11 +2849,7 @@ export default function CustomerApp() {
                                 onClick={() => handleStartEditCartItem(item)}
                                 title="Edit item details"
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                </svg>
-                                <span>Edit</span>
+                                Edit
                               </button>
                               <button
                                 type="button"
@@ -2858,308 +2865,298 @@ export default function CustomerApp() {
                       </div>
                     )}
 
-                    {/* Three Sourcing Tabs */}
-                    <div style={{ borderTop: '1.5px solid #EEF2F6', paddingTop: 18 }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#081E3B', marginBottom: 4 }}>
-                        + Add Items to Your Sourcing Request
-                      </div>
-                      <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 12 }}>
-                        Choose how you want to specify your items:
-                      </div>
-
-                      <div className="sourcing-source-tabs">
-                        <button
-                          type="button"
-                          className={`src-tab-btn ${sourcingSourceTab === 'catalog' ? 'active' : ''}`}
-                          onClick={() => setSourcingSourceTab('catalog')}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
-                          <span>From Categories</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`src-tab-btn ${sourcingSourceTab === 'mind' ? 'active' : ''}`}
-                          onClick={() => setSourcingSourceTab('mind')}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
-                          <span>Customize Product</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`src-tab-btn ${sourcingSourceTab === 'online' ? 'active' : ''}`}
-                          onClick={() => setSourcingSourceTab('online')}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-                          <span>From Online Store</span>
-                        </button>
-                      </div>
-
-                      {/* Source 1: From Categories */}
-                      {sourcingSourceTab === 'catalog' && (
-                        <div style={{ background: '#F8FAFD', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 18 }}>
-                          <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 10, color: '#081E3B' }}>
-                            Select from Visasra&apos;s Curated Indian Specialties:
+                    {/* Source Tab 1: Catalog -> Popular Picks (Mockup Match) */}
+                    {sourcingSourceTab === 'catalog' && (
+                      <div>
+                        <div className="bookslot-picks-title">Popular picks</div>
+                        <div className="bookslot-picks-grid">
+                          <div className="bookslot-pick-card">
+                            <div className="bookslot-pick-img-box">
+                              <svg width="44" height="44" viewBox="0 0 64 64" fill="none" stroke="#0B4F9C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <ellipse cx="32" cy="38" rx="22" ry="14" />
+                                <path d="M10 38v-4c0-7.7 9.8-14 22-14s22 6.3 22 14v4" />
+                                <path d="M26 20v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" />
+                                <line x1="4" y1="36" x2="10" y2="36" />
+                                <line x1="54" y1="36" x2="60" y2="36" />
+                                <circle cx="32" cy="12" r="2" fill="#0B4F9C" />
+                              </svg>
+                            </div>
+                            <div className="bookslot-pick-name">Pressure cooker</div>
+                            <div className="bookslot-pick-price">₹1,500 to ₹4,590</div>
+                            <button
+                              type="button"
+                              className="bookslot-pick-add-btn"
+                              onClick={() => handleAddPopularQuick('Pressure cooker', 1500, 4590)}
+                            >
+                              {addedFeedbackId === 'quick-cooker' ? '✓ Added' : 'Add'}
+                            </button>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8, marginBottom: 14 }}>
-                            {categories.slice(0, 8).map(c => (
+
+                          <div className="bookslot-pick-card">
+                            <div className="bookslot-pick-img-box">
+                              <svg width="44" height="44" viewBox="0 0 64 64" fill="none" stroke="#0B4F9C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <ellipse cx="26" cy="36" rx="18" ry="11" />
+                                <line x1="42" y1="32" x2="60" y2="24" strokeWidth="3" />
+                                <path d="M8 36c0 6 8.1 11 18 11s18-5 18-11" />
+                              </svg>
+                            </div>
+                            <div className="bookslot-pick-name">Non-stick pan</div>
+                            <div className="bookslot-pick-price">₹900 to ₹3,300</div>
+                            <button
+                              type="button"
+                              className="bookslot-pick-add-btn"
+                              onClick={() => handleAddPopularQuick('Non-stick pan', 900, 3300)}
+                            >
+                              {addedFeedbackId === 'quick-pan' ? '✓ Added' : 'Add'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Additional categories quick browse */}
+                        <div style={{ marginTop: 14, marginBottom: 16 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', marginBottom: 8 }}>Browse categories:</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                            {categories.slice(0, 6).map(c => (
                               <button
                                 key={c.id}
                                 type="button"
                                 style={{
-                                  padding: '9px 10px',
+                                  padding: '8px 10px',
                                   borderRadius: 10,
-                                  border: '1.5px solid #E2E8F0',
-                                  background: '#fff',
+                                  border: '1px solid #E2E8F0',
+                                  background: '#FFFFFF',
                                   fontSize: 12,
-                                  fontWeight: 700,
+                                  fontWeight: 600,
                                   cursor: 'pointer',
-                                  textAlign: 'center',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  color: '#081E3B',
+                                  textAlign: 'left',
+                                  color: '#071D3A',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
                                 }}
                                 onClick={() => {
                                   setSelectedCategoryForView(c);
                                   setActiveTab('categories');
                                 }}
                               >
-                                {c.name} →
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                                <span style={{ color: '#0B4F9C' }}>→</span>
                               </button>
                             ))}
                           </div>
-
-                          <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B', marginBottom: 8 }}>
-                            Quick Popular Picks:
-                          </div>
-                          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
-                            {popularProducts.slice(0, 4).map(p => (
-                              <div key={p.id} style={{ minWidth: 160, background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', padding: 8 }}>
-                                <img src={p.image} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 8 }} />
-                                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                                <div style={{ fontSize: 11, color: '#1261B5', fontWeight: 800, marginTop: 2 }}>Est. ₹{p.estMin} – ₹{p.estMax}</div>
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-primary"
-                                  style={{ width: '100%', padding: '5px 8px', fontSize: 11, marginTop: 6 }}
-                                  onClick={() => addToCart(p)}
-                                >
-                                  + Add to Basket
-                                </button>
-                              </div>
-                            ))}
-                          </div>
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Source 2: Customize Product (What's On Your Mind) */}
-                      {sourcingSourceTab === 'mind' && (
-                        <form onSubmit={handleAddCustomItem} style={{ background: '#FAF5FF', border: '1.5px solid #E9D8FD', borderRadius: 16, padding: 18 }}>
-                          <div style={{ fontWeight: 800, fontSize: 15, color: '#6B21A8', marginBottom: 3 }}>
-                            What&apos;s On Your Mind? Customize Any Product:
-                          </div>
-                          <div style={{ fontSize: 12, color: '#7E22CE', marginBottom: 14 }}>
-                            Tell us what&apos;s on your mind. You can customize any product, specify design requirements, and upload up to 4 reference pictures.
-                          </div>
+                    {/* Source Tab 2: Customize Product (What's On Your Mind) */}
+                    {sourcingSourceTab === 'mind' && (
+                      <form onSubmit={handleAddCustomItem} style={{ background: '#FAF5FF', border: '1.5px solid #E9D8FD', borderRadius: 16, padding: 18 }}>
+                        <div style={{ fontWeight: 800, fontSize: 15, color: '#6B21A8', marginBottom: 3 }}>
+                          What&apos;s On Your Mind? Customize Any Product:
+                        </div>
+                        <div style={{ fontSize: 12, color: '#7E22CE', marginBottom: 14 }}>
+                          Tell us what&apos;s on your mind. You can customize any product, specify design requirements, and upload up to 4 reference pictures.
+                        </div>
 
-                          <label style={{ display: 'block', marginBottom: 10 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Item Name / Title *</span>
+                        <label style={{ display: 'block', marginBottom: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Item Name / Title *</span>
+                          <input
+                            type="text"
+                            className="inp"
+                            placeholder="What's on your mind? e.g. Traditional Matte Finish Kemp Temple Jewellery Set"
+                            value={customTitle}
+                            onChange={e => setCustomTitle(e.target.value)}
+                            required
+                          />
+                        </label>
+
+                        <label style={{ display: 'block', marginBottom: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Detailed Specifications / Design Preference</span>
+                          <textarea
+                            className="inp"
+                            rows={2}
+                            placeholder="e.g. Peacock motif, ruby red stones, antique matte gold finish, approx 22-inch necklace with matching jhumkas"
+                            value={customDesc}
+                            onChange={e => setCustomDesc(e.target.value)}
+                          />
+                        </label>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+                          <label>
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Min Budget (₹)</span>
                             <input
                               type="text"
+                              inputMode="numeric"
                               className="inp"
-                              placeholder="What's on your mind? e.g. Traditional Matte Finish Kemp Temple Jewellery Set"
-                              value={customTitle}
-                              onChange={e => setCustomTitle(e.target.value)}
+                              placeholder="0"
+                              value={customMin}
+                              onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setCustomMin(val.replace(/^0+(?=\d)/, ''));
+                              }}
+                            />
+                          </label>
+                          <label>
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Max Budget (₹)</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              className="inp"
+                              placeholder="0"
+                              value={customMax}
+                              onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setCustomMax(val.replace(/^0+(?=\d)/, ''));
+                              }}
+                            />
+                          </label>
+                          <label>
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Quantity</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              className="inp"
+                              placeholder="1"
+                              value={customQty}
+                              onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setCustomQty(val.replace(/^0+(?=\d)/, ''));
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        {renderMultiImageUploadBox(
+                          customImgs,
+                          setCustomImgs,
+                          'Upload Reference Photos / Sketches (Up to 4 Pics)',
+                          'Add up to 4 photos to help your personal shopper find the exact product'
+                        )}
+
+                        <button
+                          type="submit"
+                          className="btn-concierge-primary"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            ...(customAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
+                          }}
+                        >
+                          {customAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Customized Product to Sourcing Basket'}
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Source Tab 3: From Online Platform */}
+                    {sourcingSourceTab === 'online' && (
+                      <form onSubmit={handleAddOnlineItem} style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 16, padding: 18 }}>
+                        <div style={{ fontWeight: 800, fontSize: 14, color: '#92400E', marginBottom: 12 }}>
+                          Order From Any Online Indian Platform:
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginBottom: 10 }}>
+                          <label>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Platform</span>
+                            <select
+                              className="inp"
+                              value={onlinePlatform}
+                              onChange={e => setOnlinePlatform(e.target.value)}
+                            >
+                              <option>Amazon.in</option>
+                              <option>Flipkart</option>
+                              <option>Myntra</option>
+                              <option>Nykaa</option>
+                              <option>Ajio</option>
+                              <option>GRT Jewellers</option>
+                              <option>Tanishq</option>
+                              <option>Nalli Silks</option>
+                              <option>Other Online Store</option>
+                            </select>
+                          </label>
+                          <label>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Product Web Link / URL *</span>
+                            <input
+                              type="url"
+                              className="inp"
+                              placeholder="https://www.amazon.in/dp/..."
+                              value={onlineUrl}
+                              onChange={e => setOnlineUrl(e.target.value)}
                               required
                             />
                           </label>
+                        </div>
 
-                          <label style={{ display: 'block', marginBottom: 10 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Detailed Specifications / Design Preference</span>
-                            <textarea
-                              className="inp"
-                              rows={2}
-                              placeholder="e.g. Peacock motif, ruby red stones, antique matte gold finish, approx 22-inch necklace with matching jhumkas"
-                              value={customDesc}
-                              onChange={e => setCustomDesc(e.target.value)}
-                            />
-                          </label>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
-                            <label>
-                              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Min Budget (₹)</span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                className="inp"
-                                placeholder="0"
-                                value={customMin}
-                                onChange={e => {
-                                  const val = e.target.value.replace(/\D/g, '');
-                                  setCustomMin(val.replace(/^0+(?=\d)/, ''));
-                                }}
-                              />
-                            </label>
-                            <label>
-                              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Max Budget (₹)</span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                className="inp"
-                                placeholder="0"
-                                value={customMax}
-                                onChange={e => {
-                                  const val = e.target.value.replace(/\D/g, '');
-                                  setCustomMax(val.replace(/^0+(?=\d)/, ''));
-                                }}
-                              />
-                            </label>
-                            <label>
-                              <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>Quantity</span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                className="inp"
-                                placeholder="1"
-                                value={customQty}
-                                onChange={e => {
-                                  const val = e.target.value.replace(/\D/g, '');
-                                  setCustomQty(val.replace(/^0+(?=\d)/, ''));
-                                }}
-                              />
-                            </label>
-                          </div>
-
-                          {renderMultiImageUploadBox(
-                            customImgs,
-                            setCustomImgs,
-                            'Upload Reference Photos / Sketches (Up to 4 Pics)',
-                            'Add up to 4 photos to help your personal shopper find the exact product'
-                          )}
-
-                          <button
-                            type="submit"
-                            className="btn-concierge-primary"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s ease',
-                              ...(customAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
-                            }}
-                          >
-                            {customAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Customized Product to Sourcing Basket'}
-                          </button>
-                        </form>
-                      )}
-
-                      {/* Source 3: From Online Platform */}
-                      {sourcingSourceTab === 'online' && (
-                        <form onSubmit={handleAddOnlineItem} style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 16, padding: 18 }}>
-                          <div style={{ fontWeight: 800, fontSize: 14, color: '#92400E', marginBottom: 12 }}>
-                            Order From Any Online Indian Platform:
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginBottom: 10 }}>
-                            <label>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Platform</span>
-                              <select
-                                className="inp"
-                                value={onlinePlatform}
-                                onChange={e => setOnlinePlatform(e.target.value)}
-                              >
-                                <option>Amazon.in</option>
-                                <option>Flipkart</option>
-                                <option>Myntra</option>
-                                <option>Nykaa</option>
-                                <option>Ajio</option>
-                                <option>GRT Jewellers</option>
-                                <option>Tanishq</option>
-                                <option>Nalli Silks</option>
-                                <option>Other Online Store</option>
-                              </select>
-                            </label>
-                            <label>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Product Web Link / URL *</span>
-                              <input
-                                type="url"
-                                className="inp"
-                                placeholder="https://www.amazon.in/dp/..."
-                                value={onlineUrl}
-                                onChange={e => setOnlineUrl(e.target.value)}
-                                required
-                              />
-                            </label>
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginBottom: 10 }}>
-                            <label>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Product Title / Description</span>
-                              <input
-                                type="text"
-                                className="inp"
-                                placeholder="e.g. Copper Water Dispenser 5L"
-                                value={onlineTitle}
-                                onChange={e => setOnlineTitle(e.target.value)}
-                              />
-                            </label>
-                            <label>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Listed Price (₹)</span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                className="inp"
-                                placeholder="0"
-                                value={onlinePrice}
-                                onChange={e => {
-                                  const val = e.target.value.replace(/\D/g, '');
-                                  setOnlinePrice(val.replace(/^0+(?=\d)/, ''));
-                                }}
-                              />
-                            </label>
-                          </div>
-
-                          {renderMultiImageUploadBox(
-                            onlineImgs,
-                            setOnlineImgs,
-                            'Product Photos / Screenshots (Up to 4 Pics)',
-                            'Upload up to 4 screenshots or photos of this online product from your device'
-                          )}
-
-                          <label style={{ display: 'block', marginBottom: 14 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Special Instructions (Size, Variant, Color)</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginBottom: 10 }}>
+                          <label>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Product Title / Description</span>
                             <input
                               type="text"
                               className="inp"
-                              placeholder="e.g. Size L, Maroon color, or delivery speed preference"
-                              value={onlineNotes}
-                              onChange={e => setOnlineNotes(e.target.value)}
+                              placeholder="e.g. Copper Water Dispenser 5L"
+                              value={onlineTitle}
+                              onChange={e => setOnlineTitle(e.target.value)}
                             />
                           </label>
+                          <label>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Listed Price (₹)</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              className="inp"
+                              placeholder="0"
+                              value={onlinePrice}
+                              onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setOnlinePrice(val.replace(/^0+(?=\d)/, ''));
+                              }}
+                            />
+                          </label>
+                        </div>
 
-                          <button
-                            type="submit"
-                            className="btn-concierge-primary"
-                            style={{
-                              width: '100%',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s ease',
-                              ...(onlineAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
-                            }}
-                          >
-                            {onlineAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Online Store Item to Basket'}
-                          </button>
-                        </form>
-                      )}
-                    </div>
+                        {renderMultiImageUploadBox(
+                          onlineImgs,
+                          setOnlineImgs,
+                          'Product Photos / Screenshots (Up to 4 Pics)',
+                          'Upload up to 4 screenshots or photos of this online product from your device'
+                        )}
 
-                    {/* Step 1 Next Action */}
-                    <div className="wizard-actions">
-                      <div style={{ fontSize: 12.5, color: '#64748B' }}>
-                        {cart.length > 0 ? `✓ ${cart.length} item(s) ready for sourcing` : 'Add at least 1 item to proceed'}
+                        <label style={{ display: 'block', marginBottom: 14 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Special Instructions (Size, Variant, Color)</span>
+                          <input
+                            type="text"
+                            className="inp"
+                            placeholder="e.g. Size L, Maroon color, or delivery speed preference"
+                            value={onlineNotes}
+                            onChange={e => setOnlineNotes(e.target.value)}
+                          />
+                        </label>
+
+                        <button
+                          type="submit"
+                          className="btn-concierge-primary"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            ...(onlineAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
+                          }}
+                        >
+                          {onlineAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Online Store Item to Basket'}
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Sticky Footer matching mockup */}
+                    <div className="bookslot-sticky-footer">
+                      <div className="bookslot-sticky-hint">
+                        {cart.length === 0
+                          ? 'Add at least one item to continue'
+                          : `${cart.length} item${cart.length === 1 ? '' : 's'} in basket · ₹${cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+`}
                       </div>
                       <button
                         type="button"
-                        className="btn-concierge-primary"
+                        className={`bookslot-continue-btn ${cart.length > 0 ? 'active' : 'disabled'}`}
                         disabled={cart.length === 0}
                         onClick={() => {
                           if (cart.length === 0) {
@@ -3172,8 +3169,7 @@ export default function CustomerApp() {
                           setBookingStep(2);
                         }}
                       >
-                        <span>Continue to Delivery Details</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}><polyline points="9 18 15 12 9 6" /></svg>
+                        Continue
                       </button>
                     </div>
                   </div>
