@@ -28,7 +28,9 @@ export default function ShippingPolicyPage() {
         {/* Highlight Card: DDP Model */}
         <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '18px 22px', marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <span style={{ fontSize: 20 }}>✈️</span>
+            <span style={{ color: '#166534', display: 'flex', alignItems: 'center' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></svg>
+            </span>
             <b style={{ color: '#166534', fontSize: 16 }}>Delivered Duty Paid (DDP) for Standard Orders</b>
           </div>
           <p style={{ color: '#15803D', fontSize: 14, margin: 0, lineHeight: 1.6 }}>

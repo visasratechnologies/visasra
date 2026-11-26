@@ -28,10 +28,11 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { name, phone, location, avatar, currentPassword, newPassword } = body;
+    const { name, email, phone, location, avatar, currentPassword, newPassword } = body;
 
     const updateData: {
       name?: string;
+      email?: string;
       phone?: string | null;
       location?: string | null;
       avatar?: string | null;
@@ -40,6 +41,17 @@ export async function PUT(req: Request) {
 
     if (typeof name === 'string' && name.trim()) {
       updateData.name = name.trim();
+    }
+
+    if (typeof email === 'string' && email.trim()) {
+      const emailNormalized = email.trim().toLowerCase();
+      if (emailNormalized !== user.email?.toLowerCase()) {
+        const existing = await prisma.user.findUnique({ where: { email: emailNormalized } });
+        if (existing && existing.id !== user.id) {
+          return NextResponse.json({ error: 'This email is already in use by another account' }, { status: 400 });
+        }
+        updateData.email = emailNormalized;
+      }
     }
 
     if (typeof phone === 'string') {

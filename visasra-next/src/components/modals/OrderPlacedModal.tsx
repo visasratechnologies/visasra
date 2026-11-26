@@ -92,7 +92,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             fontFamily: 'var(--font-display)',
           }}
         >
-          Order Placed Successfully! 🎉
+          Order Placed Successfully!
         </h2>
 
         <p style={{ fontSize: 13.5, color: '#64748B', margin: '0 0 18px', lineHeight: 1.5 }}>

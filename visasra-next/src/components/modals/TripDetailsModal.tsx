@@ -66,8 +66,8 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                   {slotDuration === 2
                     ? 'Super Express Sourcing (1–2 Stores)'
                     : slotDuration === 3
-                    ? 'Comprehensive Multi-Bazaar Shopping'
-                    : 'VIP Full-Day Artisan & Boutique Tour'}
+                    ? 'Multi-Store Comparison Shopping'
+                    : 'Extended Multi-Store Shopping'}
                 </div>
               </div>
               <div className="absc-thumb-box">
@@ -94,7 +94,7 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                   </svg>
                 </div>
                 <div className="absc-stop-content">
-                  <div className="absc-stop-city">Local Artisan Markets &amp; Stores</div>
+                  <div className="absc-stop-city">Local Stores &amp; Markets</div>
                   <div className="absc-stop-time">{selectedDate}, {selectedSlotWindow}</div>
                 </div>
               </div>
@@ -184,7 +184,11 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
             <div className="abhibus-contact-sub">Your live shopping updates, photos &amp; store bills will be sent here:</div>
             <div className="abhibus-contact-card">
               <div className="abhibus-contact-phone">
-                <span className="abhibus-contact-phone-icon">📞</span>
+                <span className="abhibus-contact-phone-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </span>
                 <span>{customerPhone || activeAddr?.phone || user.phone || 'Phone Pending'}</span>
               </div>
               <span className="abhibus-wa-tag">WhatsApp Active</span>
@@ -197,7 +201,14 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
             <div className="absc-breakdown-row">
               <div className="absc-breakdown-label">
-                <span>🛍️ Sourcing Merchandise Budget (Max)</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                  Sourcing Merchandise Budget (Max)
+                </span>
                 <span className="absc-sub-tip">Estimated for {cart.length} item{cart.length > 1 ? 's' : ''} in basket</span>
               </div>
               <div className="absc-breakdown-val">₹{merchandiseBudget.toLocaleString('en-IN')}</div>
@@ -205,10 +216,30 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 
             <div className="absc-breakdown-row">
               <div className="absc-breakdown-label">
-                <span>⚡ Dedicated Shopper Slot Fee ({slotDuration}h)</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  Dedicated Shopper Slot Fee ({slotDuration}h)
+                </span>
                 <span className="absc-sub-tip">Deducted immediately to reserve ground personal shopper</span>
               </div>
               <div className="absc-breakdown-val" style={{ color: '#2563EB' }}>₹{currentSlotFee}</div>
+            </div>
+
+            <div className="absc-breakdown-row">
+              <div className="absc-breakdown-label">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                  </svg>
+                  Delivery Charges
+                </span>
+                <span className="absc-sub-tip">Weighed &amp; calculated after store purchase based on actual package weight</span>
+              </div>
+              <div className="absc-breakdown-val" style={{ color: '#64748B', fontSize: 12 }}>Billed after pickup</div>
             </div>
 
             <div className="absc-total-deposit-row">
@@ -242,7 +273,7 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               <div className="absc-step-item">
                 <div className="absc-step-num">4</div>
                 <div className="absc-step-text">
-                  <b>Final Settlement:</b> Any leftover balance covers international packaging &amp; courier shipping fees at final dispatch.
+                  <b>Delivery Fee:</b> Weighed and calculated after items are collected from shops based on actual package weight.
                 </div>
               </div>
             </div>

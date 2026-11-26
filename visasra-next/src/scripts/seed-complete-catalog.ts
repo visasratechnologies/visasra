@@ -405,7 +405,7 @@ async function run() {
         const slug = productSlug(prod.name);
         const imagePath = `/images/products/${cat.key}/${slug}.jpg`;
         const desc = prod.desc || `Authentic ${prod.name} sourced directly from local market merchants with verified billing.`;
-        const tag = prod.tag || (prod.types && prod.types.length > 0 ? `${prod.types.length} Types` : 'Artisan Choice');
+        const tag = prod.tag || (prod.types && prod.types.length > 0 ? `${prod.types.length} Types` : null);
         const typesJson = prod.types && prod.types.length > 0 ? (prod.types as any) : null;
 
         if (prod.types) {

@@ -547,7 +547,7 @@ export default function WorkerApp() {
       es.onerror = () => {
         // Close on serverless environments to avoid reconnect storms and socket exhaustion
         if (es) {
-          try { es.close(); } catch {}
+          try { es.close(); } catch { }
           es = null;
         }
       };
@@ -557,7 +557,7 @@ export default function WorkerApp() {
 
     return () => {
       if (es) {
-        try { es.close(); } catch {}
+        try { es.close(); } catch { }
         es = null;
       }
     };
@@ -2952,7 +2952,7 @@ export default function WorkerApp() {
                 </div>
                 {currentSession.order?.items.some(i => i.notes) && (
                   <div style={{ marginTop: 6, fontSize: 12, color: '#78350F' }}>
-                    Artisan notes attached for {currentSession.order.items.filter(i => i.notes).length} product(s). Tap each product below to view customer requirements.
+                    Customer notes attached for {currentSession.order.items.filter(i => i.notes).length} product(s). Tap each product below to view customer requirements.
                   </div>
                 )}
               </div>

@@ -24,6 +24,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user.name || '');
+  const [editEmail, setEditEmail] = useState(user.email || '');
   const [editPhone, setEditPhone] = useState(user.phone || customerPhone || '');
   const [editLocation, setEditLocation] = useState(user.location || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -41,6 +42,10 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       showToast?.('Name cannot be empty');
       return;
     }
+    if (!editEmail.trim()) {
+      showToast?.('Email cannot be empty');
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -49,7 +54,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          email: user.email,
+          email: editEmail.trim(),
           name: editName.trim(),
           phone: editPhone.trim(),
           location: editLocation.trim(),
@@ -78,6 +83,33 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       <div className="account-modern-wrap">
         {/* Top Curved Royal Blue Banner */}
         <div className="account-hero-blue">
+          {onBack && (
+            <button
+              type="button"
+              className="back-row"
+              onClick={onBack}
+              aria-label="Back"
+              style={{
+                marginBottom: 14,
+                background: '#FFFFFF',
+                color: '#071D3A',
+                border: '1.2px solid #E2E8F0',
+                borderRadius: 8,
+                padding: '5px 12px',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Back
+            </button>
+          )}
           <h1 className="account-title">Account</h1>
           <div className="account-user-row">
             <div className="account-avatar">
@@ -94,6 +126,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
               className="account-edit-icon-btn"
               onClick={() => {
                 setEditName(user.name || '');
+                setEditEmail(user.email || '');
                 setEditPhone(user.phone || customerPhone || '');
                 setEditLocation(user.location || '');
                 setIsEditing(true);
@@ -291,6 +324,28 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Your full name"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '11px 12px',
+                    borderRadius: 10,
+                    border: '1.5px solid #CBD5E1',
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 5 }}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="your.email@example.com"
                   required
                   style={{
                     width: '100%',

@@ -172,7 +172,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Valid user identifier required' }, { status: 400 });
     }
 
-    const txNote = `Visasra Money Deposit · Pay: ${razorpayPaymentId} | Order: ${razorpayOrderId}${note ? ` · ${note}` : ''}`;
+    const txNote = note && !note.includes('pay_') ? note : 'Wallet Top-up';
 
     const [updatedUser, tx] = await prisma.$transaction([
       prisma.user.update({

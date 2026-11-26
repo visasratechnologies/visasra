@@ -28,7 +28,9 @@ export default function CustomsPolicyPage() {
         {/* Highlight Card: DDP Model */}
         <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '18px 22px', marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <span style={{ fontSize: 20 }}>🛡️</span>
+            <span style={{ color: '#166534', display: 'flex', alignItems: 'center' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+            </span>
             <b style={{ color: '#166534', fontSize: 16 }}>No Surprise Customs Fees at Delivery</b>
           </div>
           <p style={{ color: '#15803D', fontSize: 14, margin: 0, lineHeight: 1.6 }}>

@@ -66,7 +66,7 @@ export async function GET(
           }
         : null,
       store: {
-        name: session.storeName || 'Local Retail & Artisan Store',
+        name: session.storeName || 'Local Store & Market',
         address: session.storeAddress || 'Physical In-Store Sourcing Across India',
         lat: session.storeLat || 13.0418,
         lng: session.storeLng || 80.2341,

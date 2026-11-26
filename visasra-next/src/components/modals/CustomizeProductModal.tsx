@@ -61,9 +61,11 @@ export default function CustomizeProductModal({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-display)' }}>Customize Product</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontFamily: 'var(--font-display)', color: '#071D3A' }}>
+              Add Reference &amp; Special Instructions
+            </h3>
             <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
-              {product.categoryName || 'Catalog Specialty'}
+              {product.categoryName || 'Catalog Item'} · Photo is optional
             </div>
           </div>
           <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>
@@ -146,13 +148,14 @@ export default function CustomizeProductModal({
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>
-            What&apos;s on your mind? Custom Specifications &amp; Preferences
+          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 4, color: '#0B192E' }}>
+            Reference Description &amp; Special Instructions
           </label>
           <textarea
             className="inp"
-            rows={2}
-            placeholder="What's on your mind? e.g. Size M, Peacock blue color, GRT Silks preferred, matte gold finish..."
+            rows={4}
+            style={{ minHeight: 96, resize: 'vertical', lineHeight: 1.5, padding: '10px 12px' }}
+            placeholder="e.g. Traditional peacock motif, size preferences, color, GRT Silks preferred, matte gold finish..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -161,14 +164,14 @@ export default function CustomizeProductModal({
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0B192E' }}>
-              Upload Reference Photos / Sketches (Up to 4 Pics)
+              Reference Photos / Sketches (Optional)
             </span>
             <span style={{ fontSize: 11, fontWeight: 800, color: images.length >= 4 ? '#16A34A' : '#2563EB', background: images.length >= 4 ? '#DCFCE7' : '#EFF6FF', padding: '2px 8px', borderRadius: 6 }}>
-              {images.length}/4 Photos
+              {images.length}/4 Photos (Optional)
             </span>
           </div>
           <div style={{ fontSize: 11.5, color: '#64748B', marginBottom: 10 }}>
-            Add up to 4 photos or sketches from your device so your shopper gets the exact match
+            Upload reference photos or sketches from your device if needed (photo is not mandatory).
           </div>
 
           <div className="multi-photo-grid">
@@ -241,11 +244,25 @@ export default function CustomizeProductModal({
               flex: 2,
               padding: '12px',
               justifyContent: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
               transition: 'all 0.2s ease',
               ...(isAdding ? { background: '#10B981', borderColor: '#059669', color: '#fff' } : {}),
             }}
           >
-            {isAdding ? '✓ Added to Sourcing Basket!' : '+ Add to Sourcing Basket'}
+            {isAdding ? (
+              <>✓ Added to Cart!</>
+            ) : (
+              <>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
+                <span>Add to Cart</span>
+              </>
+            )}
           </button>
         </div>
       </div>

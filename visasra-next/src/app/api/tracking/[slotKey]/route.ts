@@ -46,7 +46,7 @@ export async function GET(
     const defaultStages = [
       { key: 'slot_confirmed', title: 'Slot Confirmed & Scheduled', status: 'done', note: 'Customer slot locked with priority personal shopper reservation' },
       { key: 'worker_assigned', title: 'Personal Shopper Assigned', status: 'done', note: worker ? `${worker.name} (${worker.phone || 'Dedicated Sourcing Specialist'})` : 'Assigned from Ground Shoppers Hub' },
-      { key: 'shopping', title: 'In-Store Verification & Sourcing', status: order.trackingStage === 'shopping' ? 'current' : (order.status === 'confirmed' ? 'current' : 'done'), note: order.liveSession?.storeName || 'Active at Retail & Artisan Store' },
+      { key: 'shopping', title: 'In-Store Verification & Sourcing', status: order.trackingStage === 'shopping' ? 'current' : (order.status === 'confirmed' ? 'current' : 'done'), note: order.liveSession?.storeName || 'Active at Local Store' },
       { key: 'purchased', title: 'Purchased & Billed at Merchant Counter', status: ['purchased', 'packed', 'shipped', 'delivered'].includes(order.status) ? 'done' : 'pending', expected: order.slotDate },
       { key: 'packed', title: 'Quality Check & Packed for International Transit', status: ['packed', 'shipped', 'delivered'].includes(order.status) ? 'done' : 'pending', note: 'At Visasra Central Export Hub, Chennai' },
       { key: 'shipped', title: 'Customs Cleared & International Air Cargo', status: ['shipped', 'delivered'].includes(order.status) ? 'done' : 'pending', expected: 'International Express Airway Bill' },
@@ -91,7 +91,7 @@ export async function GET(
           }
         : null,
       store: {
-        name: order.liveSession?.storeName || 'Local Retail & Artisan Store',
+        name: order.liveSession?.storeName || 'Local Store & Market',
         address: order.liveSession?.storeAddress || 'Physical In-Store Sourcing Across India',
         lat: order.liveSession?.storeLat || 13.0418,
         lng: order.liveSession?.storeLng || 80.2341,

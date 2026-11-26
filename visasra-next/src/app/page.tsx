@@ -401,26 +401,10 @@ export default function CustomerApp() {
     persistCartLocally(cart);
   }, [cart, mounted]);
 
-  // Live Auto-Save active tab to localStorage & synchronize browser URL path
+  // Live Auto-Save active tab to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('visasra_customer_active_tab', activeTab);
-      if (typeof window !== 'undefined') {
-        const tabToPath: Record<string, string> = {
-          home: '/',
-          categories: '/categories',
-          bookslot: '/book-slot',
-          orders: '/orders',
-          cart: '/cart',
-          wallet: '/wallet',
-          profile: '/profile',
-          'live-shopping': '/live-shopping',
-        };
-        const targetPath = tabToPath[activeTab] || '/';
-        if (window.location.pathname !== targetPath && !['addresses'].includes(activeTab)) {
-          window.history.replaceState({ tab: activeTab }, '', targetPath);
-        }
-      }
     } catch { }
   }, [activeTab]);
 
@@ -577,6 +561,123 @@ export default function CustomerApp() {
   const [customTopupAmt, setCustomTopupAmt] = useState('2500');
   const [selectedQuickAmt, setSelectedQuickAmt] = useState<number | null>(2500);
 
+  // Central Navigation & History Handler
+  const navigateToTab = (tab: typeof activeTab, pushToHistory = true) => {
+    setActiveTab(tab);
+    if (tab !== 'categories') {
+      setSelectedCategoryForView(null);
+      setSelectedProductForTypes(null);
+    }
+    if (pushToHistory && typeof window !== 'undefined') {
+      const tabToPath: Record<string, string> = {
+        home: '/',
+        categories: '/categories',
+        bookslot: '/book-slot',
+        orders: '/orders',
+        cart: '/cart',
+        wallet: '/wallet',
+        profile: '/profile',
+        'live-shopping': '/live-shopping',
+      };
+      const targetPath = tabToPath[tab] || '/';
+      window.history.pushState({ tab, catId: null, prodId: null }, '', targetPath);
+    }
+  };
+
+  const handleSelectCategory = (c: Category, pushToHistory = true) => {
+    setSelectedCategoryForView(c);
+    setSelectedProductForTypes(null);
+    setCatSearchQuery('');
+    setActiveTab('categories');
+    if (pushToHistory && typeof window !== 'undefined') {
+      window.history.pushState(
+        { tab: 'categories', catId: c.id, catSlug: c.slug, prodId: null },
+        '',
+        `/categories?cat=${encodeURIComponent(c.slug || c.id)}`
+      );
+    }
+  };
+
+  const handleSelectProductForTypes = (p: Product, pushToHistory = true) => {
+    setSelectedProductForTypes(p);
+    setTypeSearchQuery('');
+    if (pushToHistory && typeof window !== 'undefined' && selectedCategoryForView) {
+      window.history.pushState(
+        { tab: 'categories', catId: selectedCategoryForView.id, catSlug: selectedCategoryForView.slug, prodId: p.id },
+        '',
+        `/categories?cat=${encodeURIComponent(selectedCategoryForView.slug || selectedCategoryForView.id)}&item=${encodeURIComponent(p.id)}`
+      );
+    }
+  };
+
+  const handleGoBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Fallback if opened without browser history
+      if (selectedProductForTypes) {
+        setSelectedProductForTypes(null);
+        setTypeSearchQuery('');
+      } else if (selectedCategoryForView) {
+        setSelectedCategoryForView(null);
+        setCatSearchQuery('');
+      } else if (activeTab !== 'home') {
+        navigateToTab('home', false);
+      }
+    }
+  };
+
+  // Synchronize browser history and handle mobile/browser back button
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Anchor initial state on load if not set
+    if (!window.history.state) {
+      window.history.replaceState({ tab: activeTab, catId: null, prodId: null }, '', window.location.pathname);
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state;
+      if (state && state.tab) {
+        setActiveTab(state.tab);
+        if (state.tab === 'categories') {
+          if (state.prodId && state.catId) {
+            const cat = categories.find((c) => c.id === state.catId || c.slug === state.catSlug);
+            if (cat) {
+              setSelectedCategoryForView(cat);
+              const prod = (cat.products || []).find((p) => p.id === state.prodId);
+              setSelectedProductForTypes(prod || null);
+            }
+          } else if (state.catId) {
+            const cat = categories.find((c) => c.id === state.catId || c.slug === state.catSlug);
+            setSelectedCategoryForView(cat || null);
+            setSelectedProductForTypes(null);
+          } else {
+            setSelectedCategoryForView(null);
+            setSelectedProductForTypes(null);
+          }
+        } else {
+          setSelectedCategoryForView(null);
+          setSelectedProductForTypes(null);
+        }
+      } else {
+        // Pushed back to the beginning of the site
+        if (selectedProductForTypes) {
+          setSelectedProductForTypes(null);
+          setTypeSearchQuery('');
+        } else if (selectedCategoryForView) {
+          setSelectedCategoryForView(null);
+          setCatSearchQuery('');
+        } else if (activeTab !== 'home') {
+          setActiveTab('home');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [categories, activeTab, selectedCategoryForView, selectedProductForTypes]);
+
   // Product & Sub-type Image Resolution Helpers
   const productSlug = (name: string) => {
     return name.toLowerCase().replace(/['\u2019]/g, '').replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -641,6 +742,9 @@ export default function CustomerApp() {
   const [isAddingBasket, setIsAddingBasket] = useState(false);
   const [customAddedFeedback, setCustomAddedFeedback] = useState(false);
   const [onlineAddedFeedback, setOnlineAddedFeedback] = useState(false);
+  const [catalogFilterSlug, setCatalogFilterSlug] = useState<string>('all');
+  const [catPillsWrapped, setCatPillsWrapped] = useState(false);
+  const catScrollRef = useRef<HTMLDivElement>(null);
 
   // Worker Review & Rating Modal
   const [ratingModalOrder, setRatingModalOrder] = useState<Order | null>(null);
@@ -936,7 +1040,7 @@ export default function CustomerApp() {
             }
           : null,
         store: {
-          name: existing.liveSession?.storeName || 'Local Retail & Artisan Store',
+          name: existing.liveSession?.storeName || 'Local Store & Market',
           address: existing.liveSession?.storeAddress || 'Physical In-Store Sourcing Across India',
           lat: existing.liveSession?.storeLat ?? 13.0418,
           lng: existing.liveSession?.storeLng ?? 80.2341,
@@ -1558,8 +1662,7 @@ export default function CustomerApp() {
                   key={c.id}
                   className="search-item-row"
                   onClick={() => {
-                    setSelectedCategoryForView(c);
-                    setActiveTab('categories');
+                    handleSelectCategory(c);
                     setSearchQuery('');
                     setSearchFocused(false);
                     if (isMobile) setMobileSearchOpen(false);
@@ -1623,7 +1726,7 @@ export default function CustomerApp() {
             className="search-custom-action"
             onClick={() => {
               setCustomTitle(searchQuery);
-              setActiveTab('bookslot');
+              navigateToTab('bookslot');
               setSourcingSourceTab('mind');
               setSearchQuery('');
               setSearchFocused(false);
@@ -1960,7 +2063,7 @@ export default function CustomerApp() {
               country: activeAddress.country || 'India',
               label: activeAddress.label || 'Home',
               deliveryNotes: deliveryNotes || '',
-              marketLocation: 'Direct Artisan & Stores Across India',
+              marketLocation: 'Direct Stores & Markets Across India',
               marketNotes: '',
             },
           }),
@@ -2113,7 +2216,7 @@ export default function CustomerApp() {
                 razorpayPaymentId: paymentId,
                 razorpayOrderId: orderId,
                 razorpaySignature: signature,
-                note: `Wallet Top-up via Razorpay (${paymentId})`,
+                note: 'Wallet Top-up via Razorpay',
               }),
             });
             const data = await res.json();
@@ -2243,27 +2346,27 @@ export default function CustomerApp() {
 
       {/* Sidenav (Desktop) */}
       <nav className="sidenav" id="sidenav">
-        <div className="sidenav-brand" onClick={() => setActiveTab('home')}>
+        <div className="sidenav-brand" onClick={() => navigateToTab('home')}>
           <img src="/images/logo/visasra-logo.png" alt="" className="sidenav-brand-logo" />
           <span className="brand-text">VISASRA</span>
         </div>
 
-        <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+        <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => navigateToTab('home')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11L12 4l8 7" /><path d="M6 10v9h5v-5h2v5h5v-9" /></svg>
           Home
         </button>
-        <button className={`nav-btn ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
+        <button className={`nav-btn ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => navigateToTab('categories')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2" /><rect x="13" y="4" width="7" height="7" rx="1.2" /><rect x="4" y="13" width="7" height="7" rx="1.2" /><rect x="13" y="13" width="7" height="7" rx="1.2" /></svg>
           Categories
         </button>
-        <button className={`nav-btn ${activeTab === 'bookslot' ? 'active' : ''}`} onClick={() => setActiveTab('bookslot')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3" /><path d="M4 10h16M9 3v4M15 3v4" /><path d="M12 13v5M9.5 15.5h5" /></svg>
-          Book Slot
+        <button className={`nav-btn ${activeTab === 'bookslot' ? 'active' : ''}`} onClick={() => navigateToTab('bookslot')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+          Uploads
         </button>
         <button
           className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
           onClick={() => {
-            setActiveTab('orders');
+            navigateToTab('orders');
             loadData(user);
           }}
         >
@@ -2277,19 +2380,19 @@ export default function CustomerApp() {
             if (!liveSessionSlot && orders.length > 0) {
               setLiveSessionSlot(orders[0].slotKey);
             }
-            setActiveTab('live-shopping');
+            navigateToTab('live-shopping');
           }}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
           Live Shopping
           <span className="nb-badge" style={{ background: '#22C55E', color: '#fff', fontSize: 10, padding: '2px 5px' }}>LIVE</span>
         </button>
-        <button className={`nav-btn ${activeTab === 'cart' ? 'active' : ''}`} onClick={() => setActiveTab('cart')}>
+        <button className={`nav-btn ${activeTab === 'cart' ? 'active' : ''}`} onClick={() => navigateToTab('cart')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2" /><path d="M6 8h12l-1 12H7L6 8z" /></svg>
           Cart
           {cart.length > 0 && <span className="nb-badge">{cart.length}</span>}
         </button>
-        <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+        <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigateToTab('profile')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
           Profile
         </button>
@@ -2305,12 +2408,12 @@ export default function CustomerApp() {
 
         {/* Mobile Topbar */}
         <div className="topbar">
-          <div className="wordmark" onClick={() => setActiveTab('home')}>
+          <div className="wordmark" onClick={() => navigateToTab('home')}>
             <img src="/images/logo/visasra-logo.png" alt="" className="wordmark-logo" />
             <span className="brand-text">VISASRA</span>
           </div>
           <div className="top-actions">
-            <button className="top-btn" onClick={() => setActiveTab('wallet')} aria-label="Wallet">
+            <button className="top-btn" onClick={() => navigateToTab('wallet')} aria-label="Wallet">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 10h18" /><circle cx="16.5" cy="14.5" r="1.2" /></svg>
               Wallet
             </button>
@@ -2318,7 +2421,7 @@ export default function CustomerApp() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
               Search
             </button>
-            <button className="top-btn" onClick={() => setActiveTab('cart')} aria-label="Cart">
+            <button className="top-btn" onClick={() => navigateToTab('cart')} aria-label="Cart">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2" /><path d="M6 8h12l-1 12H7L6 8z" /></svg>
               {cart.length > 0 && <span className="nb-badge">{cart.length}</span>}
               Cart
@@ -2343,14 +2446,14 @@ export default function CustomerApp() {
               popularProducts={popularProducts}
               addedFeedbackId={addedFeedbackId}
               onNavigate={(tab) => {
-                setActiveTab(tab);
+                navigateToTab(tab);
                 if (tab === 'orders') loadData(user);
               }}
-              onSelectCategory={(cat) => setSelectedCategoryForView(cat)}
+              onSelectCategory={(cat) => handleSelectCategory(cat)}
               onAddToCart={addToCart}
               onLiveSession={(slotKey) => {
                 setLiveSessionSlot(slotKey);
-                setActiveTab('live-shopping');
+                navigateToTab('live-shopping');
               }}
               onTrackOrder={handleTrackOrder}
               renderSearchBar={renderSearchBar}
@@ -2367,9 +2470,9 @@ export default function CustomerApp() {
               <div className={`cat-tier1-wrap ${selectedCategoryForView ? 'is-hidden' : ''}`}>
                 <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
                 <div className="cat-tier1-inner">
-                  <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
-                    Back to Home
+                  <button type="button" className="back-row" onClick={handleGoBack} aria-label="Back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                    <span>Back</span>
                   </button>
                   <div className="desk-header">
                     {renderSearchBar(false)}
@@ -2383,8 +2486,7 @@ export default function CustomerApp() {
                         key={c.id}
                         className="cat-tile"
                         onClick={() => {
-                          setSelectedCategoryForView(c);
-                          setSelectedProductForTypes(null);
+                          handleSelectCategory(c);
                         }}
                       >
                         <img
@@ -2422,15 +2524,13 @@ export default function CustomerApp() {
                 /* Tier 3: Sub-Category / Product Varieties Detail (e.g. Cookware > Pans > Frying Pan, Appam Pan, etc.) */
                 <div>
                   <button
+                    type="button"
                     className="back-row"
-                    onClick={() => {
-                      setSelectedProductForTypes(null);
-                      setTypeSearchQuery('');
-                    }}
+                    onClick={handleGoBack}
                     aria-label={`Back to ${selectedCategoryForView.name}`}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
-                    Back to {selectedCategoryForView.name}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                    <span>Back to {selectedCategoryForView.name}</span>
                   </button>
 
                   <div
@@ -2499,9 +2599,14 @@ export default function CustomerApp() {
                               <button
                                 type="button"
                                 className="cat-add-btn"
-                                style={{ marginTop: 8 }}
+                                style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                               >
-                                Select &amp; Customize
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="9" cy="21" r="1" />
+                                  <circle cx="20" cy="21" r="1" />
+                                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                </svg>
+                                <span>Add to Cart</span>
                               </button>
                             </div>
                           );
@@ -2524,7 +2629,7 @@ export default function CustomerApp() {
                       }}
                       onClick={() => {
                         setCustomTitle(`Custom ${selectedProductForTypes.name}`);
-                        setActiveTab('bookslot');
+                        navigateToTab('bookslot');
                         setSourcingSourceTab('mind');
                       }}
                     >
@@ -2544,15 +2649,13 @@ export default function CustomerApp() {
                 /* Tier 2: Category Products / Sub-Categories Drill-Down */
                 <div>
                   <button
+                    type="button"
                     className="back-row"
-                    onClick={() => {
-                      setSelectedCategoryForView(null);
-                      setCatSearchQuery('');
-                    }}
-                    aria-label="Back to categories"
+                    onClick={handleGoBack}
+                    aria-label="Back to all categories"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
-                    All Categories
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                    <span>All Categories</span>
                   </button>
 
                   <div
@@ -2605,7 +2708,7 @@ export default function CustomerApp() {
                                 className="cat-prod-img-wrap"
                                 onClick={() => {
                                   if (hasTypes) {
-                                    setSelectedProductForTypes(p);
+                                    handleSelectProductForTypes(p);
                                   } else {
                                     setCustomizingProduct({
                                       ...p,
@@ -2637,9 +2740,9 @@ export default function CustomerApp() {
                                   <span className="cat-prod-tag" style={{ background: '#0A3A6B', color: '#fff' }}>
                                     {p.types?.length} Varieties
                                   </span>
-                                ) : (
-                                  <span className="cat-prod-tag">{p.tag || selectedCategoryForView.name}</span>
-                                )}
+                                ) : (p.tag && !p.tag.toLowerCase().includes('artisan')) ? (
+                                  <span className="cat-prod-tag">{p.tag}</span>
+                                ) : null}
                               </div>
 
                               <div className="cat-prod-body">
@@ -2653,10 +2756,10 @@ export default function CustomerApp() {
                                 <button
                                   type="button"
                                   className="cat-add-btn"
-                                  style={hasTypes ? { background: '#0A3A6B', color: '#fff', borderColor: '#08264A' } : {}}
+                                  style={hasTypes ? { background: '#0A3A6B', color: '#fff', borderColor: '#08264A' } : { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                   onClick={() => {
                                     if (hasTypes) {
-                                      setSelectedProductForTypes(p);
+                                      handleSelectProductForTypes(p);
                                     } else {
                                       setCustomizingProduct({
                                         ...p,
@@ -2678,8 +2781,12 @@ export default function CustomerApp() {
                                     </>
                                   ) : (
                                     <>
-                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ width: 14, height: 14 }}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                                      Customize Product (4 pics) →
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                        <circle cx="9" cy="21" r="1" />
+                                        <circle cx="20" cy="21" r="1" />
+                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                      </svg>
+                                      <span>Add to Cart</span>
                                     </>
                                   )}
                                 </button>
@@ -2705,7 +2812,7 @@ export default function CustomerApp() {
                       }}
                       onClick={() => {
                         setCustomTitle(`Custom item from ${selectedCategoryForView.name}`);
-                        setActiveTab('bookslot');
+                        navigateToTab('bookslot');
                         setSourcingSourceTab('mind');
                       }}
                     >
@@ -2726,9 +2833,9 @@ export default function CustomerApp() {
           {/* ================= SCREEN 3: REDESIGNED BOOKING FLOW ================= */}
           {activeTab === 'bookslot' && (
             <section className="screen active" data-screen="bookslot">
-              <button className="back-row" onClick={() => setActiveTab('home')} aria-label="Back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
-                Back to Home
+              <button type="button" className="back-row" onClick={handleGoBack} aria-label="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                <span>Back</span>
               </button>
 
               <h1 className="bookslot-title" style={{ marginTop: 12, marginBottom: 16 }}>
@@ -2771,7 +2878,7 @@ export default function CustomerApp() {
 
                 {/* ================= STEP 1: SOURCING BASKET (MANDATORY ITEMS) ================= */}
                 {bookingStep === 1 && (
-                  <div className="bookslot-step1-wrap" style={{ marginBottom: 40 }}>
+                  <div className="bookslot-step1-wrap" style={{ paddingBottom: 160 }}>
                     {/* Three Source Pill Buttons: Catalog, Store link, Photo */}
                     <div className="bookslot-sources-row">
                       <button
@@ -2800,150 +2907,182 @@ export default function CustomerApp() {
                       </button>
                     </div>
 
-                    {/* Basket Status: Empty Bag Card vs Items List */}
-                    {cart.length === 0 ? (
-                      <div className="bookslot-empty-card">
-                        <div className="bookslot-empty-icon">
-                          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                            <line x1="3" y1="6" x2="21" y2="6" />
-                            <path d="M16 10a4 4 0 0 1-8 0" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="bookslot-empty-title">Your basket is empty</div>
-                          <div className="bookslot-empty-sub">Add a product below or paste a store link.</div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ marginBottom: 18, background: '#FFFFFF', borderRadius: 14, border: '1.5px solid #E2E8F0', padding: 14 }}>
-                        <div style={{ fontWeight: 800, fontSize: 13, color: '#071D3A', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>Your Sourcing Basket ({cart.length})</span>
-                          <span style={{ color: '#0B4F9C', fontWeight: 700, fontSize: 12 }}>Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+</span>
-                        </div>
-                        {cart.map(item => (
-                          <div key={item.id} className="basket-item-row" style={{ padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                              <img
-                                src={resolveItemImage(item.image, item.sourceType)}
-                                alt=""
-                                className="basket-item-thumb"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                                }}
-                              />
-                            </div>
-                            <div className="basket-item-info">
-                              <span className={`basket-source-tag ${item.sourceType === 'online' ? 'tag-online' : item.sourceType === 'mind' ? 'tag-mind' : 'tag-catalog'}`}>
-                                {item.sourceType === 'online' ? 'Online Store' : item.sourceType === 'mind' ? 'Customized Product' : 'Catalog'}
-                              </span>
-                              <div className="basket-item-title">{item.name}</div>
-                              <div className="basket-item-meta">
-                                Est. ₹{item.priceMin.toLocaleString('en-IN')} – ₹{item.priceMax.toLocaleString('en-IN')} · Qty: {item.qty}
-                              </div>
-                            </div>
-                            <div className="basket-actions-col">
-                              <button
-                                type="button"
-                                className="basket-edit-btn"
-                                onClick={() => handleStartEditCartItem(item)}
-                                title="Edit item details"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                className="basket-del-btn"
-                                onClick={() => handleRemoveCartItem(item.id)}
-                                title="Remove item"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Source Tab 1: Catalog -> Popular Picks (Mockup Match) */}
+                    {/* Source Tab 1: Catalog -> Complete Catalog Browser */}
                     {sourcingSourceTab === 'catalog' && (
                       <div>
-                        <div className="bookslot-picks-title">Popular picks</div>
-                        <div className="bookslot-picks-grid">
-                          <div className="bookslot-pick-card">
-                            <div className="bookslot-pick-img-box">
-                              <svg width="44" height="44" viewBox="0 0 64 64" fill="none" stroke="#0B4F9C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <ellipse cx="32" cy="38" rx="22" ry="14" />
-                                <path d="M10 38v-4c0-7.7 9.8-14 22-14s22 6.3 22 14v4" />
-                                <path d="M26 20v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" />
-                                <line x1="4" y1="36" x2="10" y2="36" />
-                                <line x1="54" y1="36" x2="60" y2="36" />
-                                <circle cx="32" cy="12" r="2" fill="#0B4F9C" />
-                              </svg>
+                        {/* Luxury Category Filter Bar */}
+                        <div className="bookslot-cat-nav-wrap">
+                          <div className="bookslot-cat-header-row">
+                            <div className="bookslot-cat-title-group">
+                              <span className="bookslot-cat-title">Browse Categories &amp; Products</span>
+                              <span className="bookslot-cat-badge">
+                                {catalogFilterSlug === 'all'
+                                  ? `${categories.length} Categories Available`
+                                  : categories.find(c => c.slug === catalogFilterSlug)?.name || 'Filtered'}
+                              </span>
                             </div>
-                            <div className="bookslot-pick-name">Pressure cooker</div>
-                            <div className="bookslot-pick-price">₹1,500 to ₹4,590</div>
-                            <button
-                              type="button"
-                              className="bookslot-pick-add-btn"
-                              onClick={() => handleAddPopularQuick('Pressure cooker', 1500, 4590)}
-                            >
-                              {addedFeedbackId === 'quick-cooker' ? '✓ Added' : 'Add'}
-                            </button>
+                            <div className="bookslot-cat-actions">
+                              <button
+                                type="button"
+                                className="bookslot-cat-view-all-btn"
+                                onClick={() => setCatPillsWrapped(prev => !prev)}
+                                title={catPillsWrapped ? 'Show single scrollable row' : 'Show all categories'}
+                              >
+                                {catPillsWrapped ? 'Single Row ◂' : `View All (${categories.length}) ▾`}
+                              </button>
+                              {!catPillsWrapped && (
+                                <div className="bookslot-cat-arrows">
+                                  <button
+                                    type="button"
+                                    className="bookslot-cat-arrow-btn"
+                                    onClick={() => catScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
+                                    aria-label="Scroll left"
+                                    title="Scroll left"
+                                  >
+                                    ‹
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="bookslot-cat-arrow-btn"
+                                    onClick={() => catScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
+                                    aria-label="Scroll right"
+                                    title="Scroll right"
+                                  >
+                                    ›
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="bookslot-pick-card">
-                            <div className="bookslot-pick-img-box">
-                              <svg width="44" height="44" viewBox="0 0 64 64" fill="none" stroke="#0B4F9C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <ellipse cx="26" cy="36" rx="18" ry="11" />
-                                <line x1="42" y1="32" x2="60" y2="24" strokeWidth="3" />
-                                <path d="M8 36c0 6 8.1 11 18 11s18-5 18-11" />
-                              </svg>
-                            </div>
-                            <div className="bookslot-pick-name">Non-stick pan</div>
-                            <div className="bookslot-pick-price">₹900 to ₹3,300</div>
+                          <div
+                            ref={catScrollRef}
+                            className={`bookslot-cat-scroll ${catPillsWrapped ? 'wrapped' : ''}`}
+                          >
                             <button
                               type="button"
-                              className="bookslot-pick-add-btn"
-                              onClick={() => handleAddPopularQuick('Non-stick pan', 900, 3300)}
+                              className={`bookslot-cat-pill ${catalogFilterSlug === 'all' ? 'active' : ''}`}
+                              onClick={() => setCatalogFilterSlug('all')}
                             >
-                              {addedFeedbackId === 'quick-pan' ? '✓ Added' : 'Add'}
+                              <span className="bookslot-cat-pill-icon">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                                </svg>
+                              </span>
+                              <span>All Categories</span>
                             </button>
+                            {categories.map(c => {
+                              const isSelected = catalogFilterSlug === c.slug;
+                              const prodCount = (c.products || []).length;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  className={`bookslot-cat-pill ${isSelected ? 'active' : ''}`}
+                                  onClick={() => setCatalogFilterSlug(c.slug)}
+                                >
+                                  {c.image && (
+                                    <img
+                                      src={c.image}
+                                      alt=""
+                                      className="bookslot-cat-pill-thumb"
+                                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                                    />
+                                  )}
+                                  <span>{c.name}</span>
+                                  {prodCount > 0 && (
+                                    <span className="bookslot-cat-pill-count">
+                                      {prodCount}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
 
-                        {/* Additional categories quick browse */}
-                        <div style={{ marginTop: 14, marginBottom: 16 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', marginBottom: 8 }}>Browse categories:</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                            {categories.slice(0, 6).map(c => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                style={{
-                                  padding: '8px 10px',
-                                  borderRadius: 10,
-                                  border: '1px solid #E2E8F0',
-                                  background: '#FFFFFF',
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                  color: '#071D3A',
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                }}
-                                onClick={() => {
-                                  setSelectedCategoryForView(c);
-                                  setActiveTab('categories');
-                                }}
-                              >
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                                <span style={{ color: '#0B4F9C' }}>→</span>
-                              </button>
-                            ))}
-                          </div>
+                        {/* Full Products & Subproducts Grid */}
+                        <div className="bookslot-catalog-grid">
+                          {(catalogFilterSlug === 'all'
+                            ? categories.flatMap(c => (c.products || []).map(p => ({ ...p, catSlug: c.slug, catName: c.name }))).slice(0, 16)
+                            : (categories.find(c => c.slug === catalogFilterSlug)?.products || []).map(p => ({
+                                ...p,
+                                catSlug: catalogFilterSlug,
+                                catName: categories.find(c => c.slug === catalogFilterSlug)?.name || '',
+                              }))
+                          ).map((p, pIdx) => {
+                            const pKey = String(p.id || `${p.catSlug}-${productSlug(p.name)}`);
+                            const pImg = p.image || getProductImg(p.catSlug, p.name);
+                            return (
+                              <div key={`${p.catSlug}-${p.name}-${pIdx}`} className="bookslot-pick-card">
+                                <div className="bookslot-pick-img-box">
+                                  <img
+                                    src={pImg}
+                                    alt={p.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 6 }}
+                                    onError={(e) => { (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg'; }}
+                                  />
+                                </div>
+                                <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0B4F9C', textTransform: 'uppercase', marginBottom: 2 }}>
+                                  {p.catName}
+                                </div>
+                                <div className="bookslot-pick-name" title={p.name}>{p.name}</div>
+                                <div className="bookslot-pick-price">
+                                  Est. ₹{(p.estMin || 1000).toLocaleString('en-IN')} – ₹{(p.estMax || 3000).toLocaleString('en-IN')}
+                                </div>
+                                <div style={{ fontSize: 11, color: '#64748B', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minHeight: 18 }}>
+                                  {p.types && p.types.length > 0
+                                    ? `${p.types.length} varieties: ${p.types.map((t: any) => t.name).slice(0, 2).join(', ')}...`
+                                    : ''}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="bookslot-pick-add-btn"
+                                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                                  onClick={() => {
+                                    const itemToAdd: CartItem = {
+                                      id: pKey,
+                                      productId: pKey,
+                                      name: p.name,
+                                      qty: 1,
+                                      priceMin: p.estMin || 1000,
+                                      priceMax: p.estMax || 3000,
+                                      image: pImg,
+                                      categoryName: p.catName,
+                                      sourceType: 'catalog',
+                                    };
+                                    addToCart({
+                                      id: pKey,
+                                      name: p.name,
+                                      price: p.estMin || 1000,
+                                      estMin: p.estMin || 1000,
+                                      estMax: p.estMax || 3000,
+                                      image: pImg,
+                                      categoryName: p.catName,
+                                    });
+                                    // Automatically open instructions & reference photo modal
+                                    handleStartEditCartItem(itemToAdd);
+                                  }}
+                                >
+                                  {addedFeedbackId === pKey ? (
+                                    <>✓ Added to Cart</>
+                                  ) : (
+                                    <>
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                        <circle cx="9" cy="21" r="1" />
+                                        <circle cx="20" cy="21" r="1" />
+                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                      </svg>
+                                      <span>Add to Cart</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -2974,7 +3113,8 @@ export default function CustomerApp() {
                           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Detailed Specifications / Design Preference</span>
                           <textarea
                             className="inp"
-                            rows={2}
+                            rows={5}
+                            style={{ minHeight: 120, resize: 'vertical', lineHeight: 1.5, padding: '10px 14px' }}
                             placeholder="e.g. Peacock motif, ruby red stones, antique matte gold finish, approx 22-inch necklace with matching jhumkas"
                             value={customDesc}
                             onChange={e => setCustomDesc(e.target.value)}
@@ -3147,12 +3287,112 @@ export default function CustomerApp() {
                       </form>
                     )}
 
-                    {/* Sticky Footer matching mockup */}
+                    {/* Basket Status: Empty Bag Card vs Items List (Positioned Below Uploads / Catalog Input) */}
+                    <div style={{ marginTop: 28, marginBottom: 20 }}>
+                      {cart.length === 0 ? (
+                        <div className="bookslot-empty-card">
+                          <div className="bookslot-empty-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                              <line x1="3" y1="6" x2="21" y2="6" />
+                              <path d="M16 10a4 4 0 0 1-8 0" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="bookslot-empty-title">Your basket is currently empty</div>
+                            <div className="bookslot-empty-sub">Select products from the catalog above, customize an item, or paste a store link.</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ background: '#FFFFFF', borderRadius: 16, border: '1.5px solid #CBD5E1', padding: 18, boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)' }}>
+                          <div style={{ fontWeight: 800, fontSize: 14, color: '#071D3A', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2.2">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                                <line x1="3" y1="6" x2="21" y2="6" />
+                                <path d="M16 10a4 4 0 0 1-8 0" />
+                              </svg>
+                              Your Sourcing Basket ({cart.length} item{cart.length > 1 ? 's' : ''})
+                            </span>
+                            <span style={{ color: '#0B4F9C', fontWeight: 800, fontSize: 13.5 }}>
+                              Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+
+                            </span>
+                          </div>
+                          {cart.map(item => (
+                            <div key={item.id} className="basket-item-row" style={{ padding: '10px 0', borderBottom: '1px solid #F1F5F9' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                                <img
+                                  src={resolveItemImage(item.image, item.sourceType)}
+                                  alt=""
+                                  className="basket-item-thumb"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                  }}
+                                />
+                              </div>
+                              <div className="basket-item-info">
+                                <span className={`basket-source-tag ${item.sourceType === 'online' ? 'tag-online' : item.sourceType === 'mind' ? 'tag-mind' : 'tag-catalog'}`}>
+                                  {item.sourceType === 'online' ? 'Online Store' : item.sourceType === 'mind' ? 'Customized Product' : 'Catalog'}
+                                </span>
+                                <div className="basket-item-title">{item.name}</div>
+                                <div className="basket-item-meta">
+                                  Est. ₹{item.priceMin.toLocaleString('en-IN')} – ₹{item.priceMax.toLocaleString('en-IN')} · Qty: {item.qty}
+                                </div>
+                              </div>
+                              <div className="basket-actions-col">
+                                <button
+                                  type="button"
+                                  className="basket-edit-btn"
+                                  onClick={() => handleStartEditCartItem(item)}
+                                  title="Edit item details"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="basket-del-btn"
+                                  onClick={() => handleRemoveCartItem(item.id)}
+                                  title="Remove item"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* High-Contrast Floating Sticky Footer */}
                     <div className="bookslot-sticky-footer">
                       <div className="bookslot-sticky-hint">
-                        {cart.length === 0
-                          ? 'Add at least one item to continue'
-                          : `${cart.length} item${cart.length === 1 ? '' : 's'} in basket · ₹${cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+`}
+                        {cart.length === 0 ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94A3B8' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            Add at least 1 item to proceed
+                          </span>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{
+                              background: '#2563EB',
+                              color: '#fff',
+                              fontSize: 11.5,
+                              fontWeight: 800,
+                              padding: '3px 9px',
+                              borderRadius: 999
+                            }}>
+                              {cart.length} ITEM{cart.length > 1 ? 'S' : ''}
+                            </span>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF' }}>
+                                Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+
+                              </div>
+                              <div style={{ fontSize: 10.5, color: '#94A3B8' }}>
+                                Next: Delivery &amp; Contact Details
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <button
                         type="button"
@@ -3169,7 +3409,8 @@ export default function CustomerApp() {
                           setBookingStep(2);
                         }}
                       >
-                        Continue
+                        <span>Continue</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
                       </button>
                     </div>
                   </div>
@@ -3189,8 +3430,12 @@ export default function CustomerApp() {
 
                     {/* Contact Mobile */}
                     <div style={{ marginBottom: 20, background: '#F8FAFD', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 18 }}>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#081E3B', marginBottom: 6 }}>
-                        📱 WhatsApp &amp; Mobile Notification Number *
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 800, color: '#081E3B', marginBottom: 6 }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                          <line x1="12" y1="18" x2="12.01" y2="18" />
+                        </svg>
+                        <span>WhatsApp &amp; Mobile Notification Number *</span>
                       </label>
                       <input
                         type="tel"
@@ -3200,7 +3445,7 @@ export default function CustomerApp() {
                         onChange={e => setCustomerPhone(e.target.value)}
                       />
                       <div style={{ fontSize: 12, color: '#64748B', marginTop: 6, lineHeight: 1.45 }}>
-                        Real-time shopping updates, artisan photo approvals, and dispatch alerts are sent to this number.
+                        Real-time shopping updates, store photo approvals, and dispatch alerts are sent to this number.
                       </div>
                     </div>
 
@@ -3211,7 +3456,12 @@ export default function CustomerApp() {
 
                     {savedAddresses.length === 0 && !isAddingAddress && (
                       <div style={{ background: '#F8FAFD', border: '1.5px dashed #CBD5E1', borderRadius: 14, padding: '20px 16px', textAlign: 'center', marginBottom: 14 }}>
-                        <div style={{ fontSize: 24, marginBottom: 6 }}>📍</div>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EFF6FF', color: '#1D4ED8', display: 'grid', placeItems: 'center', margin: '0 auto 8px' }}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        </div>
                         <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A', marginBottom: 4 }}>No delivery address added yet</div>
                         <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 14 }}>
                           Please add your delivery address so your personal shopper knows where to courier your purchases.
@@ -3425,9 +3675,12 @@ export default function CustomerApp() {
                           <span className="lux-dur-badge lux-badge-express">Express Run</span>
                           <div className="lux-dur-hours">2 Hours</div>
                           <div className="lux-dur-name">Targeted Sourcing</div>
-                          <div className="lux-dur-desc">Quick visit to 1–2 specific artisan stores. Ideal for 1–3 pre-decided items.</div>
+                          <div className="lux-dur-desc">Quick visit to 1–2 specific stores. Ideal for 1–3 pre-decided items.</div>
                         </div>
-                        <div className="lux-dur-perk">⚡ Live In-App Photo Approvals</div>
+                        <div className="lux-dur-perk" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                          <span>Live In-App Photo Approvals</span>
+                        </div>
                       </div>
 
                       <div
@@ -3438,12 +3691,18 @@ export default function CustomerApp() {
                         }}
                       >
                         <div>
-                          <span className="lux-dur-badge lux-badge-popular">★ Most Popular</span>
+                          <span className="lux-dur-badge lux-badge-popular" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                            <span>Most Popular</span>
+                          </span>
                           <div className="lux-dur-hours">3 Hours</div>
                           <div className="lux-dur-name">Comprehensive Shopping</div>
-                          <div className="lux-dur-desc">Multi-store bazaar exploration. Compare fabric weaves, jewelry weights &amp; quality.</div>
+                          <div className="lux-dur-desc">Visit multiple stores to compare styles, quality, and prices.</div>
                         </div>
-                        <div className="lux-dur-perk">⚡ Real-Time In-Store Curation</div>
+                        <div className="lux-dur-perk" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                          <span>Real-Time In-Store Curation</span>
+                        </div>
                       </div>
 
                       <div
@@ -3454,12 +3713,19 @@ export default function CustomerApp() {
                         }}
                       >
                         <div>
-                          <span className="lux-dur-badge lux-badge-vip">VIP Shopper</span>
+                          <span className="lux-dur-badge" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>Extended Session</span>
                           <div className="lux-dur-hours">5 Hours</div>
-                          <div className="lux-dur-name">Full-Day Artisan Tour</div>
-                          <div className="lux-dur-desc">Deep curation across multiple city bazaars, custom boutique tailoring, bridal and bulk sourcing.</div>
+                          <div className="lux-dur-name">Extended Shopping</div>
+                          <div className="lux-dur-desc">Extensive visits across multiple stores. Ideal for custom tailoring, bridal, or bulk shopping.</div>
                         </div>
-                        <div className="lux-dur-perk">👑 Senior Personal Stylist Assigned</div>
+                        <div className="lux-dur-perk" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <path d="M16 10a4 4 0 0 1-8 0" />
+                          </svg>
+                          <span>Dedicated Shopper Assigned</span>
+                        </div>
                       </div>
                     </div>
 
@@ -3535,7 +3801,7 @@ export default function CustomerApp() {
                       ))}
 
                       {slotDuration === 5 && [
-                        { id: 'w5-1', tag: 'Full-Day Artisan Tour', time: '11:00 AM – 4:00 PM (IST)', zone: 'Multi-market deep curation across city' },
+                        { id: 'w5-1', tag: 'Extended Shopping', time: '11:00 AM – 4:00 PM (IST)', zone: 'Multi-store extensive shopping' },
                       ].map(slot => (
                         <div
                           key={slot.id}
@@ -3581,7 +3847,7 @@ export default function CustomerApp() {
                                 <div>
                                   <div className="ssc-title-row">
                                     <span className="ssc-service-tag">Personal Shopper</span>
-                                    <div className="ssc-title">{cart[0]?.name || 'Artisan Sourcing Run'}</div>
+                                    <div className="ssc-title">{cart[0]?.name || 'Personal Shopping Run'}</div>
                                   </div>
                                   <div className="ssc-desc">
                                     {cart.length} item{cart.length > 1 ? 's' : ''} in sourcing basket · {slotDuration}h Dedicated Shopper
@@ -3601,7 +3867,9 @@ export default function CustomerApp() {
                             {/* Bottom Section: All Slot Timing, Delivery Address & Payment Breakdown */}
                             <div className="ssc-bottom-details">
                               <div className="ssc-detail-pill">
-                                <span className="ssc-icon">🕒</span>
+                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                </span>
                                 <div className="ssc-detail-text">
                                   <span className="ssc-detail-label">All Slot Timing:</span>
                                   <span className="ssc-detail-val">{selectedDate} · {selectedSlotWindow} ({slotDuration} Hours)</span>
@@ -3609,7 +3877,9 @@ export default function CustomerApp() {
                               </div>
 
                               <div className="ssc-detail-pill">
-                                <span className="ssc-icon">📍</span>
+                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                </span>
                                 <div className="ssc-detail-text">
                                   <span className="ssc-detail-label">Delivery Address:</span>
                                   <span className="ssc-detail-val">
@@ -3623,11 +3893,25 @@ export default function CustomerApp() {
                               </div>
 
                               <div className="ssc-detail-pill">
-                                <span className="ssc-icon">💳</span>
+                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
+                                </span>
                                 <div className="ssc-detail-text">
                                   <span className="ssc-detail-label">Payment Breakdown:</span>
                                   <span className="ssc-detail-val">
                                     ₹{currentSlotFee} Slot Fee (cut now) + ₹{merchandiseBudget.toLocaleString('en-IN')} Product Budget (held safely in wallet)
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="ssc-detail-pill">
+                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                                </span>
+                                <div className="ssc-detail-text">
+                                  <span className="ssc-detail-label">Delivery Fee:</span>
+                                  <span className="ssc-detail-val">
+                                    Weighed &amp; calculated after store purchase based on actual package weight
                                   </span>
                                 </div>
                               </div>
@@ -3696,6 +3980,13 @@ export default function CustomerApp() {
                                 <span>Merchandise Budget (Held Securely):</span>
                                 <b>₹{merchandiseBudget.toLocaleString('en-IN')}</b>
                               </div>
+                              <div className="vmp-row" style={{ color: '#475569', fontSize: 12.5 }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                                  <span>Delivery Fee:</span>
+                                </span>
+                                <b style={{ color: '#2563EB', fontWeight: 600 }}>Weighed &amp; billed after store purchase</b>
+                              </div>
                               <div className="vmp-row vmp-total-row">
                                 <span style={{ fontWeight: 800, color: '#0F172A' }}>Total Booking Deposit Required:</span>
                                 <b style={{ fontSize: 14.5, color: '#0A3A6B' }}>₹{totalDepositRequired.toLocaleString('en-IN')}</b>
@@ -3705,16 +3996,16 @@ export default function CustomerApp() {
                             {walletShortfall > 0 ? (
                               <div className="vmp-alert-note">
                                 <div className="vmp-alert-note-header">
-                                  <span>💳</span>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
                                   <span>Deposit ₹{walletShortfall.toLocaleString('en-IN')} via Razorpay to confirm slot</span>
                                 </div>
                                 <div className="vmp-alert-note-body">
-                                  ₹{currentSlotFee} slot fee is deducted now for your personal shopper. ₹{merchandiseBudget.toLocaleString('en-IN')} merchandise budget is held safely in your account until you approve live samples.
+                                  ₹{currentSlotFee} slot fee is deducted now for your personal shopper. ₹{merchandiseBudget.toLocaleString('en-IN')} merchandise budget is held safely until you approve live samples. Delivery fee is weighed and calculated after items are collected from shops based on actual weight.
                                 </div>
                               </div>
                             ) : (
                               <div className="vmp-success-note">
-                                ✓ You have sufficient wallet balance. ₹{currentSlotFee} slot fee will be deducted upon confirmation.
+                                ✓ You have sufficient wallet balance. ₹{currentSlotFee} slot fee will be deducted upon confirmation. Delivery fee will be weighed and calculated after store pickup.
                               </div>
                             )}
                           </div>
@@ -3783,10 +4074,10 @@ export default function CustomerApp() {
           {activeTab === 'orders' && (
             <OrdersTab
               orders={orders}
-              onBack={() => setActiveTab('home')}
+              onBack={handleGoBack}
               onJoinLiveShopping={(slotKey) => {
                 setLiveSessionSlot(slotKey);
-                setActiveTab('live-shopping');
+                navigateToTab('live-shopping');
               }}
               onTrackOrder={handleTrackOrder}
               onRateShopper={(order) => {
@@ -3804,9 +4095,10 @@ export default function CustomerApp() {
               cart={cart}
               onRemoveItem={handleRemoveCartItem}
               onNavigate={(tab) => {
-                setActiveTab(tab);
+                navigateToTab(tab);
                 if (tab === 'orders') loadData(user);
               }}
+              onBack={handleGoBack}
             />
           )}
 
@@ -3816,7 +4108,7 @@ export default function CustomerApp() {
               user={user}
               walletTransactions={walletTransactions}
               onAddMoney={handleAddMoney}
-              onBack={() => setActiveTab('home')}
+              onBack={handleGoBack}
               showToast={showToast}
             />
           )}
@@ -3827,11 +4119,11 @@ export default function CustomerApp() {
               customerPhone={customerPhone}
               savedAddressesCount={savedAddresses.length}
               onNavigate={(tab) => {
-                setActiveTab(tab);
+                navigateToTab(tab);
                 if (tab === 'orders') loadData(user);
               }}
               onLogout={handleLogout}
-              onBack={() => setActiveTab('home')}
+              onBack={handleGoBack}
               onUpdateUser={(updated) => {
                 setUser((prev) => ({ ...prev, ...updated }));
                 if (updated.phone) setCustomerPhone(updated.phone);
@@ -3847,7 +4139,7 @@ export default function CustomerApp() {
           {activeTab === 'addresses' && (
             <AddressesTab
               savedAddresses={savedAddresses}
-              onBack={() => setActiveTab('profile')}
+              onBack={handleGoBack}
               onDeleteAddress={handleDeleteAddress}
               onSaveAddress={handleSaveNewAddress}
               defaultName={user.name}
@@ -3865,9 +4157,9 @@ export default function CustomerApp() {
               liveSessionData={liveSessionData}
               liveSessionLoading={liveSessionLoading}
               user={user}
-              onBackToOrders={() => setActiveTab('orders')}
+              onBackToOrders={handleGoBack}
               onNavigate={(tab) => {
-                setActiveTab(tab);
+                navigateToTab(tab);
                 if (tab === 'orders') loadData(user);
               }}
               onApproveOption={handleApproveOption}
@@ -3879,29 +4171,29 @@ export default function CustomerApp() {
 
         {/* Mobile Bottom Navigation */}
         <nav className="bottomnav" id="bottomnav">
-          <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
+          <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => navigateToTab('home')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11L12 4l8 7" /><path d="M6 10v9h5v-5h2v5h5v-9" /></svg>
             Home
           </button>
-          <button className={`nav-btn ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
+          <button className={`nav-btn ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => navigateToTab('categories')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2" /><rect x="13" y="4" width="7" height="7" rx="1.2" /><rect x="4" y="13" width="7" height="7" rx="1.2" /><rect x="13" y="13" width="7" height="7" rx="1.2" /></svg>
             Categories
           </button>
-          <button className={`nav-btn ${activeTab === 'bookslot' ? 'active' : ''}`} onClick={() => setActiveTab('bookslot')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="16" rx="3" /><path d="M4 10h16M9 3v4M15 3v4" /><path d="M12 13v5M9.5 15.5h5" /></svg>
-            Book Slot
+          <button className={`nav-btn ${activeTab === 'bookslot' ? 'active' : ''}`} onClick={() => navigateToTab('bookslot')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+            Uploads
           </button>
           <button
-          className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveTab('orders');
-            loadData(user);
-          }}
-        >
+            className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => {
+              navigateToTab('orders');
+              loadData(user);
+            }}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
             Orders
           </button>
-          <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
+          <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigateToTab('profile')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
             Profile
           </button>
@@ -3940,7 +4232,7 @@ export default function CustomerApp() {
                 body: JSON.stringify({ item: newItem, userId: user.id, email: user.email }),
               }).catch(() => { });
             }
-            showToast(`Added ${prod.name} to sourcing basket`);
+            showToast(`Added ${prod.name} to cart`);
           }}
           handleFileUpload={handleFileUpload}
         />
@@ -3951,16 +4243,21 @@ export default function CustomerApp() {
         slotKey={trackOrderSlot}
         trackingData={trackingData}
         onClose={() => setTrackOrderSlot(null)}
+        onJoinLiveShopping={(slotKey) => {
+          setTrackOrderSlot(null);
+          setLiveSessionSlot(slotKey);
+          navigateToTab('live-shopping');
+        }}
       />
 
       {/* ================= ORDER PLACED SUCCESSFULLY CELEBRATION MODAL ================= */}
       <OrderPlacedModal
         order={orderPlacedSuccess}
         onClose={() => setOrderPlacedSuccess(null)}
-        onNavigate={(tab) => setActiveTab(tab)}
+        onNavigate={(tab) => navigateToTab(tab)}
         onJoinLiveShopping={(slotKey) => {
           setLiveSessionSlot(slotKey);
-          setActiveTab('live-shopping');
+          navigateToTab('live-shopping');
         }}
       />
 
@@ -3976,8 +4273,19 @@ export default function CustomerApp() {
         item={editingCartItem}
         onClose={() => setEditingCartItem(null)}
         onSave={(updated) => {
-          setCart(prev => prev.map(c => c.id === updated.id ? updated : c));
-          showToast(`Updated "${updated.name}"`);
+          setCart(prev => {
+            const next = prev.map(c => c.id === updated.id ? updated : c);
+            persistCartLocally(next);
+            return next;
+          });
+          if (isLoggedIn && user.email) {
+            fetch(`/api/cart?email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id || '')}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+              body: JSON.stringify({ ...updated, userId: user.id, email: user.email }),
+            }).catch(() => { });
+          }
+          showToast(`Saved instructions for "${updated.name}"`);
           setEditingCartItem(null);
         }}
         handleFileUpload={handleFileUpload}

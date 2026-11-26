@@ -28,6 +28,8 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
   onRejectOption,
   showToast,
 }) => {
+  const [lightboxImg, setLightboxImg] = React.useState<{ src: string; title: string; price?: number } | null>(null);
+
   const approvedItemsCount = liveSessionData?.products?.reduce(
     (acc, p) => acc + (p.options?.filter(o => o.status === 'approved').length || 0),
     0
@@ -80,8 +82,9 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
               <h2 style={{ margin: 0, fontSize: 19, fontFamily: 'var(--font-display)', color: '#fff', letterSpacing: '-0.2px' }}>
                 {liveSessionData?.shopper?.name || 'Personal Shopper'}
               </h2>
-              <span className="shopper-rating-badge">
-                ★ {liveSessionData?.shopper?.rating || '4.9'} · Verified Personal Shopper
+              <span className="shopper-rating-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+                <span>{liveSessionData?.shopper?.rating || '4.9'} · Verified Personal Shopper</span>
               </span>
             </div>
             <div style={{ color: '#BAE6FD', fontSize: 13, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -106,12 +109,12 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
       <div className="live-layout-2col">
         {/* Column 1: Items & Suggestions */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-            <h3 style={{ margin: 0, fontSize: 17, fontFamily: 'var(--font-display)', color: 'var(--text)' }}>
-              In-Store Curations &amp; Suggestions
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+            <h3 style={{ margin: 0, fontSize: 20, fontFamily: 'var(--font-display, serif)', color: '#071D3A', fontWeight: 800 }}>
+              Items to approve
             </h3>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', background: '#F1F5F9', padding: '3px 10px', borderRadius: 999 }}>
-              {liveSessionData?.products?.length || 0} Item(s) in Scope
+            <span style={{ fontSize: 13, color: '#64748B' }}>
+              {liveSessionData?.products?.length || 0} item{(liveSessionData?.products?.length || 0) === 1 ? '' : 's'} · nothing is bought until you approve
             </span>
           </div>
 
@@ -123,171 +126,261 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
               <p style={{ margin: 0, fontSize: 13 }}>Syncing live recommendations, real-time tags, and high-res store photos.</p>
             </div>
           ) : liveSessionData?.products && liveSessionData.products.length > 0 ? (
-            <div style={{ display: 'grid', gap: 16 }}>
+            <div className="approval-items-wrap">
               {liveSessionData.products.map((item, itemIdx) => (
-                <div key={item.itemId || itemIdx} className="live-item-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: '#0A3A6B', textTransform: 'uppercase', letterSpacing: 0.6, background: '#EFF6FF', display: 'inline-block', padding: '2px 8px', borderRadius: 6, marginBottom: 4 }}>
-                        Sourced Item #{itemIdx + 1}
-                      </div>
-                      <h4 style={{ margin: '2px 0 0', fontSize: 18, color: 'var(--text)', fontWeight: 800 }}>{item.name}</h4>
+                <div key={item.itemId || itemIdx} className="approval-item-outer-card">
+                  {/* Outer Item Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: 0.5, background: '#EFF6FF', padding: '3px 9px', borderRadius: 6 }}>
+                        Item {itemIdx + 1}
+                      </span>
+                      <h4 style={{ margin: 0, fontSize: 17, color: '#071D3A', fontWeight: 800 }}>{item.name}</h4>
                     </div>
                     <div style={{ textAlign: 'right', minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Quantity: <b>{item.qty}</b></div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0A3A6B', marginTop: 3 }}>
-                        Target Budget: ₹{item.estMin} – ₹{item.estMax}
-                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#0A3A6B' }}>
+                        Budget ₹{item.estMin} to ₹{item.estMax}
+                      </span>
                     </div>
                   </div>
 
-                  <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A3A6B" strokeWidth="2.5">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
-                        Shopper Recommendations ({item.options?.length || 0})
-                      </span>
-                      <span style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>Verified genuine in-store options</span>
-                    </div>
+                  <div style={{ fontSize: 12.5, color: '#64748B', margin: '8px 0 14px' }}>
+                    Shopper is sharing live options from store counters:
+                  </div>
 
-                    {item.options && item.options.length > 0 ? (
-                      <div style={{ display: 'grid', gap: 14 }}>
-                        {item.options.map((opt, optIdx) => (
+                  {/* Side-by-Side Options Comparison Grid */}
+                  {item.options && item.options.length > 0 ? (
+                    <div className="approval-options-grid">
+                      {item.options.map((opt, optIdx) => {
+                        const isApproved = opt.status === 'approved';
+                        const isRejected = opt.status === 'rejected';
+                        const isPending = opt.status === 'pending';
+                        const optionLabel = optIdx === 0
+                          ? 'Option A · Shopper pick'
+                          : optIdx === 1
+                          ? 'Option B · Alternative'
+                          : `Option ${String.fromCharCode(65 + optIdx)}`;
+
+                        return (
                           <div
                             key={opt.id}
-                            className={`live-suggestion-card ${opt.status === 'approved' ? 'approved' : opt.status === 'rejected' ? 'rejected' : 'pending'}`}
+                            className={`approval-option-card ${isApproved ? 'approved' : isRejected ? 'rejected' : 'pending'}`}
                           >
-                            <div className="live-sugg-content-row" style={{ display: 'flex', gap: 16 }}>
-                              <div className="live-sugg-img-wrapper">
-                                <img
-                                  src={opt.image || '/images/placeholders/placeholder-item.svg'}
-                                  alt={opt.description || `${item.name} Sourced In-Store Option #${optIdx + 1}`}
-                                  className="live-sugg-img"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                                  }}
-                                />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                    Suggestion #{optIdx + 1}
-                                  </span>
-                                  <span className={`live-tag-${opt.status}`}>
-                                    {opt.status === 'approved' && (
-                                      <>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                                        <span>Approved & Reserved</span>
-                                      </>
-                                    )}
-                                    {opt.status === 'rejected' && (
-                                      <>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                                        <span>Alternative Requested</span>
-                                      </>
-                                    )}
-                                    {opt.status === 'pending' && (
-                                      <>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
-                                        <span>Awaiting Approval</span>
-                                      </>
-                                    )}
-                                  </span>
-                                </div>
-                                <div className="live-sugg-price" style={{ flexWrap: 'wrap' }}>
-                                  ₹{opt.price.toLocaleString('en-IN')}
-                                  <span className="live-sugg-price-usd">(~${Math.round(opt.price / 83)} USD)</span>
-                                </div>
-                                <div style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5, marginTop: 4, wordBreak: 'break-word' }}>
-                                  {opt.description || 'Verified authentic item option selected in-store by shopper.'}
-                                </div>
+                            {/* Option Photo with Zoom/Lightbox Action */}
+                            <div
+                              style={{
+                                height: 180,
+                                borderRadius: 10,
+                                overflow: 'hidden',
+                                position: 'relative',
+                                background: '#F8FAFC',
+                                cursor: 'pointer',
+                                border: '1px solid #E2E8F0',
+                              }}
+                              onClick={() => setLightboxImg({
+                                src: opt.image || '/images/placeholders/placeholder-item.svg',
+                                title: opt.description || `${item.name} · ${optionLabel}`,
+                                price: opt.price,
+                              })}
+                              title="Click to view full image in detail"
+                            >
+                              <img
+                                src={opt.image || '/images/placeholders/placeholder-item.svg'}
+                                alt={opt.description || `${item.name} · ${optionLabel}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
+                                }}
+                              />
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  bottom: 8,
+                                  right: 8,
+                                  background: 'rgba(7, 29, 58, 0.85)',
+                                  backdropFilter: 'blur(4px)',
+                                  color: '#FFFFFF',
+                                  borderRadius: 6,
+                                  padding: '3px 8px',
+                                  fontSize: 10.5,
+                                  fontWeight: 700,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}
+                              >
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                                <span>View photo</span>
                               </div>
                             </div>
 
-                            {opt.status === 'pending' && (() => {
-                              const balance = Number(user.walletBalance) || 0;
-                              const totalCost = opt.price * (item.qty || 1);
-                              const shortfall = Math.max(0, totalCost - balance);
-                              const needsTopup = balance < totalCost;
+                            {/* Option Details */}
+                            <div style={{ marginTop: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 12, fontWeight: 800, color: '#071D3A' }}>
+                                  {optionLabel}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 10.5,
+                                    fontWeight: 700,
+                                    padding: '2px 8px',
+                                    borderRadius: 6,
+                                    background: isApproved ? '#DCFCE7' : isRejected ? '#F1F5F9' : '#DCFCE7',
+                                    color: isApproved ? '#15803D' : isRejected ? '#64748B' : '#15803D',
+                                  }}
+                                >
+                                  {isApproved ? 'Approved' : isRejected ? 'Declined' : 'Photo verified'}
+                                </span>
+                              </div>
 
-                              return (
-                                <div className="live-sugg-actions" style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+                              <div style={{ fontSize: 19, fontWeight: 800, color: '#071D3A', margin: '6px 0 2px' }}>
+                                ₹{opt.price.toLocaleString('en-IN')}
+                              </div>
+
+                              <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.45, marginBottom: 14, flex: 1 }}>
+                                {opt.description || 'Verified authentic piece selected in-store by personal shopper.'}
+                              </div>
+
+                              {/* Action Buttons */}
+                              {isPending && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
+                                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
+                                      style={{
+                                        flex: 1,
+                                        background: '#0B4F9C',
+                                        color: '#FFFFFF',
+                                        border: 'none',
+                                        borderRadius: 8,
+                                        padding: '10px 16px',
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 6,
+                                        whiteSpace: 'nowrap',
+                                        transition: 'background 0.15s ease',
+                                      }}
+                                    >
+                                      <span>Approve</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setLightboxImg({
+                                        src: opt.image || '/images/placeholders/placeholder-item.svg',
+                                        title: opt.description || `${item.name} · ${optionLabel}`,
+                                        price: opt.price,
+                                      })}
+                                      style={{
+                                        flex: 1,
+                                        background: '#FFFFFF',
+                                        color: '#071D3A',
+                                        border: '1.2px solid #CBD5E1',
+                                        borderRadius: 8,
+                                        padding: '10px 16px',
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 6,
+                                        whiteSpace: 'nowrap',
+                                        transition: 'all 0.15s ease',
+                                      }}
+                                    >
+                                      <span>View photos</span>
+                                    </button>
+                                  </div>
+
                                   <button
                                     type="button"
-                                    className={`btn-live-approve ${needsTopup ? 'needs-topup' : ''}`}
-                                    onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
-                                  >
-                                    {needsTopup ? (
-                                      <>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                          <rect x="2" y="5" width="20" height="14" rx="3" />
-                                          <line x1="2" y1="10" x2="22" y2="10" />
-                                        </svg>
-                                        <span>Top-Up ₹{shortfall.toLocaleString('en-IN')} & Approve</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                        <span>Approve Option · ₹{opt.price.toLocaleString('en-IN')}</span>
-                                      </>
-                                    )}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn-live-reject"
                                     onClick={() => onRejectOption(item.itemId, opt.id)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#64748B',
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      padding: '4px 0',
+                                      textAlign: 'center',
+                                      marginTop: 2,
+                                    }}
                                   >
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                      <path d="M3 3v5h5" />
-                                    </svg>
-                                    <span>Request Alternative</span>
+                                    Request alternative design →
                                   </button>
                                 </div>
-                              );
-                            })()}
+                              )}
 
-                            {opt.status === 'approved' && (
-                              <div className="live-approved-banner">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                                  <span>Reserved for billing! Shopper will include authentic GST store invoice.</span>
+                              {isApproved && (
+                                <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 8, padding: '10px 12px', marginTop: 'auto' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#15803D', marginBottom: 6 }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                                    <span>Approved &amp; Reserved</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => onRejectOption(item.itemId, opt.id)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#166534',
+                                      fontSize: 11.5,
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                      textDecoration: 'underline',
+                                      padding: 0,
+                                    }}
+                                  >
+                                    Change decision
+                                  </button>
                                 </div>
-                                <button type="button" className="btn-live-undo" onClick={() => onRejectOption(item.itemId, opt.id)}>
-                                  Change Decision
-                                </button>
-                              </div>
-                            )}
+                              )}
 
-                            {opt.status === 'rejected' && (
-                              <div className="live-rejected-banner">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-                                  <span>Alternative requested · Shopper is checking other designs in-store</span>
+                              {isRejected && (
+                                <div style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 8, padding: '10px 12px', marginTop: 'auto' }}>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>
+                                    Alternative requested
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#0B4F9C',
+                                      fontSize: 11.5,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      padding: 0,
+                                    }}
+                                  >
+                                    Re-evaluate this option
+                                  </button>
                                 </div>
-                                <button type="button" className="btn-live-undo" onClick={() => onApproveOption(item.itemId, opt.id, item, opt)}>
-                                  Re-evaluate
-                                </button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        ))}
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ background: '#F8FAFC', borderRadius: 12, padding: 22, textAlign: 'center', border: '1.5px dashed #CBD5E1' }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+                        Shopper is selecting options in the market...
                       </div>
-                    ) : (
-                      <div style={{ background: '#F8FAFC', borderRadius: 14, padding: 22, textAlign: 'center', border: '1.5px dashed #CBD5E1' }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-                          Shopper is selecting options in the market...
-                        </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                          Photos and prices from the store will appear here as items are found.
-                        </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                        Photos and prices from the store will appear here as items are found.
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -355,6 +448,118 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Full-Screen Image Lightbox Modal */}
+      {lightboxImg && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(3, 10, 20, 0.88)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+          onClick={() => setLightboxImg(null)}
+        >
+          <div
+            style={{
+              position: 'relative',
+              maxWidth: 760,
+              width: '100%',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#071D3A',
+              borderRadius: 20,
+              overflow: 'hidden',
+              boxShadow: '0 30px 70px rgba(0, 0, 0, 0.6)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 20px',
+                background: '#0A254A',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                {lightboxImg.title}
+              </div>
+              <button
+                type="button"
+                onClick={() => setLightboxImg(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  border: 'none',
+                  color: '#fff',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                  display: 'grid',
+                  placeItems: 'center',
+                }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div
+              style={{
+                width: '100%',
+                flex: 1,
+                maxHeight: 'calc(92vh - 120px)',
+                overflow: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#030A14',
+                padding: 16,
+              }}
+            >
+              <img
+                src={lightboxImg.src}
+                alt={lightboxImg.title}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '74vh',
+                  objectFit: 'contain',
+                  borderRadius: 10,
+                }}
+              />
+            </div>
+
+            {lightboxImg.price && (
+              <div
+                style={{
+                  width: '100%',
+                  padding: '12px 20px',
+                  background: '#0A254A',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span style={{ color: '#94A3B8', fontSize: 13 }}>Verified In-Store Sample</span>
+                <span style={{ color: '#60A5FA', fontSize: 18, fontWeight: 800 }}>₹{lightboxImg.price.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 };

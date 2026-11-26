@@ -71,8 +71,11 @@ export default function EditBasketItemModal({
               {item.sourceType === 'online' ? 'Online Store Item' : item.sourceType === 'mind' ? 'Customized Product' : 'Catalog Item'}
             </span>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-              Edit Sourcing Item
+              Add Reference &amp; Instructions
             </h3>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748B' }}>
+              Add specifications, variants, or reference photos for your shopper (photo is optional).
+            </p>
           </div>
           <button
             type="button"
@@ -97,13 +100,16 @@ export default function EditBasketItemModal({
           </label>
 
           <label style={{ display: 'block', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>Specifications / Notes</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+              Reference Description &amp; Special Instructions
+            </span>
             <textarea
               className="inp"
-              rows={3}
+              rows={4}
+              style={{ minHeight: 96, resize: 'vertical', lineHeight: 1.5, padding: '10px 12px' }}
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
-              placeholder="e.g. Peacock motif, antique matte gold, approx 22-inch length"
+              placeholder="e.g. Specific design variant, preferred shop/brand, size, color, or special instructions for your shopper..."
             />
           </label>
 
@@ -155,14 +161,14 @@ export default function EditBasketItemModal({
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0B192E' }}>
-                Reference Photos / Sketches (Up to 4)
+                Reference Photos / Sketches (Optional)
               </span>
               <span style={{ fontSize: 11, fontWeight: 800, color: editImgs.length >= 4 ? '#16A34A' : '#2563EB', background: editImgs.length >= 4 ? '#DCFCE7' : '#EFF6FF', padding: '2px 8px', borderRadius: 6 }}>
-                {editImgs.length}/4 Photos
+                {editImgs.length}/4 Photos (Optional)
               </span>
             </div>
             <div style={{ fontSize: 11.5, color: '#64748B', marginBottom: 10 }}>
-              Add photos to guide your shopper
+              Upload reference photos or sketches if you have a specific reference in mind (photo is not mandatory).
             </div>
 
             <div className="multi-photo-grid">

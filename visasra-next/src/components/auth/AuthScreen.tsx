@@ -679,8 +679,11 @@ export function AuthScreen({ onAuthSuccess, showToast }: AuthScreenProps) {
               ) : (
                 <div style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 16, padding: 20 }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EFF6FF', border: '1.5px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontSize: 20 }}>
-                      ✉️
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EFF6FF', border: '1.5px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', color: '#2563EB' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
                     </div>
                     <h2 className="auth-title" style={{ fontSize: 20, marginBottom: 4 }}>
                       Enter Verification Code

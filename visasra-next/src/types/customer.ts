@@ -222,6 +222,7 @@ export interface WalletTransaction {
   amount: number;
   note: string;
   date: string;
+  razorpayPaymentId?: string | null;
 }
 
 export type CustomerTab = 'home' | 'categories' | 'bookslot' | 'orders' | 'cart' | 'profile' | 'wallet' | 'addresses' | 'live-shopping';

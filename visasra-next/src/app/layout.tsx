@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Visasra — Authentic Indian Sourcing & Worldwide Delivery',
-    description: 'Shop from local markets, GRT, Fabindia, or custom artisans in India with real-time personal shoppers.',
+    description: 'Shop from local markets, top brand stores, or custom shops in India with real-time personal shoppers.',
     url: 'https://www.visasra.com',
     siteName: 'Visasra',
     images: [
