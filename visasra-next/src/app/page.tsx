@@ -2245,7 +2245,7 @@ export default function CustomerApp() {
       <nav className="sidenav" id="sidenav">
         <div className="sidenav-brand" onClick={() => setActiveTab('home')}>
           <img src="/images/logo/visasra-logo.png" alt="" className="sidenav-brand-logo" />
-          <span className="brand-text">Visasra</span>
+          <span className="brand-text">VISASRA</span>
         </div>
 
         <button className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => setActiveTab('home')}>
@@ -2307,7 +2307,7 @@ export default function CustomerApp() {
         <div className="topbar">
           <div className="wordmark" onClick={() => setActiveTab('home')}>
             <img src="/images/logo/visasra-logo.png" alt="" className="wordmark-logo" />
-            <span className="brand-text">Visasra</span>
+            <span className="brand-text">VISASRA</span>
           </div>
           <div className="top-actions">
             <button className="top-btn" onClick={() => setActiveTab('wallet')} aria-label="Wallet">

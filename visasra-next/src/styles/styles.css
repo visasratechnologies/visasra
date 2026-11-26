@@ -43,7 +43,7 @@ html, body { height: 100%; margin: 0; }
     display: flex; justify-content: center; align-items: flex-start; margin: 0;
   }
   h1, h2, h3, .serif { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; }
-  .visasra-name, .brand-text, .visasra-brand { font-family: var(--font-bodoni) !important; letter-spacing: 0.02em; }
+  .visasra-name, .brand-text, .visasra-brand { font-family: var(--font-bodoni) !important; letter-spacing: 0.04em; text-transform: uppercase; }
   .money { font-family: var(--font-ui); font-weight: 800; }
   button { font-family: inherit; }
   a { color: inherit; }
@@ -1928,7 +1928,7 @@ html.logged-out body { display: block; padding: 0; background: var(--bg); }
   nav.sidenav > * { position: relative; z-index: 1; }
   nav.sidenav .sidenav-brand { padding: 2px 6px 24px; gap: 9px; color: #fff; cursor: pointer; }
   nav.sidenav .sidenav-brand-logo { height: 38px; width: auto; max-width: 88px; object-fit: contain; image-rendering: -webkit-optimize-contrast; }
-  nav.sidenav .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; font-weight: 700; letter-spacing: 0.3px; text-transform: none; color: #fff; }
+  nav.sidenav .sidenav-brand .brand-text { font-family: var(--font-bodoni) !important; font-size: 22px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #fff; }
   nav.sidenav .nav-btn {
     color: rgba(255, 255, 255, .75); font-size: 13.5px; font-weight: 600; padding: 12px 14px; border-radius: 10px; gap: 13px;
     transition: all .16s ease;
