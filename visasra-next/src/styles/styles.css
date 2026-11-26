@@ -6410,8 +6410,8 @@ html.logged-out body {
   }
 }
 
-.flow-decor {
-  display: none;
+.flow-decor, .fd-leaves, .fd-fan {
+  display: none !important;
 }
 
 @media (min-width: 720px) {

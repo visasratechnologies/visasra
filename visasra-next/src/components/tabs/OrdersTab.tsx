@@ -22,23 +22,40 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
   const validOrders = orders.filter((o) => o && o.id);
 
-  const filteredOrders = validOrders.filter((o) => {
-    const isCompleted = o.status === 'delivered' || o.status === 'shipped';
-    const isInProgress = o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping';
+  const isCompletedOrder = (o: Order) =>
+    o.status === 'delivered' || o.status === 'shipped' || o.status === 'cancelled' || o.trackingStage === 'out_for_delivery';
 
-    if (activeFilter === 'completed') return isCompleted;
-    if (activeFilter === 'in_progress') return isInProgress;
-    return !isCompleted;
-  });
+  const isInProgressOrder = (o: Order) =>
+    !isCompletedOrder(o) && (
+      o.trackingStage === 'shopping' ||
+      o.trackingStage === 'worker_assigned' ||
+      o.trackingStage === 'purchased' ||
+      o.trackingStage === 'packed' ||
+      o.status === 'shopping' ||
+      !!o.liveSession?.worker
+    );
 
-  // Find the top active or in-flight order for the featured card
-  const activeOrder = filteredOrders.find(
-    (o) => o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping'
-  ) || (filteredOrders.length > 0 ? filteredOrders[0] : null);
+  const isUpcomingOrder = (o: Order) =>
+    !isCompletedOrder(o) && !isInProgressOrder(o);
 
-  const otherOrders = activeOrder
-    ? filteredOrders.filter((o) => o.id !== activeOrder.id)
-    : filteredOrders;
+  const upcomingOrders = validOrders.filter(isUpcomingOrder);
+  const inProgressOrders = validOrders.filter(isInProgressOrder);
+  const completedOrders = validOrders.filter(isCompletedOrder);
+
+  const currentList = activeFilter === 'completed'
+    ? completedOrders
+    : activeFilter === 'in_progress'
+    ? inProgressOrders
+    : upcomingOrders;
+
+  // Active in-progress order for the featured card (only shown when viewing in-progress)
+  const activeOrder = activeFilter === 'in_progress' && inProgressOrders.length > 0
+    ? inProgressOrders[0]
+    : null;
+
+  const otherOrders = activeFilter === 'in_progress'
+    ? inProgressOrders.slice(1)
+    : currentList;
 
   // Determine stage index for the 4-milestone stepper (Booked = 1, Assigned = 2, Shopping = 3, Shipped = 4)
   const getStageIndex = (order: Order) => {
@@ -98,25 +115,25 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
             className={`orders-filter-pill ${activeFilter === 'upcoming' ? 'active' : ''}`}
             onClick={() => setActiveFilter('upcoming')}
           >
-            Upcoming
+            Upcoming ({upcomingOrders.length})
           </button>
           <button
             type="button"
             className={`orders-filter-pill ${activeFilter === 'in_progress' ? 'active' : ''}`}
             onClick={() => setActiveFilter('in_progress')}
           >
-            In progress
+            In progress ({inProgressOrders.length})
           </button>
           <button
             type="button"
             className={`orders-filter-pill ${activeFilter === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveFilter('completed')}
           >
-            Completed
+            Completed ({completedOrders.length})
           </button>
         </div>
 
-        {filteredOrders.length === 0 ? (
+        {currentList.length === 0 ? (
           <div style={{ background: '#FFFFFF', borderRadius: 16, padding: '36px 20px', textAlign: 'center', border: '1px solid #E2E8F0', marginTop: 12 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#071D3A', marginBottom: 4 }}>
               {activeFilter === 'completed' ? 'No Completed Orders Yet' : activeFilter === 'in_progress' ? 'No Orders In Progress' : 'No Upcoming Orders'}
@@ -280,19 +297,32 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
               const primaryItem = (o.items || [])[0]?.name || 'Sourcing order';
               const timing = o.slotLabel || o.slotDate || 'Oct 16, 11 AM to 2 PM IST';
               const total = `₹${Number(o.totalAmount || 0).toLocaleString('en-IN')}`;
+              const isComp = isCompletedOrder(o);
+              const isInProg = isInProgressOrder(o);
+              const statusLine = isComp
+                ? (o.status === 'delivered' ? 'Delivered' : 'Dispatched with Tracking')
+                : isInProg
+                ? (o.status === 'shopping' || o.trackingStage === 'shopping' ? 'Shopping in store now' : 'Shopper assigned')
+                : `Slot confirmed · ${timing}`;
 
               return (
                 <div key={o.id} className="order-card-standard">
-                  <div className="order-card-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="7" />
-                      <path d="M12 9v6" />
-                      <path d="M9 12h6" />
-                    </svg>
+                  <div className="order-card-icon" style={{ background: isComp ? '#DCFCE7' : isInProg ? '#EFF6FF' : '#F1F5F9' }}>
+                    {isComp ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isInProg ? '#0B4F9C' : '#64748B'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="7" />
+                        <path d="M12 9v6" />
+                        <path d="M9 12h6" />
+                      </svg>
+                    )}
                   </div>
                   <div className="order-card-info">
-                    <div className="order-card-status-line">
-                      Slot confirmed · {timing}
+                    <div className="order-card-status-line" style={{ color: isComp ? '#15803D' : isInProg ? '#0B4F9C' : '#475569', fontWeight: 700 }}>
+                      {statusLine}
                     </div>
                     <div className="order-card-name">
                       {primaryItem}

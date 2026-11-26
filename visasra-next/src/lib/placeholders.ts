@@ -15,14 +15,29 @@ export function getItemImageFallback(sourceType?: string | null): string {
   return PLACEHOLDER_ITEM;
 }
 
-export function resolveItemImage(image?: string | null, sourceType?: string | null): string {
+export function resolveItemImage(image?: string | null, sourceType?: string | null, itemName?: string | null): string {
   if (image && image.trim()) {
     const trimmed = image.trim();
     // Do not use category banner header files as individual product item photos
-    if (!trimmed.startsWith('/images/categories/')) {
+    if (!trimmed.startsWith('/images/categories/') && !trimmed.endsWith('placeholder-item.svg')) {
       return trimmed;
     }
   }
+
+  // Name-based smart matching to authentic high-res product photos
+  if (itemName) {
+    const lower = itemName.toLowerCase();
+    if (/silk|saree|dupatta|kanchipuram|kurti|dress|wear|fashion|clothing/i.test(lower)) {
+      return '/images/products/womens-fashion/kanchipuram-silk-saree.jpg';
+    }
+    if (/bell|diya|pooja|brass|idol|temple|spiritual|samagri/i.test(lower)) {
+      return '/images/products/pooja-spiritual/diyas/brass-diya.jpg';
+    }
+    if (/kadai|cooker|pan|pot|dinner|cookware/i.test(lower)) {
+      return '/images/products/womens-fashion/ethnic-wear.jpg';
+    }
+  }
+
   return getItemImageFallback(sourceType);
 }
 

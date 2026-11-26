@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TrackingDetails } from '@/types/customer';
+import { resolveItemImage } from '@/lib/placeholders';
 
 interface OrderTrackingModalProps {
   slotKey: string | null;
@@ -102,21 +103,21 @@ export default function OrderTrackingModal({
     : [
         {
           id: 'item-dup-1',
-          name: 'Handloom silk dupatta',
+          name: 'Handloom Kanchipuram Pure Silk Dupatta',
           qty: 1,
           priceMin: 1450,
           priceMax: 1800,
           status: 'sourcing',
-          image: '/images/categories/womens-ethnic.svg',
+          image: '/images/products/womens-fashion/kanchipuram-silk-saree.jpg',
         },
         {
           id: 'item-bell-2',
-          name: 'Brass hanging pooja bell',
+          name: 'Handcrafted Brass Hanging Pooja Bell',
           qty: 1,
           priceMin: 650,
           priceMax: 850,
           status: 'sourcing',
-          image: '/images/categories/pooja-samagri.svg',
+          image: '/images/products/pooja-spiritual/diyas/brass-diya.jpg',
         },
       ];
 
@@ -463,22 +464,17 @@ export default function OrderTrackingModal({
                             overflow: 'hidden',
                           }}
                         >
-                          {it.image ? (
-                            <img
-                              src={it.image}
-                              alt={it.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/images/categories/womens-ethnic.svg';
-                              }}
-                            />
-                          ) : (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2">
-                              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                              <line x1="3" y1="6" x2="21" y2="6" />
-                              <path d="M16 10a4 4 0 0 1-8 0" />
-                            </svg>
-                          )}
+                          <img
+                            src={resolveItemImage(it.image, it.sourceType, it.name)}
+                            alt={it.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (!target.src.includes('placeholder-item.svg')) {
+                                target.src = '/images/placeholders/placeholder-item.svg';
+                              }
+                            }}
+                          />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#071D3A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

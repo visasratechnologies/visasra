@@ -49,23 +49,42 @@ export const LiveShoppingTab: React.FC<LiveShoppingTabProps> = ({
           </svg>
           Back to Orders
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span className="live-pulsing-badge">
             <span className="live-pulsing-dot" />
             LIVE IN-STORE SHOPPER ACTIVE
           </span>
-          {orders.length > 0 && (
-            <select
-              className="inp"
-              style={{ padding: '7px 14px', fontSize: 13, height: 'auto', width: 'auto', background: '#fff', border: '1.5px solid #CBD5E1', borderRadius: 10, fontWeight: 600, color: '#071D3A' }}
-              value={liveSessionSlot || (orders[0]?.slotKey || '')}
-              onChange={e => setLiveSessionSlot(e.target.value)}
-            >
-              {orders.map(o => (
-                <option key={o.slotKey} value={o.slotKey}>{o.orderNumber} ({o.slotLabel || o.slotKey})</option>
-              ))}
-            </select>
-          )}
+          {(() => {
+            const activeLiveOrders = orders.filter(
+              (o) => o.trackingStage === 'shopping' || o.trackingStage === 'worker_assigned' || o.status === 'shopping'
+            );
+            const currentOrder = orders.find((o) => o.slotKey === liveSessionSlot) || activeLiveOrders[0] || orders[0];
+
+            if (activeLiveOrders.length > 1) {
+              return (
+                <select
+                  className="inp"
+                  style={{ padding: '6px 12px', fontSize: 12.5, height: 'auto', width: 'auto', background: '#fff', border: '1.2px solid #CBD5E1', borderRadius: 8, fontWeight: 700, color: '#071D3A' }}
+                  value={liveSessionSlot || activeLiveOrders[0]?.slotKey}
+                  onChange={e => setLiveSessionSlot(e.target.value)}
+                >
+                  {activeLiveOrders.map(o => (
+                    <option key={o.slotKey} value={o.slotKey}>{o.orderNumber} ({o.slotLabel || 'Live Shopping'})</option>
+                  ))}
+                </select>
+              );
+            }
+
+            if (currentOrder) {
+              return (
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#071D3A', background: '#FFFFFF', border: '1.2px solid #E2E8F0', padding: '5px 12px', borderRadius: 8 }}>
+                  {currentOrder.orderNumber} · {currentOrder.slotLabel || 'Live Sourcing'}
+                </span>
+              );
+            }
+
+            return null;
+          })()}
         </div>
       </div>
 

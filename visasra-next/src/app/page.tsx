@@ -2400,12 +2400,6 @@ export default function CustomerApp() {
 
       {/* Main #app Container */}
       <div id="app">
-        {/* Decorative Flow Elements */}
-        <div className="flow-decor" aria-hidden="true">
-          <img className="fd-leaves" src="/images/decor/flow-leaves.png" alt="" />
-          <img className="fd-fan" src="/images/decor/flow-fan.png" alt="" />
-        </div>
-
         {/* Mobile Topbar */}
         <div className="topbar">
           <div className="wordmark" onClick={() => navigateToTab('home')}>
