@@ -4253,6 +4253,10 @@ export default function CustomerApp() {
           setLiveSessionSlot(slotKey);
           navigateToTab('live-shopping');
         }}
+        onTrackOrder={(slotKey) => {
+          setOrderPlacedSuccess(null);
+          handleTrackOrder(slotKey);
+        }}
       />
 
       {/* Insufficient Balance Top-up & Approval Modal */}
