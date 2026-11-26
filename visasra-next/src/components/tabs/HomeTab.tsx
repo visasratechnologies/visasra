@@ -216,9 +216,9 @@ export function HomeTab({
             ))}
             {orders.length === 0 && (
               <div className="booking-card" style={{ padding: '24px', textAlign: 'center' }}>
-                <b>No bookings yet</b>
-                <div style={{ color: 'var(--text-dim)', margin: '4px 0 14px' }}>Book a slot and tell us what you need — we'll take it from there.</div>
-                <button className="btn btn-primary" onClick={() => onNavigate('bookslot')}>Book a shopping slot</button>
+                <b>No active shopping orders</b>
+                <div style={{ color: 'var(--text-dim)', margin: '4px 0 14px' }}>Upload photos or store links, and we&apos;ll take care of the rest.</div>
+                <button className="btn btn-primary" onClick={() => onNavigate('bookslot')}>Upload items to source</button>
               </div>
             )}
           </div>
