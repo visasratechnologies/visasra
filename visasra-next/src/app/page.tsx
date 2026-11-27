@@ -4265,7 +4265,7 @@ export default function CustomerApp() {
                                     <path d="M16 12h2" />
                                     <path d="M2 10h20" />
                                   </svg>
-                                  <span>Visasra Sourcing Wallet</span>
+                                  <span>Visasra Wallet</span>
                                 </div>
                                 <div className="vmp-wallet-balance">
                                   ₹{user.walletBalance.toLocaleString('en-IN')}
