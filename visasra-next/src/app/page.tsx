@@ -3234,10 +3234,10 @@ export default function CustomerApp() {
                             width: '100%',
                             justifyContent: 'center',
                             transition: 'all 0.2s ease',
-                            ...(customAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
+                            ...(customAddedFeedback ? { background: '#0B4F9C', borderColor: '#071D3A', color: '#fff', transform: 'scale(0.99)', boxShadow: '0 2px 10px rgba(11, 79, 156, 0.35)' } : {})
                           }}
                         >
-                          {customAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Customized Product to Sourcing Basket'}
+                          {customAddedFeedback ? '✓ Added to Cart!' : '+ Add to Cart'}
                         </button>
                       </form>
                     )}
@@ -3333,10 +3333,10 @@ export default function CustomerApp() {
                             width: '100%',
                             justifyContent: 'center',
                             transition: 'all 0.2s ease',
-                            ...(onlineAddedFeedback ? { background: '#10B981', borderColor: '#059669', color: '#fff', transform: 'scale(1.02)' } : {})
+                            ...(onlineAddedFeedback ? { background: '#0B4F9C', borderColor: '#071D3A', color: '#fff', transform: 'scale(0.99)', boxShadow: '0 2px 10px rgba(11, 79, 156, 0.35)' } : {})
                           }}
                         >
-                          {onlineAddedFeedback ? '✓ Added to Sourcing Basket!' : '+ Add Online Store Item to Basket'}
+                          {onlineAddedFeedback ? '✓ Added to Cart!' : '+ Add to Cart'}
                         </button>
                       </form>
                     )}

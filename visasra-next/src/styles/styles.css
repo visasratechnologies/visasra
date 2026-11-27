@@ -7304,7 +7304,7 @@ html.logged-out body {
 .corner-leaf {
   position: absolute;
   top: 0;
-  right: 0;
+  right: 24px;
   width: 130px;
   height: auto;
   z-index: 0;
@@ -7316,7 +7316,7 @@ html.logged-out body {
 @media (min-width: 720px) {
   .corner-leaf {
     top: 0;
-    right: 0;
+    right: 24px;
     width: 210px;
   }
 
@@ -7324,7 +7324,7 @@ html.logged-out body {
   .screen[data-screen="orders"] .corner-leaf,
   .screen[data-screen="profile"] .corner-leaf {
     top: 0;
-    right: 0;
+    right: 24px;
     width: 210px;
   }
 
@@ -7643,7 +7643,7 @@ html.logged-out body {
 .screen[data-screen="categories"] .corner-leaf {
   position: absolute !important;
   top: 0 !important;
-  right: 0 !important;
+  right: 24px !important;
   width: 130px !important;
   max-width: 35vw !important;
   height: auto !important;
@@ -7706,7 +7706,7 @@ html.logged-out body {
     width: 210px !important;
     max-width: 26vw !important;
     top: 0 !important;
-    right: 0 !important;
+    right: 24px !important;
   }
 
   .cat-leaves-decor {
@@ -11985,7 +11985,7 @@ html.logged-out body {
 .orders-inner .corner-leaf {
   position: absolute !important;
   top: 0 !important;
-  right: 0 !important;
+  right: 24px !important;
   width: 140px !important;
   max-width: 35vw !important;
   height: auto !important;
@@ -12016,7 +12016,7 @@ html.logged-out body {
     width: 240px !important;
     max-width: 28vw !important;
     top: 0 !important;
-    right: 0 !important;
+    right: 24px !important;
   }
 }
 
@@ -12031,7 +12031,7 @@ html.logged-out body {
   .orders-inner .corner-leaf {
     width: 260px !important;
     top: 0 !important;
-    right: 0 !important;
+    right: 24px !important;
   }
 }
 
