@@ -13332,20 +13332,22 @@ html.logged-out body {
 
 .bookslot-sticky-footer {
   position: fixed;
-  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-  left: 14px;
-  right: 14px;
-  width: calc(100% - 28px);
-  max-width: 440px;
-  margin: 0 auto;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 24px) !important;
+  max-width: 440px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
   background: #FFFFFF;
   border: 1.2px solid #E2E8F0;
   border-radius: 20px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   z-index: 100;
   box-shadow: 0 10px 30px rgba(7, 29, 58, 0.16), 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -13354,9 +13356,9 @@ html.logged-out body {
   background: #EFF6FF;
   color: #1D4ED8;
   border: 1px solid #BFDBFE;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -13371,10 +13373,11 @@ html.logged-out body {
   flex-direction: column;
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .bookslot-footer-est {
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 800;
   color: #071D3A;
   line-height: 1.2;
@@ -13382,7 +13385,7 @@ html.logged-out body {
 }
 
 .bookslot-footer-next {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #64748B;
   font-weight: 500;
   white-space: nowrap;
@@ -13394,15 +13397,23 @@ html.logged-out body {
 .bookslot-sticky-hint {
   font-size: 12px;
   color: #64748B;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .bookslot-continue-btn {
-  padding: 9px 24px;
+  padding: 10px 16px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
   border: none;
   cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
 }
 
 .bookslot-continue-btn.disabled {

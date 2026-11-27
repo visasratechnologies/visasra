@@ -3424,7 +3424,7 @@ export default function CustomerApp() {
                             Add at least 1 item to proceed
                           </span>
                         ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                             <span className="bookslot-count-badge">
                               {cart.length} {cart.length === 1 ? 'ITEM' : 'ITEMS'}
                             </span>
@@ -3433,7 +3433,7 @@ export default function CustomerApp() {
                                 Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}
                               </div>
                               <div className="bookslot-footer-next">
-                                Next: Delivery &amp; Contact Details
+                                Next: Delivery Details
                               </div>
                             </div>
                           </div>
