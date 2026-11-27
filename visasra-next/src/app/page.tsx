@@ -3721,8 +3721,9 @@ export default function CustomerApp() {
                         }}
                       >
                         <div>
-                          <span className="lux-dur-badge lux-badge-express">Express Run</span>
+                          <span className="lux-dur-badge lux-badge-express">Express</span>
                           <div className="lux-dur-hours">2 Hours</div>
+                          <div className="lux-dur-fee">₹250</div>
                           <div className="lux-dur-name">Targeted Sourcing</div>
                           <div className="lux-dur-desc">Quick visit to 1–2 specific stores. Ideal for 1–3 pre-decided items.</div>
                         </div>
@@ -3746,9 +3747,10 @@ export default function CustomerApp() {
                         <div>
                           <span className="lux-dur-badge lux-badge-popular" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                            <span>Most Popular</span>
+                            <span>Popular</span>
                           </span>
                           <div className="lux-dur-hours">3 Hours</div>
+                          <div className="lux-dur-fee">₹400</div>
                           <div className="lux-dur-name">Comprehensive Shopping</div>
                           <div className="lux-dur-desc">Visit multiple stores to compare styles, quality, and prices.</div>
                         </div>
@@ -3770,8 +3772,9 @@ export default function CustomerApp() {
                         }}
                       >
                         <div>
-                          <span className="lux-dur-badge" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>Extended Session</span>
+                          <span className="lux-dur-badge" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>Extended</span>
                           <div className="lux-dur-hours">5 Hours</div>
+                          <div className="lux-dur-fee">₹600</div>
                           <div className="lux-dur-name">Extended Shopping</div>
                           <div className="lux-dur-desc">Extensive visits across multiple stores. Ideal for custom tailoring, bridal, or bulk shopping.</div>
                         </div>
@@ -3966,43 +3969,29 @@ export default function CustomerApp() {
                         </div>
                       </div>
 
-                      {/* Right Column: Confirmed Shopping Window Card */}
+                      {/* Right Column: Clean Confirmed Shopping Window Card */}
                       <div className="slot-confirmed-card">
                         <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', display: 'grid', placeItems: 'center', color: '#0B4F9C' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <polyline points="12 6 12 12 16 14" />
-                                </svg>
-                              </div>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: '#071D3A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                Confirmed Shopping Window
-                              </span>
-                            </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: '#071D3A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                              Confirmed Shopping Slot
+                            </span>
                             <span
                               style={{
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: 700,
                                 background: '#ECFDF5',
                                 color: '#047857',
                                 border: '1px solid #A7F3D0',
-                                padding: '3px 10px',
+                                padding: '2px 8px',
                                 borderRadius: 999,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 5,
                               }}
                             >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                              Completes before 9:00 PM IST
+                              ✓ Completes before 9:00 PM IST
                             </span>
                           </div>
 
-                          {/* Main Highlight Banner */}
+                          {/* High-Contrast Slot Time Display */}
                           <div
                             style={{
                               background: 'linear-gradient(135deg, #0B4F9C 0%, #071D3A 100%)',
@@ -4010,112 +3999,35 @@ export default function CustomerApp() {
                               padding: '16px 20px',
                               color: '#FFFFFF',
                               textAlign: 'center',
-                              marginBottom: 14,
-                              boxShadow: '0 4px 12px rgba(11, 79, 156, 0.2)',
+                              marginBottom: 12,
+                              boxShadow: '0 4px 14px rgba(11, 79, 156, 0.18)',
                             }}
                           >
                             <div style={{ fontSize: 11.5, fontWeight: 700, color: '#93C5FD', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
-                              Your {slotDuration}-Hour Shopping Window
+                              {slotDuration}-Hour Active Window
                             </div>
                             <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '0.5px', fontFamily: 'var(--font-display, serif)' }}>
-                              {selectedSlotWindow}
-                            </div>
-                          </div>
-
-                          {/* 3-Column Slot Flow Display */}
-                          <div
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr auto 1fr',
-                              alignItems: 'center',
-                              gap: 12,
-                              padding: '14px 16px',
-                              background: '#F8FAFC',
-                              borderRadius: 14,
-                              border: '1px solid #E2E8F0',
-                              textAlign: 'center',
-                            }}
-                          >
-                            {/* Start Time */}
-                            <div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>
-                                Slot Start Time
-                              </div>
-                              <div style={{ fontSize: 20, fontWeight: 800, color: '#071D3A', fontFamily: 'var(--font-display, serif)' }}>
-                                {formatHour12(selectedStartHour)}
-                              </div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#0B4F9C', marginTop: 1 }}>
-                                {selectedStartHour >= 12 ? 'Post Meridiem (PM)' : 'Ante Meridiem (AM)'} · IST
-                              </div>
-                            </div>
-
-                            {/* Center Duration Badge */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 8px' }}>
-                              <span
-                                style={{
-                                  fontSize: 11.5,
-                                  fontWeight: 800,
-                                  color: '#0B4F9C',
-                                  background: '#DBEAFE',
-                                  padding: '4px 12px',
-                                  borderRadius: 999,
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {slotDuration} Hours Active
-                              </span>
-                              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                              </svg>
-                            </div>
-
-                            {/* End Time */}
-                            <div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>
-                                Slot End Time
-                              </div>
-                              <div style={{ fontSize: 20, fontWeight: 800, color: '#071D3A', fontFamily: 'var(--font-display, serif)' }}>
-                                {formatHour12(selectedStartHour + slotDuration)}
-                              </div>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: '#10B981', marginTop: 1 }}>
-                                {(selectedStartHour + slotDuration) >= 12 ? 'Post Meridiem (PM)' : 'Ante Meridiem (AM)'} · IST
-                              </div>
+                              {selectedSlotWindow} IST
                             </div>
                           </div>
                         </div>
 
-                        {/* Bottom Summary Bar */}
+                        {/* Bottom Clean Date & Operating Window Line */}
                         <div
                           style={{
-                            marginTop: 14,
-                            paddingTop: 12,
+                            paddingTop: 10,
                             borderTop: '1px dashed #CBD5E1',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             flexWrap: 'wrap',
-                            gap: 10,
-                            fontSize: 12.5,
+                            gap: 8,
+                            fontSize: 12,
                             color: '#475569',
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 700, color: '#071D3A' }}>
-                              Date: {selectedDate}
-                            </span>
-                            <span>•</span>
-                            <span style={{ fontWeight: 700, color: '#0B4F9C' }}>
-                              Booking Window: {selectedSlotWindow}
-                            </span>
-                          </div>
-                          <div style={{ color: '#047857', fontWeight: 700, fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                            </svg>
-                            <span>Store Operating Window: 11:00 AM – 9:00 PM IST</span>
-                          </div>
-
+                          <span>Date: <b style={{ color: '#071D3A' }}>{selectedDate}</b></span>
+                          <span style={{ color: '#047857', fontWeight: 600 }}>11:00 AM – 9:00 PM Operating Hours</span>
                         </div>
                       </div>
                     </div>
@@ -4169,7 +4081,7 @@ export default function CustomerApp() {
                               </div>
                             </div>
 
-                            {/* Bottom Section: All Slot Timing, Delivery Address & Payment Breakdown */}
+                            {/* Bottom Section: All Slot Timing & Delivery Address */}
                             <div className="ssc-bottom-details">
                               <div className="ssc-detail-pill">
                                 <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -4193,30 +4105,6 @@ export default function CustomerApp() {
                                     ) : (
                                       <span style={{ color: '#E11D48' }}>Delivery address pending (Step 2)</span>
                                     )}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="ssc-detail-pill">
-                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
-                                </span>
-                                <div className="ssc-detail-text">
-                                  <span className="ssc-detail-label">Payment Breakdown:</span>
-                                  <span className="ssc-detail-val">
-                                    ₹{currentSlotFee} Slot Fee (cut now) + ₹{merchandiseBudget.toLocaleString('en-IN')} Product Budget (held safely in wallet)
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="ssc-detail-pill">
-                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
-                                </span>
-                                <div className="ssc-detail-text">
-                                  <span className="ssc-detail-label">Delivery Fee:</span>
-                                  <span className="ssc-detail-val">
-                                    Weighed &amp; calculated after store purchase based on actual package weight
                                   </span>
                                 </div>
                               </div>

@@ -9056,10 +9056,62 @@ html.logged-out body {
   margin-bottom: 24px;
 }
 
+.lux-dur-fee {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0B4F9C;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
 @media (max-width: 680px) {
   .lux-dur-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .lux-dur-card {
+    padding: 10px 4px !important;
+    border-radius: 12px !important;
+    text-align: center !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .lux-dur-card > div:first-child {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .lux-dur-badge {
+    margin-bottom: 4px !important;
+    font-size: 8px !important;
+    padding: 2px 5px !important;
+    align-self: center !important;
+  }
+
+  .lux-dur-hours {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    margin: 2px 0 !important;
+    color: #071D3A !important;
+  }
+
+  .lux-dur-fee {
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    color: #0B4F9C !important;
+    margin: 0 !important;
+  }
+
+  /* Remove all verbose matter on mobile screens as requested */
+  .lux-dur-name,
+  .lux-dur-desc,
+  .lux-dur-perk {
+    display: none !important;
   }
 }
 
