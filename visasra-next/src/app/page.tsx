@@ -4115,6 +4115,7 @@ export default function CustomerApp() {
                             </svg>
                             <span>Store Operating Window: 11:00 AM – 9:00 PM IST</span>
                           </div>
+
                         </div>
                       </div>
                     </div>
@@ -4496,6 +4497,20 @@ export default function CustomerApp() {
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
             Orders
+          </button>
+          <button
+            className={`nav-btn ${activeTab === 'live-shopping' ? 'active' : ''}`}
+            style={{ position: 'relative' }}
+            onClick={() => {
+              if (!liveSessionSlot && orders.length > 0) {
+                setLiveSessionSlot(orders[0].slotKey);
+              }
+              navigateToTab('live-shopping');
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+            Live
+            <span style={{ position: 'absolute', top: 3, right: '14%', background: '#22C55E', color: '#fff', fontSize: 8, fontWeight: 800, padding: '1px 4px', borderRadius: 999 }}>LIVE</span>
           </button>
           <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigateToTab('profile')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>

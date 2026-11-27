@@ -7658,7 +7658,7 @@ html.logged-out body {
   width: 100% !important;
   max-width: 440px !important;
   margin-top: auto !important;
-  margin-bottom: 46px !important;
+  margin-bottom: 0 !important;
   margin-left: auto !important;
   margin-right: auto !important;
   padding: 0 !important;
@@ -7721,6 +7721,23 @@ html.logged-out body {
 @media (max-width: 719px) {
   .cat-tier1-inner {
     padding: 0 16px !important;
+  }
+
+  .screens-cat-root,
+  .screens:has(.screen-categories-root) {
+    padding-bottom: 58px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .cat-tier1-wrap {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .cat-leaves-decor {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    transform: translateY(2px) !important;
   }
 }
 
@@ -12579,13 +12596,38 @@ html.logged-out body {
   border-radius: 0 !important;
   box-shadow: none !important;
   border-bottom: none !important;
+  padding: 6px 16px !important;
 }
 
 @media (max-width: 768px) {
   .app-tab-profile .account-hero-blue {
     background: linear-gradient(180deg, #0A3A6B 0%, #082F57 100%) !important;
-    padding: 8px 20px 48px !important;
-    border-radius: 0 0 28px 28px !important;
+    padding: 0 18px 24px !important;
+    border-radius: 0 0 24px 24px !important;
+  }
+
+  .app-tab-profile .account-title {
+    font-size: 19px !important;
+    margin: 0 0 8px !important;
+  }
+
+  .app-tab-profile .account-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+
+  .app-tab-profile .account-user-name {
+    font-size: 16px !important;
+    margin: 0 0 2px !important;
+  }
+
+  .app-tab-profile .account-user-sub {
+    font-size: 11.5px !important;
+  }
+
+  .app-tab-profile .account-wallet-card {
+    margin: -14px 16px 14px !important;
   }
 }
 
@@ -13290,30 +13332,31 @@ html.logged-out body {
 
 .bookslot-sticky-footer {
   position: fixed;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  left: 12px;
-  right: 12px;
-  width: calc(100% - 24px);
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  left: 14px;
+  right: 14px;
+  width: calc(100% - 28px);
   max-width: 440px;
   margin: 0 auto;
   background: #FFFFFF;
   border: 1.2px solid #E2E8F0;
-  border-radius: 16px;
-  padding: 10px 14px;
+  border-radius: 20px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   z-index: 100;
-  box-shadow: 0 8px 24px rgba(7, 29, 58, 0.12);
+  box-shadow: 0 10px 30px rgba(7, 29, 58, 0.16), 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .bookslot-count-badge {
-  background: #0B4F9C;
-  color: #FFFFFF;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
   font-size: 11px;
   font-weight: 800;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: 999px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -13327,23 +13370,25 @@ html.logged-out body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
 }
 
 .bookslot-footer-est {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #071D3A;
-  line-height: 1.25;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
 .bookslot-footer-next {
-  font-size: 10.5px;
+  font-size: 11px;
   color: #64748B;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 1px;
 }
 
 .bookslot-sticky-hint {

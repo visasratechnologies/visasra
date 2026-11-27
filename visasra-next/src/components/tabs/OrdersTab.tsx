@@ -331,13 +331,38 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       {o.orderNumber || 'VIS-ORDER'} · {total}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="order-card-view-btn"
-                    onClick={() => onTrackOrder(o.slotKey)}
-                  >
-                    View
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      className="order-card-view-btn"
+                      onClick={() => onTrackOrder(o.slotKey)}
+                    >
+                      View
+                    </button>
+                    {!isComp && (
+                      <button
+                        type="button"
+                        onClick={() => onJoinLiveShopping(o.slotKey)}
+                        style={{
+                          background: '#0B4F9C',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '4px 8px',
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22C55E' }}></span>
+                        Join Live
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
