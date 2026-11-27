@@ -108,21 +108,24 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
           )}
         </div>
 
-        {/* 3 Segmented Filter Tabs (Upcoming | In progress | Completed) */}
+        {/* 3 Segmented Filter Tabs (Orders | Live Orders | Completed) */}
         <div className="orders-filter-bar">
           <button
             type="button"
             className={`orders-filter-pill ${activeFilter === 'upcoming' ? 'active' : ''}`}
             onClick={() => setActiveFilter('upcoming')}
           >
-            Upcoming ({upcomingOrders.length})
+            Orders ({upcomingOrders.length})
           </button>
           <button
             type="button"
             className={`orders-filter-pill ${activeFilter === 'in_progress' ? 'active' : ''}`}
             onClick={() => setActiveFilter('in_progress')}
           >
-            In progress ({inProgressOrders.length})
+            {inProgressOrders.length > 0 && (
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', display: 'inline-block', marginRight: 5 }} />
+            )}
+            Live Orders ({inProgressOrders.length})
           </button>
           <button
             type="button"
@@ -136,10 +139,12 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
         {currentList.length === 0 ? (
           <div style={{ background: '#FFFFFF', borderRadius: 16, padding: '36px 20px', textAlign: 'center', border: '1px solid #E2E8F0', marginTop: 12 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#071D3A', marginBottom: 4 }}>
-              {activeFilter === 'completed' ? 'No Completed Orders Yet' : activeFilter === 'in_progress' ? 'No Orders In Progress' : 'No Upcoming Orders'}
+              {activeFilter === 'completed' ? 'No Completed Orders Yet' : activeFilter === 'in_progress' ? 'No Live Orders In Progress' : 'No Orders Placed Yet'}
             </div>
             <p style={{ margin: '0 0 16px', fontSize: 12.5, color: '#64748B' }}>
-              Reserve a shopping slot to have your dedicated shopper visit physical stores in India.
+              {activeFilter === 'in_progress'
+                ? 'When your shopping slot begins and your shopper enters the store, your live session will appear here.'
+                : 'Reserve a shopping slot to have your dedicated shopper visit physical stores in India.'}
             </p>
             {onRefresh && (
               <button
@@ -337,9 +342,9 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
                       className="order-card-view-btn"
                       onClick={() => onTrackOrder(o.slotKey)}
                     >
-                      View
+                      {isInProg ? 'Track' : 'View'}
                     </button>
-                    {!isComp && (
+                    {isInProg && (
                       <button
                         type="button"
                         onClick={() => onJoinLiveShopping(o.slotKey)}
