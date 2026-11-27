@@ -1639,18 +1639,20 @@ export default function CustomerApp() {
   const loadData = async (targetUser?: User | null, force: boolean = false) => {
     try {
       const activeUser = targetUser !== undefined ? targetUser : (isLoggedIn ? user : null);
-      if (activeUser) {
+      if (activeUser && (activeUser.email || activeUser.id)) {
         const now = Date.now();
         // Skip re-fetching if recently loaded within 30 seconds unless explicitly forced
         if (!force && now - lastOrdersFetchRef.current < 30000 && orders.length > 0) {
           return;
         }
         lastOrdersFetchRef.current = now;
-        const q = activeUser.email ? `?email=${encodeURIComponent(activeUser.email)}` : '';
+        const q = activeUser.email ? `?email=${encodeURIComponent(activeUser.email)}` : `?userId=${encodeURIComponent(activeUser.id)}`;
         const ordRes = await fetch(`/api/orders${q}`, { headers: getAuthHeaders() });
         const ordData = await ordRes.json();
-        if (ordData.orders) {
+        if (Array.isArray(ordData.orders)) {
           setOrders(ordData.orders);
+        } else {
+          setOrders([]);
         }
       } else {
         setOrders([]);

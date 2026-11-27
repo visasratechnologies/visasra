@@ -40,24 +40,7 @@ export async function GET(req: Request) {
     }
 
     if (!authUser) {
-      authUser = await prisma.user.findFirst({
-        where: { email: 'harenagula@gmail.com' },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          location: true,
-          avatar: true,
-          walletBalance: true,
-          lastLoginAt: true,
-          createdAt: true,
-        },
-      });
-    }
-
-    if (!authUser) {
-      return NextResponse.json({ error: 'Unauthorized: Authentication required' }, { status: 401 });
+      return NextResponse.json({ success: true, balance: 0, transactions: [] });
     }
 
     const user = await prisma.user.findUnique({

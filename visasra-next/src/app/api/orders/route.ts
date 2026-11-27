@@ -72,29 +72,11 @@ export async function GET(req: Request) {
       }
     }
 
-    // Dev/Demo fallback: if no user session found, load harenagula@gmail.com
     if (!authUser) {
-      authUser = await prisma.user.findFirst({
-        where: { email: 'harenagula@gmail.com' },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          location: true,
-          avatar: true,
-          walletBalance: true,
-          lastLoginAt: true,
-          createdAt: true,
-        },
-      });
+      return NextResponse.json({ success: true, orders: [] });
     }
 
-    if (!authUser) {
-      return NextResponse.json({ error: 'Unauthorized: Please log in to view orders' }, { status: 401 });
-    }
-
-    let orders = await prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where: { userId: authUser.id },
       include: {
         items: {
@@ -122,39 +104,6 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
-
-    // If customer has no orders yet, include demo order so experience is demonstrated cleanly
-    if (orders.length === 0) {
-      const demoOrder = await prisma.order.findFirst({
-        where: { orderNumber: 'VIS-33025' },
-        include: {
-          items: {
-            include: {
-              options: true,
-            },
-          },
-          liveSession: {
-            include: {
-              worker: {
-                select: {
-                  id: true,
-                  name: true,
-                  phone: true,
-                  rating: true,
-                  currentLat: true,
-                  currentLng: true,
-                  photo: true,
-                },
-              },
-            },
-          },
-          stageHistory: true,
-        },
-      });
-      if (demoOrder) {
-        orders = [demoOrder];
-      }
-    }
 
     return NextResponse.json({ success: true, orders });
   } catch (err: unknown) {
@@ -185,16 +134,6 @@ export async function POST(req: Request) {
           },
         });
       }
-    }
-
-    if (!authUser) {
-      authUser = await prisma.user.findFirst({
-        where: { email: 'harenagula@gmail.com' },
-      });
-    }
-
-    if (!authUser) {
-      authUser = await prisma.user.findFirst();
     }
 
     if (!authUser) {
