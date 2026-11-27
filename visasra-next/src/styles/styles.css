@@ -4752,6 +4752,12 @@ html.logged-out body {
   transition: all 0.15s ease;
 }
 
+@media (max-width: 768px) {
+  .back-row {
+    display: none !important;
+  }
+}
+
 .back-row svg {
   width: 14px;
   height: 14px;
@@ -6711,10 +6717,26 @@ html.logged-out body {
     stroke: #38BDF8;
   }
 
-  nav.sidenav .nb-badge {
-    border-color: #0B1528;
-    background: #38BDF8;
-    color: #0B1528;
+  nav.sidenav .nb-badge,
+  .sidenav .nav-btn .nb-badge {
+    position: static !important;
+    margin-left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    padding: 0 6px !important;
+    border-radius: 999px !important;
+    background: #38BDF8 !important;
+    color: #0B1528 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    border: none !important;
+    flex-shrink: 0 !important;
   }
 }
 
@@ -11152,14 +11174,21 @@ html.logged-out body {
   }
 
   .sidenav .nb-badge {
-    position: absolute !important;
-    top: 3px !important;
-    right: 8px !important;
-    min-width: 15px !important;
-    height: 15px !important;
-    font-size: 9px !important;
-    padding: 0 3px !important;
-    line-height: 15px !important;
+    position: static !important;
+    margin-left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    padding: 0 5px !important;
+    border-radius: 999px !important;
+    background: #38BDF8 !important;
+    color: #0B1528 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   /* Spacious Tablet Content Area */
@@ -12544,6 +12573,22 @@ html.logged-out body {
   box-shadow: 0 8px 24px rgba(10, 58, 107, 0.22);
 }
 
+/* Seamless Profile Header integration */
+.app-tab-profile .topbar {
+  background: #0A3A6B !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+@media (max-width: 768px) {
+  .app-tab-profile .account-hero-blue {
+    background: linear-gradient(180deg, #0A3A6B 0%, #082F57 100%) !important;
+    padding: 8px 20px 48px !important;
+    border-radius: 0 0 28px 28px !important;
+  }
+}
+
 .account-title {
   font-family: var(--font-bodoni, serif) !important;
   font-size: 26px;
@@ -13245,19 +13290,60 @@ html.logged-out body {
 
 .bookslot-sticky-footer {
   position: fixed;
-  bottom: 60px;
-  left: 0;
-  right: 0;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  left: 12px;
+  right: 12px;
+  width: calc(100% - 24px);
+  max-width: 440px;
+  margin: 0 auto;
   background: #FFFFFF;
-  border-top: 1px solid #E2E8F0;
-  padding: 12px 18px;
+  border: 1.2px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 50;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
-  max-width: 460px;
-  margin: 0 auto;
+  gap: 10px;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(7, 29, 58, 0.12);
+}
+
+.bookslot-count-badge {
+  background: #0B4F9C;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.3px;
+}
+
+.bookslot-footer-text-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bookslot-footer-est {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #071D3A;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.bookslot-footer-next {
+  font-size: 10.5px;
+  color: #64748B;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bookslot-sticky-hint {
@@ -13517,10 +13603,14 @@ html.logged-out body {
     left: 240px !important;
     right: 0 !important;
     bottom: 0 !important;
+    width: auto !important;
     max-width: 1080px !important;
     margin: 0 auto !important;
     border-radius: 16px 16px 0 0 !important;
+    border: none !important;
+    border-top: 1px solid #E2E8F0 !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
+    padding: 14px 24px !important;
   }
   .screen[data-screen="bookslot"] {
     max-width: 1180px !important;

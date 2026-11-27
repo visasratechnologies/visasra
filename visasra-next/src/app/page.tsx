@@ -511,6 +511,17 @@ export default function CustomerApp() {
 
   // Booking Flow State (3 Steps: Sourcing Basket -> Delivery & Contact -> Slot & Timing)
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3>(1);
+
+  const goToBookingStep = (step: 1 | 2 | 3, pushToHistory = true) => {
+    setBookingStep(step);
+    if (pushToHistory && typeof window !== 'undefined') {
+      window.history.pushState(
+        { tab: 'bookslot', bookingStep: step, catId: null, prodId: null },
+        '',
+        step === 1 ? '/book-slot' : `/book-slot?step=${step}`
+      );
+    }
+  };
   const [sourcingSourceTab, setSourcingSourceTab] = useState<'catalog' | 'mind' | 'online'>('catalog');
   const [slotDuration, setSlotDuration] = useState<2 | 3 | 5>(3);
   const getTomorrowDateStr = (): string => {
@@ -703,6 +714,10 @@ export default function CustomerApp() {
             setSelectedCategoryForView(null);
             setSelectedProductForTypes(null);
           }
+        } else if (state.tab === 'bookslot') {
+          setSelectedCategoryForView(null);
+          setSelectedProductForTypes(null);
+          setBookingStep((state.bookingStep as 1 | 2 | 3) || 1);
         } else {
           setSelectedCategoryForView(null);
           setSelectedProductForTypes(null);
@@ -715,6 +730,8 @@ export default function CustomerApp() {
         } else if (selectedCategoryForView) {
           setSelectedCategoryForView(null);
           setCatSearchQuery('');
+        } else if (activeTab === 'bookslot' && bookingStep > 1) {
+          setBookingStep(1);
         } else if (activeTab !== 'home') {
           setActiveTab('home');
         }
@@ -2446,7 +2463,7 @@ export default function CustomerApp() {
       </nav>
 
       {/* Main #app Container */}
-      <div id="app">
+      <div id="app" className={`app-tab-${activeTab}`}>
         {/* Mobile Topbar */}
         <div className="topbar">
           <div className="wordmark" onClick={() => navigateToTab('home')}>
@@ -2457,10 +2474,6 @@ export default function CustomerApp() {
             <button className="top-btn" onClick={() => navigateToTab('wallet')} aria-label="Wallet">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 10h18" /><circle cx="16.5" cy="14.5" r="1.2" /></svg>
               Wallet
-            </button>
-            <button className="top-btn" onClick={() => setMobileSearchOpen(!mobileSearchOpen)} aria-label="Search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              Search
             </button>
             <button className="top-btn" onClick={() => navigateToTab('cart')} aria-label="Cart">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 8V6a3 3 0 0 1 6 0v2" /><path d="M6 8h12l-1 12H7L6 8z" /></svg>
@@ -2887,7 +2900,7 @@ export default function CustomerApp() {
               <div className="bookslot-stepper-minimal">
                 <button
                   type="button"
-                  onClick={() => setBookingStep(1)}
+                  onClick={() => goToBookingStep(1)}
                   className={`bookslot-step-num ${bookingStep >= 1 ? 'active' : ''}`}
                   style={{ border: 'none', cursor: 'pointer' }}
                 >
@@ -2896,7 +2909,7 @@ export default function CustomerApp() {
                 <div className="bookslot-step-line" style={{ background: bookingStep > 1 ? '#0B4F9C' : '#CBD5E1' }} />
                 <button
                   type="button"
-                  onClick={() => cart.length > 0 && setBookingStep(2)}
+                  onClick={() => cart.length > 0 && goToBookingStep(2)}
                   disabled={cart.length === 0}
                   className={`bookslot-step-num ${bookingStep >= 2 ? 'active' : ''}`}
                   style={{ border: 'none', cursor: cart.length > 0 ? 'pointer' : 'not-allowed' }}
@@ -2906,7 +2919,7 @@ export default function CustomerApp() {
                 <div className="bookslot-step-line" style={{ background: bookingStep > 2 ? '#0B4F9C' : '#CBD5E1' }} />
                 <button
                   type="button"
-                  onClick={() => cart.length > 0 && setBookingStep(3)}
+                  onClick={() => cart.length > 0 && goToBookingStep(3)}
                   disabled={cart.length === 0}
                   className={`bookslot-step-num ${bookingStep >= 3 ? 'active' : ''}`}
                   style={{ border: 'none', cursor: cart.length > 0 ? 'pointer' : 'not-allowed' }}
@@ -3412,21 +3425,14 @@ export default function CustomerApp() {
                           </span>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{
-                              background: '#2563EB',
-                              color: '#fff',
-                              fontSize: 11.5,
-                              fontWeight: 800,
-                              padding: '3px 9px',
-                              borderRadius: 999
-                            }}>
-                              {cart.length} ITEM{cart.length > 1 ? 'S' : ''}
+                            <span className="bookslot-count-badge">
+                              {cart.length} {cart.length === 1 ? 'ITEM' : 'ITEMS'}
                             </span>
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF' }}>
-                                Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}+
+                            <div className="bookslot-footer-text-meta">
+                              <div className="bookslot-footer-est">
+                                Est. ₹{cart.reduce((s, i) => s + (i.priceMin || 0) * i.qty, 0).toLocaleString('en-IN')}
                               </div>
-                              <div style={{ fontSize: 10.5, color: '#94A3B8' }}>
+                              <div className="bookslot-footer-next">
                                 Next: Delivery &amp; Contact Details
                               </div>
                             </div>
@@ -3445,7 +3451,7 @@ export default function CustomerApp() {
                           if (savedAddresses.length === 0) {
                             setIsAddingAddress(true);
                           }
-                          setBookingStep(2);
+                          goToBookingStep(2);
                         }}
                       >
                         <span>Continue</span>
@@ -3648,7 +3654,7 @@ export default function CustomerApp() {
                       <button
                         type="button"
                         className="btn-concierge-secondary"
-                        onClick={() => setBookingStep(1)}
+                        onClick={() => goToBookingStep(1)}
                       >
                         ← Back
                       </button>
@@ -3669,14 +3675,14 @@ export default function CustomerApp() {
                           if (!hasSelected) {
                             if (savedAddresses.length > 0) {
                               setSelectedAddressId(savedAddresses[0].id);
-                              setBookingStep(3);
+                              goToBookingStep(3);
                               return;
                             }
                             setIsAddingAddress(true);
                             showToast('Please add and save your delivery address to continue');
                             return;
                           }
-                          setBookingStep(3);
+                          goToBookingStep(3);
                         }}
                       >
                         <span>Continue to Slot &amp; Timing</span>
@@ -4314,7 +4320,7 @@ export default function CustomerApp() {
                               className="btn-concierge-secondary"
                               onClick={() => {
                                 setIsBooking(false);
-                                setBookingStep(2);
+                                goToBookingStep(2);
                               }}
                             >
                               ← Back
