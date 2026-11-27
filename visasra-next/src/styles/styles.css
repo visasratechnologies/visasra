@@ -13402,6 +13402,7 @@ html.logged-out body {
   gap: 8px;
   z-index: 100;
   box-shadow: 0 10px 30px rgba(7, 29, 58, 0.16), 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden !important;
 }
 
 .bookslot-count-badge {
@@ -13708,17 +13709,19 @@ html.logged-out body {
     gap: 16px !important;
   }
   .bookslot-sticky-footer {
-    left: 240px !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: auto !important;
-    max-width: 1080px !important;
-    margin: 0 auto !important;
-    border-radius: 16px 16px 0 0 !important;
-    border: none !important;
-    border-top: 1px solid #E2E8F0 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
-    padding: 14px 24px !important;
+    left: calc(50% + 120px) !important;
+    right: auto !important;
+    bottom: 24px !important;
+    transform: translateX(-50%) !important;
+    width: calc(100% - 320px) !important;
+    max-width: 600px !important;
+    margin: 0 !important;
+    border-radius: 999px !important;
+    border: 1.2px solid #E2E8F0 !important;
+    box-shadow: 0 12px 36px rgba(7, 29, 58, 0.18) !important;
+    padding: 10px 18px !important;
+    background: #FFFFFF !important;
+    z-index: 1000 !important;
   }
   .screen[data-screen="bookslot"] {
     max-width: 1180px !important;
@@ -13735,7 +13738,7 @@ html.logged-out body {
     gap: 18px !important;
   }
   .bookslot-sticky-footer {
-    max-width: 1140px !important;
+    max-width: 600px !important;
   }
 }
 
@@ -13746,6 +13749,243 @@ html.logged-out body {
   .screen[data-screen="bookslot"] {
     padding-bottom: 180px !important;
   }
+}
+
+/* 
+==========================================================================
+   OFFICIAL MOCKUP DESIGNS: CHOOSE YOUR SHOPPING TIME (Images 3 & 4)
+========================================================================== */
+.slot-mockup-container {
+  background: #FFFFFF;
+  border: 1.2px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(7, 29, 58, 0.05);
+  margin-bottom: 24px;
+}
+
+.slot-mockup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.slot-mockup-title {
+  font-family: var(--font-display, serif);
+  font-size: 24px;
+  font-weight: 800;
+  color: #071D3A;
+  margin: 0;
+}
+
+.slot-mockup-operating-hours {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.slot-mockup-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  background: #F8FAFC;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #EEF2F6;
+}
+
+.slot-mockup-section-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 10px;
+}
+
+.slot-mockup-dur-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.slot-mockup-dur-pill {
+  border: 1.2px solid #E2E8F0;
+  background: #FFFFFF;
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slot-mockup-dur-pill:hover {
+  border-color: #93C5FD;
+  background: #F8FAFC;
+}
+
+.slot-mockup-dur-pill.selected {
+  border: 1.8px solid #0B4F9C;
+  background: #EFF6FF;
+  box-shadow: 0 2px 8px rgba(11, 79, 156, 0.12);
+}
+
+.slot-mockup-dur-hours {
+  font-family: var(--font-display, serif);
+  font-size: 17px;
+  font-weight: 800;
+  color: #071D3A;
+}
+
+.slot-mockup-dur-sub {
+  font-size: 12px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.slot-mockup-times-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .slot-mockup-times-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+.slot-mockup-time-btn {
+  padding: 12px 6px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  background: #FFFFFF;
+  color: #071D3A;
+  border: 1.2px solid #E2E8F0;
+}
+
+.slot-mockup-time-btn:hover:not(:disabled) {
+  border-color: #0B4F9C;
+  background: #F8FAFC;
+}
+
+.slot-mockup-time-btn.selected {
+  background: #0B4F9C !important;
+  color: #FFFFFF !important;
+  border-color: #0B4F9C !important;
+  box-shadow: 0 4px 12px rgba(11, 79, 156, 0.25) !important;
+}
+
+.slot-mockup-time-btn:disabled {
+  background: #F8FAFC !important;
+  color: #CBD5E1 !important;
+  border-color: #F1F5F9 !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+.slot-mockup-window-banner {
+  background: #082C52;
+  border-radius: 16px;
+  padding: 20px 24px;
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(8, 44, 82, 0.25);
+}
+
+.slot-mockup-window-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slot-mockup-window-sub {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
+.slot-mockup-window-time {
+  font-family: var(--font-display, serif);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.slot-mockup-window-date {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.slot-mockup-window-badge {
+  background: #FFFFFF;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+}
+
+.slot-mockup-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #EEF2F6;
+}
+
+.slot-mockup-fee-note {
+  font-size: 13px;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.slot-mockup-confirm-btn {
+  background: #0B4F9C;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 30px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(11, 79, 156, 0.25);
+  transition: all 0.15s ease;
+}
+
+.slot-mockup-confirm-btn:hover:not(:disabled) {
+  background: #083E7A;
+  box-shadow: 0 6px 20px rgba(11, 79, 156, 0.35);
+}
+
+.slot-mockup-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ==========================================================================

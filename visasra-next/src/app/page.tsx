@@ -2524,8 +2524,8 @@ export default function CustomerApp() {
             >
               {/* Tier 1: All Categories Grid (Persistent DOM for zero image reload/flicker) */}
               <div className={`cat-tier1-wrap ${selectedCategoryForView ? 'is-hidden' : ''}`}>
-                <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
                 <div className="cat-tier1-inner">
+                  <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
                   <button type="button" className="back-row" onClick={handleGoBack} aria-label="Back">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
                     <span>Back</span>
@@ -3694,25 +3694,58 @@ export default function CustomerApp() {
                   </div>
                 )}
 
-                {/* ================= STEP 3: SLOT & TIMING (AT THE END) ================= */}
+                {/* ================= STEP 3: SLOT & TIMING (MOCKUP DESIGN) ================= */}
                 {bookingStep === 3 && (
-                  <div className="luxury-step-card">
-                    <div className="luxury-step-header">
-                      <div className="luxury-step-title">
-                        <span>3. Shopping Window &amp; Slot</span>
-                      </div>
-                      <div className="luxury-step-subtitle">
-                        Select your shopping duration and convenient time window. A dedicated ground shopper is assigned to you.
+                  <div className="slot-mockup-container">
+                    <div className="slot-mockup-header">
+                      <h2 className="slot-mockup-title">Choose your shopping time</h2>
+                      <div className="slot-mockup-operating-hours">Open 11 AM to 9 PM IST</div>
+                    </div>
+
+                    {/* Date Selection */}
+                    <div className="slot-mockup-date-row">
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#071D3A' }}>Shopping Date:</span>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
+                        {availableDates.map(d => (
+                          <button
+                            key={d.date}
+                            type="button"
+                            onClick={() => setSelectedDate(d.date)}
+                            style={{
+                              border: selectedDate === d.date ? '1.5px solid #0B4F9C' : '1px solid #CBD5E1',
+                              background: selectedDate === d.date ? '#EFF6FF' : '#FFFFFF',
+                              color: selectedDate === d.date ? '#0B4F9C' : '#334155',
+                              fontWeight: selectedDate === d.date ? 700 : 500,
+                              borderRadius: 8,
+                              padding: '5px 12px',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {d.day} ({d.label})
+                          </button>
+                        ))}
+                        <input
+                          type="date"
+                          className="inp"
+                          style={{ maxWidth: 150, padding: '4px 8px', fontSize: 12, height: 30 }}
+                          value={selectedDate}
+                          min={availableDates[0]?.date || getTomorrowDateStr()}
+                          onChange={e => {
+                            const minDate = availableDates[0]?.date || getTomorrowDateStr();
+                            if (e.target.value >= minDate) {
+                              setSelectedDate(e.target.value);
+                            }
+                          }}
+                        />
                       </div>
                     </div>
 
-                    {/* Duration Selection */}
-                    <div style={{ fontWeight: 800, fontSize: 14, color: '#081E3B', marginBottom: 10 }}>
-                      Shopping Window Duration:
-                    </div>
-                    <div className="lux-dur-grid">
+                    {/* DURATION Section */}
+                    <div className="slot-mockup-section-label">DURATION</div>
+                    <div className="slot-mockup-dur-grid">
                       <div
-                        className={`lux-dur-card ${slotDuration === 2 ? 'selected' : ''}`}
+                        className={`slot-mockup-dur-pill ${slotDuration === 2 ? 'selected' : ''}`}
                         onClick={() => {
                           const newDuration = 2;
                           const maxStart = 21 - newDuration;
@@ -3722,21 +3755,12 @@ export default function CustomerApp() {
                           setSelectedSlotWindow(calculateSlotWindow(nextStart, newDuration));
                         }}
                       >
-                        <div>
-                          <span className="lux-dur-badge lux-badge-express">Express</span>
-                          <div className="lux-dur-hours">2 Hours</div>
-                          <div className="lux-dur-fee">₹250</div>
-                          <div className="lux-dur-name">Targeted Sourcing</div>
-                          <div className="lux-dur-desc">Quick visit to 1–2 specific stores. Ideal for 1–3 pre-decided items.</div>
-                        </div>
-                        <div className="lux-dur-perk" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
-                          <span>Live In-App Photo Approvals</span>
-                        </div>
+                        <div className="slot-mockup-dur-hours">2 hours</div>
+                        <div className="slot-mockup-dur-sub">9 start times</div>
                       </div>
 
                       <div
-                        className={`lux-dur-card ${slotDuration === 3 ? 'selected' : ''}`}
+                        className={`slot-mockup-dur-pill ${slotDuration === 3 ? 'selected' : ''}`}
                         onClick={() => {
                           const newDuration = 3;
                           const maxStart = 21 - newDuration;
@@ -3746,24 +3770,12 @@ export default function CustomerApp() {
                           setSelectedSlotWindow(calculateSlotWindow(nextStart, newDuration));
                         }}
                       >
-                        <div>
-                          <span className="lux-dur-badge lux-badge-popular" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                            <span>Popular</span>
-                          </span>
-                          <div className="lux-dur-hours">3 Hours</div>
-                          <div className="lux-dur-fee">₹400</div>
-                          <div className="lux-dur-name">Comprehensive Shopping</div>
-                          <div className="lux-dur-desc">Visit multiple stores to compare styles, quality, and prices.</div>
-                        </div>
-                        <div className="lux-dur-perk" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
-                          <span>Real-Time In-Store Curation</span>
-                        </div>
+                        <div className="slot-mockup-dur-hours">3 hours</div>
+                        <div className="slot-mockup-dur-sub">8 start times</div>
                       </div>
 
                       <div
-                        className={`lux-dur-card ${slotDuration === 5 ? 'selected' : ''}`}
+                        className={`slot-mockup-dur-pill ${slotDuration === 5 ? 'selected' : ''}`}
                         onClick={() => {
                           const newDuration = 5;
                           const maxStart = 21 - newDuration;
@@ -3773,442 +3785,88 @@ export default function CustomerApp() {
                           setSelectedSlotWindow(calculateSlotWindow(nextStart, newDuration));
                         }}
                       >
-                        <div>
-                          <span className="lux-dur-badge" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>Extended</span>
-                          <div className="lux-dur-hours">5 Hours</div>
-                          <div className="lux-dur-fee">₹600</div>
-                          <div className="lux-dur-name">Extended Shopping</div>
-                          <div className="lux-dur-desc">Extensive visits across multiple stores. Ideal for custom tailoring, bridal, or bulk shopping.</div>
-                        </div>
-                        <div className="lux-dur-perk" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                            <line x1="3" y1="6" x2="21" y2="6" />
-                            <path d="M16 10a4 4 0 0 1-8 0" />
-                          </svg>
-                          <span>Dedicated Shopper Assigned</span>
-                        </div>
+                        <div className="slot-mockup-dur-hours">5 hours</div>
+                        <div className="slot-mockup-dur-sub">6 start times</div>
                       </div>
                     </div>
 
-                    {/* Date Selection */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#081E3B' }}>
-                        Select Shopping Date:
-                      </div>
-                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#047857', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: 999 }}>
-                        ✓ Minimum 1-day advance booking · Earliest slot: Tomorrow
-                      </span>
-                    </div>
-                    <div className="lux-date-bar">
-                      {availableDates.map(d => (
-                        <div
-                          key={d.date}
-                          className={`lux-date-pill ${selectedDate === d.date ? 'selected' : ''}`}
-                          onClick={() => setSelectedDate(d.date)}
-                        >
-                          <div className="lux-date-day">{d.day}</div>
-                          <div className="lux-date-val">{d.label}</div>
-                        </div>
-                      ))}
+                    {/* START TIME Section */}
+                    <div className="slot-mockup-section-label">START TIME</div>
+                    <div className="slot-mockup-times-grid">
+                      {[11, 12, 13, 14, 15, 16, 17, 18, 19].map((h) => {
+                        const maxStart = 21 - slotDuration;
+                        const isDisabled = h > maxStart;
+                        const isSelected = selectedStartHour === h;
+
+                        return (
+                          <button
+                            key={h}
+                            type="button"
+                            className={`slot-mockup-time-btn ${isSelected ? 'selected' : ''}`}
+                            disabled={isDisabled}
+                            onClick={() => {
+                              if (!isDisabled) {
+                                setSelectedStartHour(h);
+                                setSelectedSlotWindow(calculateSlotWindow(h, slotDuration));
+                              }
+                            }}
+                          >
+                            {formatHourShort(h)}
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B' }}>Or pick any custom date:</span>
-                      <input
-                        type="date"
-                        className="inp"
-                        style={{ maxWidth: 200, padding: '7px 12px', fontSize: 13 }}
-                        value={selectedDate}
-                        min={availableDates[0]?.date || getTomorrowDateStr()}
-                        onChange={e => {
-                          const minDate = availableDates[0]?.date || getTomorrowDateStr();
-                          if (e.target.value >= minDate) {
-                            setSelectedDate(e.target.value);
-                          }
-                        }}
-                      />
-                      <span style={{ fontSize: 11.5, color: '#94A3B8' }}>(Same-day booking not available)</span>
-                    </div>
-
-                    {/* Dynamic Start Time Picker & Operating Hours Window */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: '#081E3B' }}>
-                        Select Start Time (11:00 AM – 9:00 PM IST Operating Window):
+                    {/* Your window Solid Navy Card */}
+                    <div className="slot-mockup-window-banner">
+                      <div className="slot-mockup-window-left">
+                        <span className="slot-mockup-window-sub">Your window</span>
+                        <span className="slot-mockup-window-time">
+                          {formatHourShort(selectedStartHour)} – {formatHourShort(selectedStartHour + slotDuration)} IST
+                        </span>
+                        <span className="slot-mockup-window-date">
+                          {(() => {
+                            try {
+                              const d = new Date(selectedDate);
+                              const dStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                              return `${dStr} · ${slotDuration} hours`;
+                            } catch {
+                              return `${selectedDate} · ${slotDuration} hours`;
+                            }
+                          })()}
+                        </span>
                       </div>
-                      <span style={{ fontSize: 12, color: '#0B4F9C', fontWeight: 700, background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '3px 10px', borderRadius: 999 }}>
-                        {slotDuration}h Session · Max End: 9:00 PM
+                      <span className="slot-mockup-window-badge">
+                        Ends before 9 PM
                       </span>
                     </div>
 
-                    {/* Side-by-Side: Start Time Drum Picker (Left) & Confirmed Window Card (Right) */}
-                    <div className="slot-side-by-side-grid">
-                      {/* Left Column: Clean Start Time Drum Picker matching Image 1 */}
-                      <div className="slot-drum-card">
-                        <div className="sdp-header">START TIME</div>
-                        <div className="sdp-drum-viewport">
-                          {/* Up Navigation Button */}
-                          <button
-                            type="button"
-                            className="sdp-nav-btn"
-                            onClick={() => {
-                              if (selectedStartHour > 11) {
-                                const next = selectedStartHour - 1;
-                                setSelectedStartHour(next);
-                                setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                              }
-                            }}
-                            disabled={selectedStartHour <= 11}
-                            aria-label="Previous hour"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="18 15 12 9 6 15" />
-                            </svg>
-                          </button>
-
-                          <div className="sdp-hours-stack">
-                            {/* 2 hours above */}
-                            {selectedStartHour - 2 >= 11 && (
-                              <div
-                                className="sdp-hour-item sdp-hour-faint"
-                                onClick={() => {
-                                  const next = selectedStartHour - 2;
-                                  setSelectedStartHour(next);
-                                  setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                                }}
-                              >
-                                {formatHourShort(selectedStartHour - 2)}
-                              </div>
-                            )}
-
-                            {/* 1 hour above */}
-                            {selectedStartHour - 1 >= 11 && (
-                              <div
-                                className="sdp-hour-item sdp-hour-adjacent"
-                                onClick={() => {
-                                  const next = selectedStartHour - 1;
-                                  setSelectedStartHour(next);
-                                  setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                                }}
-                              >
-                                {formatHourShort(selectedStartHour - 1)}
-                              </div>
-                            )}
-
-                            {/* Centered Selected Pill [ 11 AM ] matching Image 1 */}
-                            <div className="sdp-selected-pill">
-                              {formatHourShort(selectedStartHour)}
-                            </div>
-
-                            {/* 1 hour below */}
-                            {(() => {
-                              const nextH1 = selectedStartHour + 1;
-                              const maxStart = 21 - slotDuration;
-                              const isBlocked = nextH1 > maxStart;
-                              if (nextH1 <= 19) {
-                                return (
-                                  <div
-                                    className={`sdp-hour-item ${isBlocked ? 'sdp-hour-blocked' : 'sdp-hour-adjacent'}`}
-                                    onClick={() => {
-                                      if (!isBlocked) {
-                                        setSelectedStartHour(nextH1);
-                                        setSelectedSlotWindow(calculateSlotWindow(nextH1, slotDuration));
-                                      }
-                                    }}
-                                  >
-                                    <span>{formatHourShort(nextH1)}</span>
-                                    {isBlocked && <span className="sdp-blocked-tag">Exceeds 9 PM</span>}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-
-                            {/* 2 hours below */}
-                            {(() => {
-                              const nextH2 = selectedStartHour + 2;
-                              const maxStart = 21 - slotDuration;
-                              const isBlocked = nextH2 > maxStart;
-                              if (nextH2 <= 19) {
-                                return (
-                                  <div
-                                    className={`sdp-hour-item ${isBlocked ? 'sdp-hour-blocked' : 'sdp-hour-faint'}`}
-                                    onClick={() => {
-                                      if (!isBlocked) {
-                                        setSelectedStartHour(nextH2);
-                                        setSelectedSlotWindow(calculateSlotWindow(nextH2, slotDuration));
-                                      }
-                                    }}
-                                  >
-                                    <span>{formatHourShort(nextH2)}</span>
-                                    {isBlocked && <span className="sdp-blocked-tag">Exceeds 9 PM</span>}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-
-                          {/* Down Navigation Button */}
-                          <button
-                            type="button"
-                            className="sdp-nav-btn"
-                            onClick={() => {
-                              const maxStart = 21 - slotDuration;
-                              if (selectedStartHour < maxStart) {
-                                const next = selectedStartHour + 1;
-                                setSelectedStartHour(next);
-                                setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                              }
-                            }}
-                            disabled={selectedStartHour >= (21 - slotDuration)}
-                            aria-label="Next hour"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Right Column: Clean Confirmed Shopping Window Card */}
-                      <div className="slot-confirmed-card">
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
-                            <span style={{ fontSize: 12, fontWeight: 800, color: '#071D3A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                              Confirmed Shopping Slot
-                            </span>
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                background: '#ECFDF5',
-                                color: '#047857',
-                                border: '1px solid #A7F3D0',
-                                padding: '2px 8px',
-                                borderRadius: 999,
-                              }}
-                            >
-                              ✓ Completes before 9:00 PM IST
-                            </span>
-                          </div>
-
-                          {/* High-Contrast Slot Time Display */}
-                          <div
-                            style={{
-                              background: 'linear-gradient(135deg, #0B4F9C 0%, #071D3A 100%)',
-                              borderRadius: 14,
-                              padding: '16px 20px',
-                              color: '#FFFFFF',
-                              textAlign: 'center',
-                              marginBottom: 12,
-                              boxShadow: '0 4px 14px rgba(11, 79, 156, 0.18)',
-                            }}
-                          >
-                            <div style={{ fontSize: 11.5, fontWeight: 700, color: '#93C5FD', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
-                              {slotDuration}-Hour Active Window
-                            </div>
-                            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '0.5px', fontFamily: 'var(--font-display, serif)' }}>
-                              {selectedSlotWindow} IST
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Bottom Clean Date & Operating Window Line */}
-                        <div
-                          style={{
-                            paddingTop: 10,
-                            borderTop: '1px dashed #CBD5E1',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            flexWrap: 'wrap',
-                            gap: 8,
-                            fontSize: 12,
-                            color: '#475569',
-                          }}
-                        >
-                          <span>Date: <b style={{ color: '#071D3A' }}>{selectedDate}</b></span>
-                          <span style={{ color: '#047857', fontWeight: 600 }}>11:00 AM – 9:00 PM Operating Hours</span>
-                        </div>
-                      </div>
-                    </div>
-
+                    {/* Fee & Confirm Bar */}
                     {(() => {
                       const currentSlotFee = slotDuration === 2 ? 250 : slotDuration === 5 ? 600 : 400;
                       const merchandiseBudget = cart.reduce((sum, item) => sum + (item.priceMax || item.priceMin || 1000) * (item.qty || 1), 0);
                       const totalDepositRequired = merchandiseBudget + currentSlotFee;
                       const walletShortfall = Math.max(0, totalDepositRequired - user.walletBalance);
-                      const activeAddr = savedAddresses.find(a => a.id === selectedAddressId) || savedAddresses[0];
 
                       return (
-                        <>
-                          {/* Sourcing Summary Card (Clean, Professional, AbhiBus-Inspired) */}
-                          <div
-                            className="sourcing-summary-compact-card"
-                            onClick={() => setShowTripDetailsModal(true)}
-                          >
-                            <div className="ssc-top-row">
-                              <div className="ssc-item-info">
-                                <div className="ssc-thumb-wrapper">
-                                  <img
-                                    src={cart[0]?.image || '/images/placeholders/placeholder-item.svg'}
-                                    alt={cart[0]?.name || 'Sourcing items'}
-                                    className="ssc-primary-thumb"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg';
-                                    }}
-                                  />
-                                  {cart.length > 1 && (
-                                    <span className="ssc-badge-more">+{cart.length - 1}</span>
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="ssc-title-row">
-                                    <span className="ssc-service-tag">Personal Shopper</span>
-                                    <div className="ssc-title">{cart[0]?.name || 'Personal Shopping Run'}</div>
-                                  </div>
-                                  <div className="ssc-desc">
-                                    {cart.length} item{cart.length > 1 ? 's' : ''} in sourcing basket · {slotDuration}h Dedicated Shopper
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="ssc-price-box">
-                                <div style={{ fontSize: 10.5, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>Product Budget</div>
-                                <div className="ssc-price" style={{ color: '#0F172A', marginTop: 1 }}>₹{merchandiseBudget.toLocaleString('en-IN')}</div>
-                                <div style={{ fontSize: 10.5, fontWeight: 700, color: '#2563EB', marginTop: 1 }}>
-                                  + ₹{currentSlotFee} ({slotDuration}h Shopper)
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Bottom Section: All Slot Timing & Delivery Address */}
-                            <div className="ssc-bottom-details">
-                              <div className="ssc-detail-pill">
-                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                </span>
-                                <div className="ssc-detail-text">
-                                  <span className="ssc-detail-label">All Slot Timing:</span>
-                                  <span className="ssc-detail-val">{selectedDate} · {selectedSlotWindow} ({slotDuration} Hours)</span>
-                                </div>
-                              </div>
-
-                              <div className="ssc-detail-pill">
-                                <span className="ssc-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                </span>
-                                <div className="ssc-detail-text">
-                                  <span className="ssc-detail-label">Delivery Address:</span>
-                                  <span className="ssc-detail-val">
-                                    {activeAddr ? (
-                                      `${activeAddr.name} · ${[activeAddr.city, activeAddr.country].filter(Boolean).join(', ')}`
-                                    ) : (
-                                      <span style={{ color: '#E11D48' }}>Delivery address pending (Step 2)</span>
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="ssc-action-banner">
-                              <div className="ssc-guarantee-text">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.4" style={{ width: 15, height: 15 }}>
-                                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                                  <path d="M9 12l2 2 4-4" />
-                                </svg>
-                                <span>100% Protected</span>
-                              </div>
-                              <div className="ssc-view-trigger">
-                                <span>View Sourcing &amp; Payment Plan</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 13, height: 13 }}>
-                                  <polyline points="9 18 15 12 9 6" />
-                                </svg>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* AbhiBus Inspired Trip Details Bottom Sheet Modal */}
-                          <TripDetailsModal
-                            isOpen={showTripDetailsModal}
-                            onClose={() => setShowTripDetailsModal(false)}
-                            slotDuration={slotDuration}
-                            selectedDate={selectedDate}
-                            selectedSlotWindow={selectedSlotWindow}
-                            cart={cart}
-                            activeAddr={activeAddr}
-                            user={user}
-                            customerPhone={customerPhone}
-                            merchandiseBudget={merchandiseBudget}
-                            currentSlotFee={currentSlotFee}
-                            totalDepositRequired={totalDepositRequired}
-                          />
-
-                          {/* Clean, Responsive Visasra Sourcing & Wallet Box */}
-                          <div className={`visasra-money-pay-box ${walletShortfall > 0 ? 'needs-deposit' : 'sufficient'}`}>
-                            <div className="vmp-header">
-                              <div className="vmp-wallet-info">
-                                <div className="vmp-wallet-title">
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="#0A3A6B" strokeWidth="2.2" style={{ width: 16, height: 16 }}>
-                                    <rect x="2" y="4" width="20" height="16" rx="3" />
-                                    <path d="M16 12h2" />
-                                    <path d="M2 10h20" />
-                                  </svg>
-                                  <span>Visasra Wallet</span>
-                                </div>
-                                <div className="vmp-wallet-balance">
-                                  ₹{user.walletBalance.toLocaleString('en-IN')}
-                                </div>
-                              </div>
-                              <div className={walletShortfall > 0 ? 'vmp-badge-warning' : 'vmp-badge-success'}>
-                                {walletShortfall > 0 ? `Shortfall: ₹${walletShortfall.toLocaleString('en-IN')}` : '✓ Sufficient Balance'}
-                              </div>
-                            </div>
-
-                            <div className="vmp-summary-details">
-                              <div className="vmp-row">
-                                <span>Dedicated Shopper Slot Fee ({slotDuration}h):</span>
-                                <b>₹{currentSlotFee}</b>
-                              </div>
-                              <div className="vmp-row">
-                                <span>Merchandise Budget (Held Securely):</span>
-                                <b>₹{merchandiseBudget.toLocaleString('en-IN')}</b>
-                              </div>
-                              <div className="vmp-row" style={{ color: '#475569', fontSize: 12.5 }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B4F9C" strokeWidth="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
-                                  <span>Delivery Fee:</span>
-                                </span>
-                                <b style={{ color: '#2563EB', fontWeight: 600 }}>Weighed &amp; billed after store purchase</b>
-                              </div>
-                              <div className="vmp-row vmp-total-row">
-                                <span style={{ fontWeight: 800, color: '#0F172A' }}>Total Booking Deposit Required:</span>
-                                <b style={{ fontSize: 14.5, color: '#0A3A6B' }}>₹{totalDepositRequired.toLocaleString('en-IN')}</b>
-                              </div>
-                            </div>
-
+                        <div className="slot-mockup-bottom-bar">
+                          <div className="slot-mockup-fee-note">
+                            <div>Slot fee ₹{currentSlotFee} · Product budget held in wallet</div>
                             {walletShortfall > 0 ? (
-                              <div className="vmp-alert-note">
-                                <div className="vmp-alert-note-header">
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
-                                  <span>Deposit ₹{walletShortfall.toLocaleString('en-IN')} via Razorpay to confirm slot</span>
-                                </div>
-                                <div className="vmp-alert-note-body">
-                                  ₹{currentSlotFee} slot fee is deducted now for your personal shopper. ₹{merchandiseBudget.toLocaleString('en-IN')} merchandise budget is held safely until you approve live samples. Delivery fee is weighed and calculated after items are collected from shops based on actual weight.
-                                </div>
+                              <div style={{ fontSize: 12, color: '#DC2626', fontWeight: 600, marginTop: 3 }}>
+                                Wallet balance: ₹{user.walletBalance.toLocaleString('en-IN')} (Deposit ₹{walletShortfall.toLocaleString('en-IN')} needed)
                               </div>
                             ) : (
-                              <div className="vmp-success-note">
-                                ✓ You have sufficient wallet balance. ₹{currentSlotFee} slot fee will be deducted upon confirmation. Delivery fee will be weighed and calculated after store pickup.
+                              <div style={{ fontSize: 12, color: '#059669', fontWeight: 600, marginTop: 3 }}>
+                                Visasra Wallet: ₹{user.walletBalance.toLocaleString('en-IN')} (Sufficient Balance)
                               </div>
                             )}
                           </div>
-
-                          <div className="wizard-actions">
+                          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                             <button
                               type="button"
                               className="btn-concierge-secondary"
+                              style={{ padding: '10px 18px', borderRadius: 999, fontSize: 13 }}
                               onClick={() => {
                                 setIsBooking(false);
                                 goToBookingStep(2);
@@ -4218,45 +3876,20 @@ export default function CustomerApp() {
                             </button>
                             <button
                               type="button"
-                              className="btn-concierge-primary"
+                              className="slot-mockup-confirm-btn"
                               disabled={isBooking}
                               onClick={handleConfirmBooking}
-                              style={isBooking ? { opacity: 0.88, cursor: 'wait' } : {}}
                             >
                               {isBooking ? (
-                                <>
-                                  <span
-                                    style={{
-                                      width: 15,
-                                      height: 15,
-                                      border: '2.2px solid rgba(255,255,255,0.3)',
-                                      borderTopColor: '#fff',
-                                      borderRadius: '50%',
-                                      display: 'inline-block',
-                                      animation: 'spin 0.75s linear infinite',
-                                      marginRight: 6,
-                                    }}
-                                  />
-                                  <span>Confirming Booking...</span>
-                                </>
+                                'Confirming...'
                               ) : walletShortfall > 0 ? (
-                                <>
-                                  <span>Pay ₹{walletShortfall.toLocaleString('en-IN')} &amp; Book Slot</span>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
-                                    <polyline points="9 18 15 12 9 6" />
-                                  </svg>
-                                </>
+                                `Pay ₹${walletShortfall.toLocaleString('en-IN')} & Book`
                               ) : (
-                                <>
-                                  <span>Confirm &amp; Book Slot ({slotDuration}h)</span>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
-                                    <polyline points="9 18 15 12 9 6" />
-                                  </svg>
-                                </>
+                                'Confirm slot'
                               )}
                             </button>
                           </div>
-                        </>
+                        </div>
                       );
                     })()}
                   </div>

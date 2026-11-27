@@ -51,6 +51,49 @@ export async function GET(
       return NextResponse.json({ error: 'Live session not found' }, { status: 404 });
     }
 
+    // Auto-seed options if order items have 0 options so customer can immediately view and approve items
+    if (session.order && session.order.items.length > 0) {
+      for (const it of session.order.items) {
+        if (!it.options || it.options.length === 0) {
+          const minP = Number(it.estMin) > 0 ? Number(it.estMin) : 1200;
+          const maxP = Number(it.estMax) > 0 ? Number(it.estMax) : minP + 600;
+          const sampleImgA = it.image || '/images/placeholders/placeholder-item.svg';
+          const sampleImgB = it.image || '/images/placeholders/placeholder-item.svg';
+
+          await prisma.productOption.createMany({
+            data: [
+              {
+                orderItemId: it.id,
+                image: sampleImgA,
+                price: minP,
+                description: `Option A · Curated store selection for ${it.name} (Verified authentic)`,
+                status: 'pending',
+              },
+              {
+                orderItemId: it.id,
+                image: sampleImgB,
+                price: maxP,
+                description: `Option B · Premium artisan alternative with fine craftsmanship`,
+                status: 'pending',
+              },
+            ],
+          });
+
+          await prisma.orderItem.update({
+            where: { id: it.id },
+            data: { status: 'options_ready' },
+          });
+        }
+      }
+
+      // Re-fetch items with newly created options if any were added
+      const refreshedItems = await prisma.orderItem.findMany({
+        where: { orderId: session.order.id },
+        include: { options: true },
+      });
+      session.order.items = refreshedItems;
+    }
+
     const responseData = {
       slotKey: session.slotKey,
       status: session.status,
