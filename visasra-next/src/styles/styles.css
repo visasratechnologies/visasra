@@ -13144,18 +13144,28 @@ html.logged-out body {
 
 .bookslot-pick-card {
   background: #FFFFFF;
-  border-radius: 14px;
-  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  border: 1.2px solid #E2E8F0;
   padding: 12px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 8px rgba(7, 29, 58, 0.04);
+  transition: all 0.2s ease;
+}
+
+.bookslot-pick-card:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 6px 18px rgba(11, 79, 156, 0.08);
+  transform: translateY(-2px);
 }
 
 .bookslot-pick-img-box {
+  position: relative;
   width: 100%;
-  aspect-ratio: 1.25;
-  border-radius: 10px;
-  background: #F1F5F9;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13163,11 +13173,39 @@ html.logged-out body {
   overflow: hidden;
 }
 
+.bookslot-pick-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
+}
+
+.bookslot-pick-card:hover .bookslot-pick-img-box img {
+  transform: scale(1.04);
+}
+
+.bookslot-variety-pill {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(7, 29, 58, 0.78);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
 .bookslot-pick-name {
   font-size: 13.5px;
   font-weight: 700;
   color: #071D3A;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -13175,14 +13213,19 @@ html.logged-out body {
 
 .bookslot-pick-price {
   font-size: 12px;
-  color: #64748B;
-  margin-bottom: 10px;
+  font-weight: 700;
+  color: #071D3A;
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bookslot-pick-add-btn {
   width: 100%;
-  padding: 8px;
-  border-radius: 8px;
+  margin-top: auto;
+  padding: 9px 12px;
+  border-radius: 10px;
   background: #0B4F9C;
   color: #FFFFFF;
   border: none;
@@ -13190,6 +13233,10 @@ html.logged-out body {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .bookslot-pick-add-btn:hover {

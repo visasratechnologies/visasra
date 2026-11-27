@@ -3063,9 +3063,13 @@ export default function CustomerApp() {
                                   <img
                                     src={pImg}
                                     alt={p.name}
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 6 }}
                                     onError={(e) => { (e.target as HTMLImageElement).src = '/images/placeholders/placeholder-item.svg'; }}
                                   />
+                                  {p.types && p.types.length > 0 && (
+                                    <span className="bookslot-variety-pill">
+                                      {p.types.length} Varieties
+                                    </span>
+                                  )}
                                 </div>
                                 <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0B4F9C', textTransform: 'uppercase', marginBottom: 2 }}>
                                   {p.catName}
@@ -3074,15 +3078,9 @@ export default function CustomerApp() {
                                 <div className="bookslot-pick-price">
                                   Est. ₹{(p.estMin || 1000).toLocaleString('en-IN')} – ₹{(p.estMax || 3000).toLocaleString('en-IN')}
                                 </div>
-                                <div style={{ fontSize: 11, color: '#64748B', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minHeight: 18 }}>
-                                  {p.types && p.types.length > 0
-                                    ? `${p.types.length} varieties: ${p.types.map((t: any) => t.name).slice(0, 2).join(', ')}...`
-                                    : ''}
-                                </div>
                                 <button
                                   type="button"
                                   className="bookslot-pick-add-btn"
-                                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                                   onClick={() => {
                                     const itemToAdd: CartItem = {
                                       id: pKey,
