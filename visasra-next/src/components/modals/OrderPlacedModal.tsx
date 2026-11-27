@@ -42,39 +42,86 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(7, 29, 58, 0.75)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'grid',
-        placeItems: 'center',
-        padding: '16px',
+        background: '#FFFFFF',
         overflowY: 'auto',
-        animation: 'fadeIn 0.25s ease-out',
+        display: 'flex',
+        flexDirection: 'column',
+        animation: 'fadeIn 0.2s ease-out',
       }}
-      onClick={onClose}
     >
-      <div
-        className="order-placed-container"
-        onClick={(e) => e.stopPropagation()}
+      {/* Top Application Bar */}
+      <header
         style={{
-          background: '#FFFFFF',
-          borderRadius: 24,
-          maxWidth: 880,
           width: '100%',
-          boxShadow: '0 25px 60px -15px rgba(7, 29, 58, 0.35)',
-          border: '1.5px solid #E2E8F0',
-          position: 'relative',
-          overflow: 'hidden',
-          padding: '36px 32px',
-          animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          borderBottom: '1px solid #EEF2F6',
+          background: '#FFFFFF',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 960,
+            margin: '0 auto',
+            padding: 'calc(12px + env(safe-area-inset-top, 0px)) 20px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/images/logo/visasra-logo.png" alt="Visasra" style={{ height: 28, width: 'auto' }} />
+            <span style={{ fontFamily: 'var(--font-display, serif)', fontWeight: 800, fontSize: 18, color: '#071D3A', letterSpacing: '0.04em' }}>
+              VISASRA
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleHome}
+            aria-label="Back to home"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#F8FAFC',
+              border: '1.2px solid #E2E8F0',
+              borderRadius: 999,
+              padding: '7px 14px',
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: '#334155',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <span>Close</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      {/* Main Page Content */}
+      <main
+        className="order-placed-page-body"
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: 960,
+          margin: '0 auto',
+          padding: '28px 20px calc(48px + env(safe-area-inset-bottom, 0px))',
+          boxSizing: 'border-box',
         }}
       >
         <style jsx>{`
           .order-placed-layout {
             display: grid;
-            grid-template-columns: 1fr 1.1fr;
-            gap: 36px;
-            align-items: center;
+            grid-template-columns: 1fr 1.15fr;
+            gap: 40px;
+            align-items: start;
           }
           .op-left {
             display: flex;
@@ -94,7 +141,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             background: #FFFFFF;
             border: 1.2px solid #CBD5E1;
             border-radius: 999px;
-            padding: 10px 24px;
+            padding: 11px 24px;
             font-size: 13.5px;
             font-weight: 700;
             color: #071D3A;
@@ -109,7 +156,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             background: #0B4F9C;
             border: none;
             border-radius: 999px;
-            padding: 10px 28px;
+            padding: 11px 28px;
             font-size: 13.5px;
             font-weight: 700;
             color: #FFFFFF;
@@ -121,17 +168,16 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             background: #093E7A;
           }
           @media (max-width: 768px) {
-            .order-placed-container {
-              padding: 24px 18px !important;
-              border-radius: 20px !important;
+            .order-placed-page-body {
+              padding: 18px 16px calc(36px + env(safe-area-inset-bottom, 0px)) !important;
             }
             .order-placed-layout {
               grid-template-columns: 1fr;
-              gap: 18px;
+              gap: 20px;
             }
             .op-buttons {
               order: 3;
-              margin-top: 14px;
+              margin-top: 16px;
               display: flex;
               gap: 10px;
               width: 100%;
@@ -140,7 +186,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             .op-btn-track {
               flex: 1;
               text-align: center;
-              padding: 11px 14px;
+              padding: 12px 14px;
               font-size: 13px;
             }
           }
@@ -384,7 +430,7 @@ export const OrderPlacedModal: React.FC<OrderPlacedModalProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

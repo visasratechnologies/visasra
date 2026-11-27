@@ -2524,8 +2524,8 @@ export default function CustomerApp() {
             >
               {/* Tier 1: All Categories Grid (Persistent DOM for zero image reload/flicker) */}
               <div className={`cat-tier1-wrap ${selectedCategoryForView ? 'is-hidden' : ''}`}>
-                <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
                 <div className="cat-tier1-inner">
+                  <img className="corner-leaf" src="/images/decor/visasra-corner-flourish.png?v=1" alt="" aria-hidden="true" />
                   <button type="button" className="back-row" onClick={handleGoBack} aria-label="Back">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
                     <span>Back</span>
