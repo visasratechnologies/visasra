@@ -9209,31 +9209,19 @@ html.logged-out body {
   margin-top: 2px;
 }
 
-/* Start Time Drum Picker & Schedule Selector */
-.slot-selection-container {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 20px;
-  align-items: stretch;
-  margin-bottom: 20px;
-}
-
-@media (max-width: 860px) {
-  .slot-selection-container {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
+/* Start Time Drum Picker */
 .slot-drum-card {
   background: #FFFFFF;
   border: 1.5px solid #E2E8F0;
   border-radius: 20px;
-  padding: 20px 16px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   box-shadow: 0 4px 16px rgba(7, 29, 58, 0.04);
+  max-width: 440px;
+  margin: 0 auto 20px auto;
+  width: 100%;
 }
 
 .sdp-header {
@@ -9251,15 +9239,15 @@ html.logged-out body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  gap: 4px;
+  gap: 6px;
 }
 
 .sdp-nav-btn {
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -9274,7 +9262,7 @@ html.logged-out body {
 }
 
 .sdp-nav-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: not-allowed;
 }
 
@@ -9283,13 +9271,13 @@ html.logged-out body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  gap: 6px;
+  gap: 8px;
   padding: 8px 0;
 }
 
 .sdp-hour-item {
   cursor: pointer;
-  padding: 6px 14px;
+  padding: 6px 20px;
   border-radius: 10px;
   transition: all 0.15s ease;
   user-select: none;
@@ -9307,11 +9295,11 @@ html.logged-out body {
   font-size: 14.5px;
   font-weight: 600;
   color: #94A3B8;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .sdp-hour-adjacent {
-  font-size: 16.5px;
+  font-size: 17px;
   font-weight: 700;
   color: #64748B;
 }
@@ -9322,11 +9310,11 @@ html.logged-out body {
   background: #F0F7FF;
   color: #071D3A;
   font-weight: 800;
-  font-size: 22px;
-  padding: 10px 32px;
+  font-size: 24px;
+  padding: 12px 48px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(11, 79, 156, 0.12);
-  width: 85%;
+  box-shadow: 0 4px 14px rgba(11, 79, 156, 0.12);
+  width: 80%;
   margin: 4px 0;
 }
 
@@ -9335,7 +9323,7 @@ html.logged-out body {
   color: #CBD5E1;
   text-decoration: line-through;
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .sdp-hour-blocked:hover {
@@ -9347,124 +9335,9 @@ html.logged-out body {
   font-weight: 700;
   background: #FEE2E2;
   color: #DC2626;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
   text-decoration: none;
-}
-
-/* Quick Slot Schedule Grid (matching Image 2) */
-.slot-schedule-card {
-  background: #FFFFFF;
-  border: 1.5px solid #E2E8F0;
-  border-radius: 20px;
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 16px rgba(7, 29, 58, 0.04);
-}
-
-.ssc-schedule-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ssc-schedule-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: #071D3A;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.ssc-schedule-badge {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #0B4F9C;
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
-  padding: 3px 10px;
-  border-radius: 999px;
-}
-
-.schedule-slots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
-  overflow-y: auto;
-  max-height: 250px;
-  padding: 2px;
-}
-
-.sched-slot-pill {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1.5px solid #E2E8F0;
-  background: #FFFFFF;
-  cursor: pointer;
-  transition: all 0.16s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  text-align: left;
-}
-
-.sched-slot-pill:hover:not(.disabled) {
-  border-color: #93C5FD;
-  background: #F8FAFC;
-}
-
-.sched-slot-pill.selected {
-  border-color: #0B4F9C;
-  background: #EFF6FF;
-  box-shadow: 0 2px 8px rgba(11, 79, 156, 0.15);
-}
-
-.sched-slot-pill.disabled {
-  opacity: 0.4;
-  background: #F8FAFC;
-  cursor: not-allowed;
-  border-color: #F1F5F9;
-}
-
-.ssp-num {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #F1F5F9;
-  color: #475569;
-  font-size: 11px;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  margin-right: 8px;
-}
-
-.sched-slot-pill.selected .ssp-num {
-  background: #0B4F9C;
-  color: #FFFFFF;
-}
-
-.ssp-time {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #071D3A;
-  white-space: nowrap;
-}
-
-.sched-slot-pill.selected .ssp-time {
-  color: #0B4F9C;
-}
-
-.ssp-check {
-  color: #0B4F9C;
-  display: flex;
-  align-items: center;
-  margin-left: 6px;
 }
 
 /* VIP Concierge Sourcing Pass Ticket - Harmonious Luxury Style */

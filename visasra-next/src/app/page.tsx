@@ -3790,203 +3790,144 @@ export default function CustomerApp() {
                     </div>
 
                     {/* Dynamic Start Time Picker & Operating Hours Window */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
                       <div style={{ fontWeight: 800, fontSize: 14, color: '#081E3B' }}>
-                        Select Slot Timing (11:00 AM – 9:00 PM IST Operating Window):
+                        Select Start Time (11:00 AM – 9:00 PM IST Operating Window):
                       </div>
                       <span style={{ fontSize: 12, color: '#0B4F9C', fontWeight: 700, background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '3px 10px', borderRadius: 999 }}>
                         {slotDuration}h Session · Max End: 9:00 PM
                       </span>
                     </div>
 
-                    {/* Start Time Drum Picker & Schedule Grid Container */}
-                    <div className="slot-selection-container">
-                      {/* Left: Drum Picker matching Image 1 */}
-                      <div className="slot-drum-card">
-                        <div className="sdp-header">START TIME</div>
-                        <div className="sdp-drum-viewport">
-                          {/* Up Navigation Button */}
-                          <button
-                            type="button"
-                            className="sdp-nav-btn"
-                            onClick={() => {
-                              if (selectedStartHour > 11) {
+                    {/* Clean Start Time Drum Picker matching Image 1 */}
+                    <div className="slot-drum-card">
+                      <div className="sdp-header">START TIME</div>
+                      <div className="sdp-drum-viewport">
+                        {/* Up Navigation Button */}
+                        <button
+                          type="button"
+                          className="sdp-nav-btn"
+                          onClick={() => {
+                            if (selectedStartHour > 11) {
+                              const next = selectedStartHour - 1;
+                              setSelectedStartHour(next);
+                              setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
+                            }
+                          }}
+                          disabled={selectedStartHour <= 11}
+                          aria-label="Previous hour"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="18 15 12 9 6 15" />
+                          </svg>
+                        </button>
+
+                        <div className="sdp-hours-stack">
+                          {/* 2 hours above */}
+                          {selectedStartHour - 2 >= 11 && (
+                            <div
+                              className="sdp-hour-item sdp-hour-faint"
+                              onClick={() => {
+                                const next = selectedStartHour - 2;
+                                setSelectedStartHour(next);
+                                setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
+                              }}
+                            >
+                              {formatHourShort(selectedStartHour - 2)}
+                            </div>
+                          )}
+
+                          {/* 1 hour above */}
+                          {selectedStartHour - 1 >= 11 && (
+                            <div
+                              className="sdp-hour-item sdp-hour-adjacent"
+                              onClick={() => {
                                 const next = selectedStartHour - 1;
                                 setSelectedStartHour(next);
                                 setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                              }
-                            }}
-                            disabled={selectedStartHour <= 11}
-                            aria-label="Previous hour"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="18 15 12 9 6 15" />
-                            </svg>
-                          </button>
-
-                          <div className="sdp-hours-stack">
-                            {/* 2 hours above */}
-                            {selectedStartHour - 2 >= 11 && (
-                              <div
-                                className="sdp-hour-item sdp-hour-faint"
-                                onClick={() => {
-                                  const next = selectedStartHour - 2;
-                                  setSelectedStartHour(next);
-                                  setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                                }}
-                              >
-                                {formatHourShort(selectedStartHour - 2)}
-                              </div>
-                            )}
-
-                            {/* 1 hour above */}
-                            {selectedStartHour - 1 >= 11 && (
-                              <div
-                                className="sdp-hour-item sdp-hour-adjacent"
-                                onClick={() => {
-                                  const next = selectedStartHour - 1;
-                                  setSelectedStartHour(next);
-                                  setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                                }}
-                              >
-                                {formatHourShort(selectedStartHour - 1)}
-                              </div>
-                            )}
-
-                            {/* Centered Selected Pill [ 1 PM ] matching Image 1 */}
-                            <div className="sdp-selected-pill">
-                              {formatHourShort(selectedStartHour)}
+                              }}
+                            >
+                              {formatHourShort(selectedStartHour - 1)}
                             </div>
+                          )}
 
-                            {/* 1 hour below */}
-                            {(() => {
-                              const nextH1 = selectedStartHour + 1;
-                              const maxStart = 21 - slotDuration;
-                              const isBlocked = nextH1 > maxStart;
-                              if (nextH1 <= 19) {
-                                return (
-                                  <div
-                                    className={`sdp-hour-item ${isBlocked ? 'sdp-hour-blocked' : 'sdp-hour-adjacent'}`}
-                                    onClick={() => {
-                                      if (!isBlocked) {
-                                        setSelectedStartHour(nextH1);
-                                        setSelectedSlotWindow(calculateSlotWindow(nextH1, slotDuration));
-                                      }
-                                    }}
-                                  >
-                                    <span>{formatHourShort(nextH1)}</span>
-                                    {isBlocked && <span className="sdp-blocked-tag">Exceeds 9 PM</span>}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
-
-                            {/* 2 hours below */}
-                            {(() => {
-                              const nextH2 = selectedStartHour + 2;
-                              const maxStart = 21 - slotDuration;
-                              const isBlocked = nextH2 > maxStart;
-                              if (nextH2 <= 19) {
-                                return (
-                                  <div
-                                    className={`sdp-hour-item ${isBlocked ? 'sdp-hour-blocked' : 'sdp-hour-faint'}`}
-                                    onClick={() => {
-                                      if (!isBlocked) {
-                                        setSelectedStartHour(nextH2);
-                                        setSelectedSlotWindow(calculateSlotWindow(nextH2, slotDuration));
-                                      }
-                                    }}
-                                  >
-                                    <span>{formatHourShort(nextH2)}</span>
-                                    {isBlocked && <span className="sdp-blocked-tag">Exceeds 9 PM</span>}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })()}
+                          {/* Centered Selected Pill [ 11 AM ] matching Image 1 */}
+                          <div className="sdp-selected-pill">
+                            {formatHourShort(selectedStartHour)}
                           </div>
 
-                          {/* Down Navigation Button */}
-                          <button
-                            type="button"
-                            className="sdp-nav-btn"
-                            onClick={() => {
-                              const maxStart = 21 - slotDuration;
-                              if (selectedStartHour < maxStart) {
-                                const next = selectedStartHour + 1;
-                                setSelectedStartHour(next);
-                                setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
-                              }
-                            }}
-                            disabled={selectedStartHour >= (21 - slotDuration)}
-                            aria-label="Next hour"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Right: Full Schedule Table matching Image 2 */}
-                      <div className="slot-schedule-card">
-                        <div className="ssc-schedule-header">
-                          <div className="ssc-schedule-title">
-                            Time Slot Schedule ({slotDuration}-Hour Slots)
-                          </div>
-                          <span className="ssc-schedule-badge">
-                            {21 - slotDuration - 11 + 1} Available Windows
-                          </span>
-                        </div>
-
-                        <div className="schedule-slots-grid">
-                          {[11, 12, 13, 14, 15, 16, 17, 18, 19].map((hour, idx) => {
+                          {/* 1 hour below */}
+                          {(() => {
+                            const nextH1 = selectedStartHour + 1;
                             const maxStart = 21 - slotDuration;
-                            const isBlocked = hour > maxStart;
-                            const isSelected = selectedStartHour === hour;
-                            const slotTimeLabel = `${formatHour12(hour)} – ${formatHour12(hour + slotDuration)}`;
-
-                            return (
-                              <button
-                                key={hour}
-                                type="button"
-                                className={`sched-slot-pill ${isSelected ? 'selected' : ''} ${isBlocked ? 'disabled' : ''}`}
-                                onClick={() => {
-                                  if (!isBlocked) {
-                                    setSelectedStartHour(hour);
-                                    setSelectedSlotWindow(calculateSlotWindow(hour, slotDuration));
-                                  }
-                                }}
-                                disabled={isBlocked}
-                                title={isBlocked ? `Ends after 9:00 PM (${formatHour12(hour + slotDuration)})` : undefined}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                  <span className="ssp-num">{idx + 1}</span>
-                                  <div>
-                                    <div className="ssp-time">{slotTimeLabel}</div>
-                                    {isBlocked && (
-                                      <div style={{ fontSize: 10, color: '#EF4444', fontWeight: 700, marginTop: 1 }}>
-                                        Exceeds 9 PM
-                                      </div>
-                                    )}
-                                  </div>
+                            const isBlocked = nextH1 > maxStart;
+                            if (nextH1 <= 19) {
+                              return (
+                                <div
+                                  className={`sdp-hour-item ${isBlocked ? 'sdp-hour-blocked' : 'sdp-hour-adjacent'}`}
+                                  onClick={() => {
+                                    if (!isBlocked) {
+                                      setSelectedStartHour(nextH1);
+                                      setSelectedSlotWindow(calculateSlotWindow(nextH1, slotDuration));
+                                    }
+                                  }}
+                                >
+                                  <span>{formatHourShort(nextH1)}</span>
+                                  {isBlocked && <span className="sdp-blocked-tag">Exceeds 9 PM</span>}
                                 </div>
-                                {isSelected && (
-                                  <span className="ssp-check">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
+                              );
+                            }
+                            return null;
+                          })()}
+
+                          {/* 2 hours below */}
+                          {(() => {
+                            const nextH2 = selectedStartHour + 2;
+                            const maxStart = 21 - slotDuration;
+                            const isBlocked = nextH2 > maxStart;
+                            if (nextH2 <= 19) {
+                              return (
+                                <div
+                                  className={`sdp-hour-item ${isBlocked ? 'sdp-hour-blocked' : 'sdp-hour-faint'}`}
+                                  onClick={() => {
+                                    if (!isBlocked) {
+                                      setSelectedStartHour(nextH2);
+                                      setSelectedSlotWindow(calculateSlotWindow(nextH2, slotDuration));
+                                    }
+                                  }}
+                                >
+                                  <span>{formatHourShort(nextH2)}</span>
+                                  {isBlocked && <span className="sdp-blocked-tag">Exceeds 9 PM</span>}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
+
+                        {/* Down Navigation Button */}
+                        <button
+                          type="button"
+                          className="sdp-nav-btn"
+                          onClick={() => {
+                            const maxStart = 21 - slotDuration;
+                            if (selectedStartHour < maxStart) {
+                              const next = selectedStartHour + 1;
+                              setSelectedStartHour(next);
+                              setSelectedSlotWindow(calculateSlotWindow(next, slotDuration));
+                            }
+                          }}
+                          disabled={selectedStartHour >= (21 - slotDuration)}
+                          aria-label="Next hour"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Automatically Calculated Slot Timing & Closing Guarantee Card */}
+                    {/* Automatically Calculated Slot Timing & Closing Guarantee Card (Shows ONLY the selected slot) */}
                     <div
                       style={{
                         marginBottom: 24,
@@ -3995,6 +3936,8 @@ export default function CustomerApp() {
                         borderRadius: 18,
                         padding: '18px 22px',
                         boxShadow: '0 4px 18px rgba(11, 79, 156, 0.08)',
+                        maxWidth: 540,
+                        margin: '0 auto 24px auto',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
@@ -4026,7 +3969,7 @@ export default function CustomerApp() {
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
-                          Completes before 9:00 PM IST store closing
+                          Completes before 9:00 PM IST
                         </span>
                       </div>
 
